@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Fresh FA — Дашборд</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;0,9..144,700&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --paper: #e4e9f2; --ink: #1a1b22; --muted: #5c6370;
+      --brand: #003dff; --accent: #003dff; --ok: #166534; --warn: #b45309; --err: #991b1b;
+      --line: rgba(26,27,34,0.1); --radius: 16px;
+    }
+    body {
+      font-family: 'Inter', system-ui, sans-serif;
+      background: var(--paper); color: var(--ink);
+      min-height: 100vh; padding: 1.5rem 2rem;
+    }
+    .dash-header { display: flex; align-items: center; gap: 1rem; margin-bottom: 0.75rem; flex-wrap: wrap; }
+    .dash-header img { height: 22px; width: auto; display: block; }
+    .dash-header h1 { margin: 0; }
+    h1 { font-family: 'Fraunces', serif; font-size: 1.7rem; font-weight: 600; margin-bottom: 0.3rem; }
+    .subtitle { color: var(--muted); font-size: 0.85rem; margin-bottom: 1.5rem; }
+    .subtitle a { color: var(--accent); text-decoration: none; }
+    .subtitle a:hover { text-decoration: underline; }
+    .filters { display: flex; gap: 0.5rem; margin-bottom: 1.5rem; flex-wrap: wrap; align-items: center; }
+    .filters label { font-size: 0.75rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; }
+    .filters select { font: inherit; font-size: 0.82rem; padding: 0.3rem 0.5rem; border-radius: 8px; border: 1px solid var(--line); background: #fff; }
+    .kpi-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem; margin-bottom: 2rem; }
+    .kpi { background: #fff; border-radius: var(--radius); padding: 1rem 1.2rem; border: 1px solid var(--line); }
+    .kpi-label { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); font-weight: 600; }
+    .kpi-value { font-family: 'Fraunces', serif; font-size: 2rem; font-weight: 700; margin-top: 0.15rem; }
+    .charts { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 2rem; }
+    @media (max-width: 900px) { .charts { grid-template-columns: 1fr; } }
+    .chart-card { background: #fff; border-radius: var(--radius); padding: 1rem 1.2rem; border: 1px solid var(--line); }
+    .chart-card h3 { font-size: 0.82rem; font-weight: 700; margin-bottom: 0.7rem; }
+    canvas { width: 100% !important; max-height: 300px; }
+    .table-card { background: #fff; border-radius: var(--radius); padding: 1rem 1.2rem; border: 1px solid var(--line); margin-bottom: 1.5rem; overflow-x: auto; }
+    .table-card h3 { font-size: 0.82rem; font-weight: 700; margin-bottom: 0.7rem; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+    th { text-align: left; font-weight: 600; color: var(--muted); font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.05em; padding: 0.4rem 0.6rem; border-bottom: 2px solid var(--line); }
+    td { padding: 0.4rem 0.6rem; border-bottom: 1px solid var(--line); }
+    .score-pill { display: inline-block; padding: 0.15rem 0.5rem; border-radius: 6px; font-weight: 600; font-size: 0.78rem; }
+    .score-high { background: rgba(22,101,52,0.1); color: var(--ok); }
+    .score-mid { background: rgba(180,83,9,0.1); color: var(--warn); }
+    .score-low { background: rgba(153,27,27,0.1); color: var(--err); }
+    .empty-state { text-align: center; padding: 3rem; color: var(--muted); }
+  </style>
+</head>
+<body>
+  <div class="dash-header">
+    <img src="/static/assets/img/fresh-logo-blue.png" alt="FRESH" width="120" height="22" />
+    <h1>Аналитика</h1>
+  </div>
+  <p class="subtitle"><a href="/">← Вернуться к записям</a></p>
+
+  <div class="filters">
+    <label>Менеджер:</label>
+    <select id="filter-manager"><option value="">Все</option></select>
+    <label>Локация:</label>
+    <select id="filter-location"><option value="">Все</option></select>
+    <a href="/api/export/csv" id="export-link" style="margin-left:auto; font-size:0.78rem; color:var(--accent);">Экспорт CSV</a>
+  </div>
+
+  <div class="kpi-row" id="kpi-row"></div>
+
+  <div class="charts">
+    <div class="chart-card"><h3>Баллы по менеджерам</h3><canvas id="chart-managers"></canvas></div>
+    <div class="chart-card"><h3>Баллы по локациям</h3><canvas id="chart-locations"></canvas></div>
+    <div class="chart-card"><h3>Динамика по дням</h3><canvas id="chart-trend"></canvas></div>
+    <div class="chart-card"><h3>Средний балл по критериям</h3><canvas id="chart-criteria"></canvas></div>
+  </div>
+
+  <div class="table-card" id="table-managers"><h3>Рейтинг менеджеров</h3><div id="table-managers-body"></div></div>
+
+  <div id="empty-state" class="empty-state" style="display:none;">Нет данных для отображения. Загрузите и обработайте видео.</div>
+
+<script>
+const API = location.origin;
+let _charts = {};
+
+function scorePill(v) {
+  if (v == null) return '—';
+  const cls = v >= 75 ? 'score-high' : v >= 50 ? 'score-mid' : 'score-low';
+  return `<span class="score-pill ${cls}">${v}</span>`;
+}
+
+async function loadDashboard() {
+  const mp = document.getElementById('filter-manager').value;
+  const lp = document.getElementById('filter-location').value;
+  const params = new URLSearchParams();
+  if (mp) params.set('manager_id', mp);
+  if (lp) params.set('location_id', lp);
+
+  const url = `${API}/api/dashboard?${params}`;
+  let data;
+  try {
+    const r = await fetch(url);
+    data = await r.json();
+  } catch (e) {
+    console.error(e);
+    return;
+  }
+
+  // Export link with filters
+  const exportParams = new URLSearchParams(params);
+  document.getElementById('export-link').href = `/api/export/csv?${exportParams}`;
+
+  if (!data.total_evaluations) {
+    document.getElementById('empty-state').style.display = 'block';
+    document.getElementById('kpi-row').innerHTML = '';
+    return;
+  }
+  document.getElementById('empty-state').style.display = 'none';
+
+  // KPIs
+  document.getElementById('kpi-row').innerHTML = `
+    <div class="kpi"><div class="kpi-label">Всего оценок</div><div class="kpi-value">${data.total_evaluations}</div></div>
+    <div class="kpi"><div class="kpi-label">Средний балл</div><div class="kpi-value">${data.average_score ?? '—'}</div></div>
+    <div class="kpi"><div class="kpi-label">Менеджеров</div><div class="kpi-value">${data.by_manager.length}</div></div>
+    <div class="kpi"><div class="kpi-label">Локаций</div><div class="kpi-value">${data.by_location.length}</div></div>
+  `;
+
+  // Populate filter dropdowns (once)
+  const mSel = document.getElementById('filter-manager');
+  const lSel = document.getElementById('filter-location');
+  if (mSel.options.length <= 1 && data.managers) {
+    for (const m of data.managers) {
+      const o = document.createElement('option');
+      o.value = m.id; o.textContent = m.name || m.id;
+      mSel.appendChild(o);
+    }
+  }
+  if (lSel.options.length <= 1 && data.locations) {
+    for (const l of data.locations) {
+      const o = document.createElement('option');
+      o.value = l.id; o.textContent = l.name || l.id;
+      lSel.appendChild(o);
+    }
+  }
+
+  const accent = '#003dff';
+  const accentA = 'rgba(0,61,255,0.7)';
+
+  // Chart: managers
+  renderBarChart('chart-managers', data.by_manager.map(m => m.name), data.by_manager.map(m => m.avg), accent);
+
+  // Chart: locations
+  renderBarChart('chart-locations', data.by_location.map(l => l.name), data.by_location.map(l => l.avg), '#166534');
+
+  // Chart: trend
+  renderLineChart('chart-trend', data.by_date.map(d => d.date), data.by_date.map(d => d.avg), accent);
+
+  // Chart: criteria
+  renderBarChart('chart-criteria', data.by_criteria.map(c => c.name), data.by_criteria.map(c => c.avg), '#b45309');
+
+  // Table: managers
+  if (data.by_manager.length) {
+    let html = '<table><thead><tr><th>Менеджер</th><th>Оценок</th><th>Средний</th><th>Мин</th><th>Макс</th></tr></thead><tbody>';
+    for (const m of data.by_manager) {
+      html += `<tr><td>${m.name}</td><td>${m.count}</td><td>${scorePill(m.avg)}</td><td>${m.min}</td><td>${m.max}</td></tr>`;
+    }
+    html += '</tbody></table>';
+    document.getElementById('table-managers-body').innerHTML = html;
+  }
+}
+
+function renderBarChart(id, labels, values, color) {
+  if (_charts[id]) _charts[id].destroy();
+  const ctx = document.getElementById(id);
+  _charts[id] = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [{
+        data: values,
+        backgroundColor: color + '88',
+        borderColor: color,
+        borderWidth: 1,
+        borderRadius: 6,
+      }],
+    },
+    options: {
+      indexAxis: labels.length > 6 ? 'y' : 'x',
+      responsive: true,
+      plugins: { legend: { display: false } },
+      scales: {
+        y: { beginAtZero: true, max: 100, grid: { color: 'rgba(0,0,0,0.05)' } },
+        x: { grid: { display: false } },
+      },
+    },
+  });
+}
+
+function renderLineChart(id, labels, values, color) {
+  if (_charts[id]) _charts[id].destroy();
+  const ctx = document.getElementById(id);
+  _charts[id] = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [{
+        data: values,
+        borderColor: color,
+        backgroundColor: color + '22',
+        fill: true,
+        tension: 0.3,
+        pointRadius: 3,
+      }],
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { display: false } },
+      scales: {
+        y: { beginAtZero: true, max: 100, grid: { color: 'rgba(0,0,0,0.05)' } },
+        x: { grid: { display: false } },
+      },
+    },
+  });
+}
+
+document.getElementById('filter-manager').addEventListener('change', loadDashboard);
+document.getElementById('filter-location').addEventListener('change', loadDashboard);
+loadDashboard();
+</script>
+</body>
+</html>

@@ -1,0 +1,26 @@
+# Транскрипция
+faster-whisper>=1.2.0
+
+# Диаризация (нужен HF_TOKEN и согласие с условиями модели на huggingface.co)
+pyannote.audio>=4.0.0
+torch>=2.0
+torchaudio
+
+# Оценка по критериям (OpenAI-совместимый API)
+openai>=1.40.0
+
+pyyaml>=6.0.1
+python-dotenv>=1.0.1
+
+# Fallback-диаризация без HF_TOKEN (грубое разделение голосов по сегментам)
+librosa>=0.10.0
+scikit-learn>=1.3.0
+
+# SER: эмоциональная окраска по аудио (рядом с транскриптом — *.tone.json)
+transformers>=4.40.0
+soundfile>=0.12.0
+
+# Веб-интерфейс
+fastapi>=0.115.0
+uvicorn[standard]>=0.32.0
+python-multipart>=0.0.12
