@@ -20,6 +20,7 @@ _PIPELINE_STAGE_TEXT: dict[str, str] = {
     "done": "Готово",
     "error": "Ошибка",
     "starting": "Запуск пайплайна",
+    "resume": "Возобновление: пропуск уже готовых этапов",
 }
 
 
@@ -27,9 +28,12 @@ def _pipeline_log(phase: str) -> None:
     text = _PIPELINE_STAGE_TEXT.get(phase, phase)
     print(f"[Fresh FA] {text}", flush=True)
 
+from src.artifacts import delete_derived_artifacts_for_stem
+from src.atomic_json import try_load_transcript
 from src.evaluate import evaluate_transcript, write_evaluation_json
 from src.audio_extract import extract_wav_16k_mono
-from src.paths import CRITERIA_FILE, EVALUATION_DIR, TRANSCRIPT_DIR, VIDEO_DIR, evaluation_json_path
+from src.database import DB
+from src.paths import DEFAULT_CHECKLIST_SLUG, TRANSCRIPT_DIR, VIDEO_DIR, evaluation_json_path
 from src.speech_emotion import build_speech_emotion_sidecar, write_tone_json
 from src.transcribe import transcribe_video_to_structure, write_transcript_json
 
@@ -61,7 +65,11 @@ def find_video_for_stem(stem: str, video_dir: Path | None = None) -> Path | None
     return None
 
 
-def emotion_only_from_transcript(transcript_path: Path) -> Path:
+def emotion_only_from_transcript(
+    transcript_path: Path,
+    *,
+    cancel_check: Callable[[], None] | None = None,
+) -> Path:
     """
     SER по готовому JSON транскрипта: то же видео в 01.Video, сегменты из JSON.
     Пишет stem.tone.json и обновляет поле speech_emotion_sidecar в транскрипте.
@@ -91,9 +99,14 @@ def emotion_only_from_transcript(transcript_path: Path) -> Path:
 
     vf = data.get("video_file") or video.name
 
+    if cancel_check:
+        cancel_check()
+
     with tempfile.TemporaryDirectory(prefix="fa_tone_") as tmp:
         wav = Path(tmp) / "audio.wav"
         extract_wav_16k_mono(video, wav)
+        if cancel_check:
+            cancel_check()
         y_audio, sr_audio = sf.read(str(wav), always_2d=False, dtype="float32")
         if y_audio.ndim > 1:
             y_audio = np.mean(y_audio, axis=1)
@@ -113,8 +126,11 @@ def process_one_video(
     video_path: Path,
     *,
     criteria_path: Path | None = None,
+    db: DB | None = None,
     skip_eval: bool = False,
     on_progress: Callable[[str], None] | None = None,
+    cancel_check: Callable[[], None] | None = None,
+    eval_stream_callback: Callable[[str], None] | None = None,
 ) -> tuple[Path, Path | None, Path | None]:
     video_path = video_path.resolve()
     if not video_path.is_file():
@@ -123,17 +139,21 @@ def process_one_video(
     print(f"[Fresh FA] Обработка: {video_path.name}", flush=True)
 
     def ping(phase: str) -> None:
+        if cancel_check:
+            cancel_check()
         _pipeline_log(phase)
         if on_progress:
             on_progress(phase)
 
     stem = stem_for_outputs(video_path)
     transcript_path = TRANSCRIPT_DIR / f"{stem}.json"
-    crit = criteria_path or CRITERIA_FILE
+    crit = criteria_path or Path(DEFAULT_CHECKLIST_SLUG)
     eval_path = evaluation_json_path(stem, crit)
     tone_path = TRANSCRIPT_DIR / f"{stem}.tone.json"
 
-    data, tone_data = transcribe_video_to_structure(video_path, on_progress=ping)
+    data, tone_data = transcribe_video_to_structure(
+        video_path, on_progress=ping, cancel_check=cancel_check
+    )
     write_transcript_json(data, transcript_path)
     if tone_data is not None:
         write_tone_json(tone_data, tone_path)
@@ -149,16 +169,111 @@ def process_one_video(
         data,
         criteria_path=crit,
         transcript_path=transcript_path,
+        cancel_check=cancel_check,
+        db=db,
+        stream_callback=eval_stream_callback,
     )
     write_evaluation_json(ev, eval_path)
     ping("done")
     return transcript_path, eval_path, tone_path
 
 
+def process_one_video_resume(
+    video_path: Path,
+    *,
+    criteria_path: Path | None = None,
+    db: DB | None = None,
+    on_progress: Callable[[str], None] | None = None,
+    cancel_check: Callable[[], None] | None = None,
+    eval_stream_callback: Callable[[str], None] | None = None,
+) -> tuple[Path, Path | None, Path | None]:
+    """
+    После остановки пайплайна: не повторять уже завершённые шаги.
+    Нет транскрипта — полный прогон; есть транскрипт, нет тона — только SER;
+    есть транскрипт и тон — только оценка (если для активного чеклиста ещё нет файла оценки).
+    Битый или неподходящий JSON транскрипта — удаление производных файлов и полный прогон с нуля.
+    """
+    video_path = video_path.resolve()
+    if not video_path.is_file():
+        raise FileNotFoundError(str(video_path))
+
+    def ping(phase: str) -> None:
+        if cancel_check:
+            cancel_check()
+        _pipeline_log(phase)
+        if on_progress:
+            on_progress(phase)
+
+    stem = stem_for_outputs(video_path)
+    transcript_path = TRANSCRIPT_DIR / f"{stem}.json"
+    tone_path = TRANSCRIPT_DIR / f"{stem}.tone.json"
+    crit = criteria_path or Path(DEFAULT_CHECKLIST_SLUG)
+    eval_path = evaluation_json_path(stem, crit)
+
+    if not transcript_path.is_file():
+        print(f"[Fresh FA] Возобновление: нет транскрипта — полный пайплайн", flush=True)
+        return process_one_video(
+            video_path,
+            criteria_path=criteria_path,
+            db=db,
+            on_progress=on_progress,
+            cancel_check=cancel_check,
+            eval_stream_callback=eval_stream_callback,
+        )
+
+    data = try_load_transcript(transcript_path)
+    if data is None:
+        print(
+            "[Fresh FA] Возобновление: транскрипт повреждён или неподходит — "
+            "сброс производных и полный пайплайн",
+            flush=True,
+        )
+        delete_derived_artifacts_for_stem(stem)
+        return process_one_video(
+            video_path,
+            criteria_path=criteria_path,
+            db=db,
+            on_progress=on_progress,
+            cancel_check=cancel_check,
+            eval_stream_callback=eval_stream_callback,
+        )
+
+    ping("resume")
+
+    if not tone_path.is_file():
+        ping("tone")
+        emotion_only_from_transcript(transcript_path, cancel_check=cancel_check)
+        data = try_load_transcript(transcript_path)
+        if data is None:
+            raise RuntimeError(
+                "Транскрипт недоступен после SER — удалите повреждённый файл вручную или запустите «с начала»."
+            )
+
+    if eval_path.is_file():
+        ping("done")
+        return transcript_path, eval_path, tone_path if tone_path.is_file() else None
+
+    ping("evaluating")
+    ev = evaluate_transcript(
+        data,
+        criteria_path=crit,
+        transcript_path=transcript_path,
+        cancel_check=cancel_check,
+        db=db,
+        stream_callback=eval_stream_callback,
+    )
+    write_evaluation_json(ev, eval_path)
+    ping("done")
+    return transcript_path, eval_path, tone_path if tone_path.is_file() else None
+
+
 def evaluate_only_from_transcript(
     transcript_path: Path,
     *,
     criteria_path: Path | None = None,
+    db: DB | None = None,
+    cancel_check: Callable[[], None] | None = None,
+    stream_callback: Callable[[str], None] | None = None,
 ) -> Path:
     """Только LLM-оценка по готовому JSON транскрипта (без повторного распознавания)."""
     transcript_path = transcript_path.resolve()
@@ -166,12 +281,15 @@ def evaluate_only_from_transcript(
         raise FileNotFoundError(str(transcript_path))
     data = json.loads(transcript_path.read_text(encoding="utf-8"))
     stem = transcript_path.stem
-    crit = criteria_path or CRITERIA_FILE
+    crit = criteria_path or Path(DEFAULT_CHECKLIST_SLUG)
     eval_path = evaluation_json_path(stem, crit)
     ev = evaluate_transcript(
         data,
         criteria_path=crit,
         transcript_path=transcript_path,
+        cancel_check=cancel_check,
+        db=db,
+        stream_callback=stream_callback,
     )
     write_evaluation_json(ev, eval_path)
     return eval_path

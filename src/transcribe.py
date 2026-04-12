@@ -6,11 +6,15 @@ import os
 import sys
 from collections import Counter
 from datetime import datetime, timezone
+import multiprocessing
+import time
 from collections.abc import Callable
 from pathlib import Path
+from queue import Empty
 from typing import Any
 
 from src.audio_extract import extract_wav_16k_mono
+from src.errors import PipelineCancelled
 from src.audio_tone import (
     aggregate_tone_by_speaker,
     audio_tone_summary_note,
@@ -546,13 +550,125 @@ def _apply_speaker_roles(
             seg["speaker_role"] = roles[sp]
 
 
+def _use_transcribe_subprocess() -> bool:
+    """
+    Распознавание в отдельном процессе: при отмене задачи родитель делает terminate(),
+    и загрузка CPU прекращается (иначе faster-whisper может долго не выходить в Python
+    между сегментами). По умолчанию вкл. на Windows; выкл.: FA_TRANSCRIBE_SUBPROCESS=0.
+    """
+    v = os.environ.get("FA_TRANSCRIBE_SUBPROCESS", "").strip().lower()
+    if v in ("0", "false", "no"):
+        return False
+    if v in ("1", "true", "yes"):
+        return True
+    return sys.platform == "win32"
+
+
+def _whisper_chunk_length_kw() -> dict[str, Any]:
+    """
+    По умолчанию не передаём chunk_length — используется дефолт faster-whisper (~30 с).
+    Явно задать окно: FA_WHISPER_CHUNK_LENGTH_SEC=20 (редко нужно; влияет на качество).
+    """
+    raw = os.environ.get("FA_WHISPER_CHUNK_LENGTH_SEC", "").strip()
+    if not raw or raw in ("0", "default"):
+        return {}
+    try:
+        n = int(raw)
+        if 8 <= n <= 60:
+            return {"chunk_length": n}
+    except ValueError:
+        pass
+    return {}
+
+
+def _fw_transcribe_worker(
+    wav_path_str: str,
+    model_name: str,
+    device: str,
+    compute_type: str,
+    transcribe_kw: dict[str, Any],
+    out_q: Any,
+    err_q: Any,
+) -> None:
+    try:
+        from faster_whisper import WhisperModel
+
+        model = WhisperModel(model_name, device=device, compute_type=compute_type)
+        segments_gen, info = model.transcribe(wav_path_str, **transcribe_kw)
+        lang = (info.language or "ru") if info else "ru"
+        out_q.put(("meta", {"language": lang}))
+        for seg in segments_gen:
+            out_q.put(("seg", seg))
+        out_q.put(("finished", None))
+    except Exception as e:
+        err_q.put(repr(e))
+
+
+def _transcribe_segments_subprocess(
+    wav: Path,
+    model_name: str,
+    device: str,
+    compute_type: str,
+    transcribe_kw: dict[str, Any],
+    cancel_check: Callable[[], None] | None,
+) -> tuple[list[Any], str]:
+    ctx = multiprocessing.get_context("spawn")
+    out_q = ctx.Queue()
+    err_q = ctx.Queue()
+    proc = ctx.Process(
+        target=_fw_transcribe_worker,
+        args=(str(wav), model_name, device, compute_type, transcribe_kw, out_q, err_q),
+    )
+    proc.start()
+    seg_list: list[Any] = []
+    detected_lang = "ru"
+    finished = False
+    try:
+        while not finished:
+            if cancel_check:
+                try:
+                    cancel_check()
+                except PipelineCancelled:
+                    proc.terminate()
+                    for _ in range(80):
+                        if not proc.is_alive():
+                            break
+                        time.sleep(0.1)
+                    raise
+            try:
+                kind, payload = out_q.get(timeout=0.35)
+            except Empty:
+                if not proc.is_alive():
+                    if not err_q.empty():
+                        raise RuntimeError(err_q.get())
+                    if finished:
+                        break
+                    raise RuntimeError(
+                        "Процесс распознавания завершился без результата (см. лог сервера)"
+                    )
+                continue
+            if kind == "meta":
+                detected_lang = (payload.get("language") or "ru") if payload else "ru"
+            elif kind == "seg":
+                seg_list.append(payload)
+            elif kind == "finished":
+                proc.join(timeout=300)
+                finished = True
+    finally:
+        if proc.is_alive():
+            proc.terminate()
+            proc.join(timeout=8)
+    return seg_list, detected_lang
+
+
 def transcribe_video_to_structure(
     video_path: Path,
     on_progress: Callable[[str], None] | None = None,
+    cancel_check: Callable[[], None] | None = None,
 ) -> tuple[dict[str, Any], dict[str, Any] | None]:
-    from faster_whisper import WhisperModel
-
     def ping(phase: str) -> None:
+        if cancel_check:
+            cancel_check()
         if on_progress:
             on_progress(phase)
 
@@ -566,6 +682,8 @@ def transcribe_video_to_structure(
 
     with tempfile.TemporaryDirectory(prefix="fa_transcribe_") as tmp:
         wav = Path(tmp) / "audio.wav"
+        if cancel_check:
+            cancel_check()
         extract_wav_16k_mono(video_path, wav)
         ping("extract_audio")
 
@@ -580,6 +698,8 @@ def transcribe_video_to_structure(
         if _should_run_pyannote(hf):
             ping("diarization")
             try:
+                if cancel_check:
+                    cancel_check()
                 diar_rows = _load_diarization_rows(wav, hf)
             except Exception as e:
                 diar_error = str(e)
@@ -596,23 +716,37 @@ def transcribe_video_to_structure(
             ping("diarization_skip")
             diar_error = "HF_TOKEN не задан — говорящие не различаются."
 
-        ping("whisper_load")
-        model = WhisperModel(model_name, device=device, compute_type=compute_type)
         transcribe_kw: dict[str, Any] = {
             "word_timestamps": True,
             "vad_filter": True,
         }
+        transcribe_kw.update(_whisper_chunk_length_kw())
         if lang:
             transcribe_kw["language"] = lang
         prompt = _initial_prompt()
         if prompt:
             transcribe_kw["initial_prompt"] = prompt
 
-        ping("asr_whisper")
-        segments_gen, info = model.transcribe(str(wav), **transcribe_kw)
-        detected_lang = (info.language or lang or "ru") if info else (lang or "ru")
+        if _use_transcribe_subprocess():
+            ping("whisper_load")
+            ping("asr_whisper")
+            seg_list, detected_lang = _transcribe_segments_subprocess(
+                wav, model_name, device, compute_type, transcribe_kw, cancel_check
+            )
+            detected_lang = detected_lang or lang or "ru"
+        else:
+            from faster_whisper import WhisperModel
 
-        seg_list = list(segments_gen)
+            ping("whisper_load")
+            model = WhisperModel(model_name, device=device, compute_type=compute_type)
+            ping("asr_whisper")
+            segments_gen, info = model.transcribe(str(wav), **transcribe_kw)
+            detected_lang = (info.language or lang or "ru") if info else (lang or "ru")
+            seg_list = []
+            for seg in segments_gen:
+                if cancel_check:
+                    cancel_check()
+                seg_list.append(seg)
         ping("segments_build")
         bounds = [(float(s.start), float(s.end)) for s in seg_list]
         skip_mfcc = os.environ.get("SKIP_MFCC_SPEAKERS", "").lower() in (
@@ -875,7 +1009,6 @@ def transcribe_video_to_structure(
 
 
 def write_transcript_json(data: dict[str, Any], out_path: Path) -> None:
-    out_path.parent.mkdir(parents=True, exist_ok=True)
-    out_path.write_text(
-        json.dumps(data, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
-    )
+    from src.atomic_json import atomic_write_json
+
+    atomic_write_json(out_path, data, indent=2)

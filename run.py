@@ -18,7 +18,7 @@
   MFCC_WORD_LEVEL=1 — включить MFCC по каждому слову (по умолчанию выкл. — даёт шум и дробление строк)
   MFCC_WORD_SMOOTH_RADIUS — сглаживание меток по словам (по умолчанию 4), только при MFCC_WORD_LEVEL=1
   TRANSCRIPT_PAUSE_SPLIT_SEC — пауза (сек) для дополнительного разреза строк; по умолчанию 0 (только смена спикера)
-  OPENAI_API_KEY — ключ для оценки по критериям из config/criteria.yaml
+  OPENAI_API_KEY — ключ для оценки по критериям (чеклисты в SQLite)
   WHISPER_MODEL — по умолчанию small (быстрее на CPU); large-v3 точнее
   WHISPER_DEVICE — cpu или cuda
   WHISPER_MODEL — medium (дефолт в коде) / large-v3 (в .env — максимальное качество, дольше)
@@ -66,7 +66,8 @@ from dotenv import load_dotenv
 # override=True: иначе пустой HF_TOKEN из окружения IDE/шелла перекрывает .env — Hub идёт без авторизации
 load_dotenv(ROOT / ".env", override=True)
 
-from src.paths import TRANSCRIPT_DIR, VIDEO_DIR
+from src.database import DB, init_db, migrate_checklists_from_config
+from src.paths import CONFIG_DIR, TRANSCRIPT_DIR, VIDEO_DIR
 from src.pipeline import (
     emotion_only_from_transcript,
     evaluate_only_from_transcript,
@@ -74,6 +75,19 @@ from src.pipeline import (
     list_videos,
     process_one_video,
 )
+
+
+def _cli_checklist_db() -> tuple[DB, Path]:
+    """Инициализация SQLite и чеклистов (импорт YAML при первом запуске)."""
+    init_db()
+    db = DB()
+    migrate_checklists_from_config(
+        db,
+        config_dir=CONFIG_DIR,
+        active_marker=CONFIG_DIR / ".active_criteria",
+        delete_source_files=True,
+    )
+    return db, Path(db.get_active_checklist_slug())
 
 
 def main() -> None:
@@ -141,13 +155,16 @@ def main() -> None:
     args = parser.parse_args()
 
     if args.cmd == "process-all":
+        db, crit = _cli_checklist_db()
         videos = list_videos(VIDEO_DIR)
         if not videos:
             print(f"Нет видео в {VIDEO_DIR}", file=sys.stderr)
             sys.exit(1)
         for v in videos:
             print(f"Обработка: {v.name} …")
-            tr, ev, tone = process_one_video(v, skip_eval=args.skip_eval)
+            tr, ev, tone = process_one_video(
+                v, skip_eval=args.skip_eval, db=db, criteria_path=crit
+            )
             print(f"  транскрипт: {tr}")
             if tone:
                 print(f"  тон (SER):  {tone}")
@@ -156,7 +173,10 @@ def main() -> None:
         return
 
     if args.cmd == "process":
-        tr, ev, tone = process_one_video(args.video, skip_eval=args.skip_eval)
+        db, crit = _cli_checklist_db()
+        tr, ev, tone = process_one_video(
+            args.video, skip_eval=args.skip_eval, db=db, criteria_path=crit
+        )
         print(f"Транскрипт: {tr}")
         if tone:
             print(f"Тон (SER):  {tone}")
@@ -165,6 +185,7 @@ def main() -> None:
         return
 
     if args.cmd == "eval-only":
+        db, crit = _cli_checklist_db()
         if args.transcript:
             paths = [args.transcript.resolve()]
         else:
@@ -174,7 +195,7 @@ def main() -> None:
             sys.exit(1)
         for p in paths:
             print(f"Оценка по: {p.name} …")
-            evp = evaluate_only_from_transcript(p)
+            evp = evaluate_only_from_transcript(p, db=db, criteria_path=crit)
             print(f"  → {evp}")
         return
 

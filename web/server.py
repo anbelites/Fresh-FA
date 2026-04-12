@@ -9,7 +9,6 @@ import io
 import json
 import os
 import re
-import shutil
 import sys
 import uuid
 from datetime import datetime, timezone
@@ -44,6 +43,7 @@ from src.ad_auth import (
 from src.paths import (
     CONFIG_DIR,
     CRITERIA_FILE,
+    DEFAULT_CHECKLIST_SLUG,
     EVALUATION_DIR,
     LOCATIONS_FILE,
     MANAGERS_FILE,
@@ -53,14 +53,17 @@ from src.paths import (
     human_evaluation_json_path,
     meta_json_path,
 )
+from src.artifacts import delete_derived_artifacts_for_stem
 from src.pipeline import (
     evaluate_only_from_transcript,
     find_video_for_stem,
     list_transcripts,
     list_videos,
     process_one_video,
+    process_one_video_resume,
 )
-from src.database import DB, init_db
+from src.database import DB, init_db, migrate_checklists_from_config
+from src.errors import PipelineCancelled
 
 _VIDEO_MIME = {
     ".mp4": "video/mp4",
@@ -131,83 +134,90 @@ app.add_middleware(
 )
 
 
+import concurrent.futures
+import threading
+
+_ACTIVE_CRITERIA_MARKER = CONFIG_DIR / ".active_criteria"
+
+_db = DB()
+
+
 @app.on_event("startup")
 def _migrate_yaml_to_db() -> None:
-    """One-time import of managers/locations from YAML config if DB tables are empty."""
+    """Импорт справочников и чеклистов из YAML при пустых таблицах."""
     validate_ad_config_at_startup()
     if not _db.list_managers():
         _db.import_managers_from_yaml(_load_yaml_list(MANAGERS_FILE, "managers"))
     if not _db.list_locations():
         _db.import_locations_from_yaml(_load_yaml_list(LOCATIONS_FILE, "locations"))
+    migrate_checklists_from_config(
+        _db,
+        config_dir=CONFIG_DIR,
+        active_marker=_ACTIVE_CRITERIA_MARKER,
+        delete_source_files=True,
+    )
 
 
-import concurrent.futures
-
-_db = DB()
 _MAX_WORKERS = int(os.environ.get("FA_MAX_WORKERS", "2"))
 _executor = concurrent.futures.ThreadPoolExecutor(max_workers=_MAX_WORKERS, thread_name_prefix="fa-worker")
 
-_ACTIVE_CRITERIA_MARKER = CONFIG_DIR / ".active_criteria"
+_job_cancel_lock = threading.Lock()
+_job_cancel_events: dict[str, threading.Event] = {}
 
 
 def _safe_criteria_filename(name: str) -> str:
     s = (name or "").strip()
     if not s or ".." in s or "/" in s or "\\" in s:
-        raise HTTPException(400, "Некорректное имя файла")
-    if not re.match(r"^[a-zA-Z0-9_\-\u0400-\u04FF]+\.ya?ml$", s):
-        raise HTTPException(400, "Разрешены только .yaml / .yml в папке config")
+        raise HTTPException(400, "Некорректное имя чеклиста")
+    lower = s.lower()
+    if lower.endswith(".yaml"):
+        s = s[: -len(".yaml")]
+    elif lower.endswith(".yml"):
+        s = s[: -len(".yml")]
+    if not s or not re.match(r"^[a-zA-Z0-9_\-\u0400-\u04FF]+$", s):
+        raise HTTPException(
+            400,
+            "Допустимы латиница, цифры, дефис, подчёркивание и кириллица, без расширения",
+        )
     return s
 
 
-def _active_criteria_path() -> Path:
-    """Файл чеклиста для новых оценок и повторной генерации."""
-    if _ACTIVE_CRITERIA_MARKER.is_file():
-        try:
-            raw = _ACTIVE_CRITERIA_MARKER.read_text(encoding="utf-8").strip()
-            if raw:
-                name = _safe_criteria_filename(raw)
-                p = (CONFIG_DIR / name).resolve()
-                if p.parent == CONFIG_DIR.resolve() and p.is_file():
-                    return p
-        except HTTPException:
-            pass
-    return CRITERIA_FILE
-
-
-def _list_criteria_files() -> list[dict[str, str]]:
-    CONFIG_DIR.mkdir(parents=True, exist_ok=True)
-    out: list[dict[str, str]] = []
-    for p in sorted(CONFIG_DIR.glob("*.yml")):
-        if p.is_file():
-            out.append({"name": p.name})
-    for p in sorted(CONFIG_DIR.glob("*.yaml")):
-        if p.is_file() and not any(x["name"] == p.name for x in out):
-            out.append({"name": p.name})
-    out.sort(key=lambda x: x["name"].lower())
-    if not out and CRITERIA_FILE.is_file():
-        out.append({"name": CRITERIA_FILE.name})
-    return out
-
-
 def _resolve_criteria_query_param(raw: str | None) -> str:
-    """Имя файла чеклиста из query; при пустом/некорректном — активный."""
+    """Slug чеклиста из query; при пустом/некорректном — активный из БД."""
+    fallback = _db.get_active_checklist_slug()
     if not raw or not str(raw).strip():
-        return _active_criteria_path().name
+        return fallback
     try:
-        return _safe_criteria_filename(str(raw).strip())
+        name = _safe_criteria_filename(str(raw).strip())
     except HTTPException:
-        return _active_criteria_path().name
+        return fallback
+    if _db.checklist_exists(name):
+        return name
+    return fallback
 
 
 def _load_evaluation_for_stem(stem: str, criteria_name: str) -> dict | None:
-    """Оценка для пары (stem, чеклист); для criteria.yaml допускается legacy stem.json."""
+    """Оценка для пары (stem, чеклист); legacy: stem__criteria.yaml.eval.json и stem.json для дефолта."""
     path = EVALUATION_DIR / f"{stem}__{criteria_name}.eval.json"
     if path.is_file():
-        return json.loads(path.read_text(encoding="utf-8"))
-    if criteria_name == CRITERIA_FILE.name:
+        try:
+            return json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError, UnicodeError):
+            return None
+    if criteria_name == DEFAULT_CHECKLIST_SLUG:
+        alt = EVALUATION_DIR / f"{stem}__{CRITERIA_FILE.name}.eval.json"
+        if alt.is_file():
+            try:
+                return json.loads(alt.read_text(encoding="utf-8"))
+            except (OSError, json.JSONDecodeError, UnicodeError):
+                return None
+    if criteria_name in (DEFAULT_CHECKLIST_SLUG, CRITERIA_FILE.name):
         legacy = EVALUATION_DIR / f"{stem}.json"
         if legacy.is_file():
-            return json.loads(legacy.read_text(encoding="utf-8"))
+            try:
+                return json.loads(legacy.read_text(encoding="utf-8"))
+            except (OSError, json.JSONDecodeError, UnicodeError):
+                return None
     return None
 
 
@@ -218,6 +228,13 @@ def _load_human_eval_for_stem(stem: str, criteria_name: str) -> dict | None:
             return json.loads(path.read_text(encoding="utf-8"))
         except (OSError, json.JSONDecodeError):
             return None
+    if criteria_name == DEFAULT_CHECKLIST_SLUG:
+        legacy = EVALUATION_DIR / f"{stem}__{CRITERIA_FILE.name}.human.json"
+        if legacy.is_file():
+            try:
+                return json.loads(legacy.read_text(encoding="utf-8"))
+            except (OSError, json.JSONDecodeError):
+                return None
     return None
 
 
@@ -236,32 +253,63 @@ def _stem_has_any_evaluation(stem: str) -> bool:
 
 def _run_eval_only_job(job_id: str, stem_key: str, criteria_name: str | None = None) -> None:
     tr = TRANSCRIPT_DIR / f"{stem_key}.json"
-    _job_set(job_id, status="running", stage="eval_prep", updated_at=_utc_now())
-
-    if not tr.is_file():
-        _job_set(
-            job_id,
-            status="error",
-            stage="error",
-            error="Нет файла транскрипта — сначала дождитесь распознавания.",
-            updated_at=_utc_now(),
-        )
-        return
-
     try:
-        if criteria_name:
-            cpath = _criteria_file_path(criteria_name)
-        else:
-            cpath = _active_criteria_path()
-        if not cpath.is_file():
-            raise FileNotFoundError(str(cpath))
-        _job_set(job_id, stage="evaluating", updated_at=_utc_now())
-        evaluate_only_from_transcript(tr, criteria_path=cpath)
+        with _job_cancel_lock:
+            ev = _job_cancel_events.get(job_id)
+
+        def cancel_check() -> None:
+            if ev is not None and ev.is_set():
+                raise PipelineCancelled()
+            jx = _db.get_job(job_id)
+            if jx and jx.get("status") == "cancelled":
+                raise PipelineCancelled()
+
+        j0 = _db.get_job(job_id)
+        if j0 and j0.get("status") == "cancelled":
+            return
+
+        _job_set(job_id, status="running", stage="eval_prep", updated_at=_utc_now())
+
+        if not tr.is_file():
+            _job_set(
+                job_id,
+                status="error",
+                stage="error",
+                error="Нет файла транскрипта — сначала дождитесь распознавания.",
+                updated_at=_utc_now(),
+            )
+            return
+
+        slug = criteria_name if criteria_name else _db.get_active_checklist_slug()
+        if not _db.checklist_exists(slug):
+            raise FileNotFoundError(f"Чеклист не найден в БД: {slug}")
+        cpath = Path(slug)
+        cancel_check()
+        _job_set(job_id, stage="evaluating", stream_log="", updated_at=_utc_now())
+        stream_cb = _job_stream_callback_throttled(job_id)
+        evaluate_only_from_transcript(
+            tr,
+            criteria_path=cpath,
+            cancel_check=cancel_check,
+            db=_db,
+            stream_callback=stream_cb,
+        )
+        j_done = _db.get_job(job_id)
+        if j_done and j_done.get("status") == "cancelled":
+            return
         _job_set(
             job_id,
             status="done",
             stage="done",
             stem=stem_key,
+            stream_log="",
+            updated_at=_utc_now(),
+        )
+    except PipelineCancelled:
+        _job_set(
+            job_id,
+            status="cancelled",
+            stage="cancelled",
             updated_at=_utc_now(),
         )
     except Exception as e:
@@ -270,12 +318,30 @@ def _run_eval_only_job(job_id: str, stem_key: str, criteria_name: str | None = N
             status="error",
             stage="error",
             error=str(e),
+            stream_log="",
             updated_at=_utc_now(),
         )
+    finally:
+        with _job_cancel_lock:
+            _job_cancel_events.pop(job_id, None)
 
 
 def _job_set(job_id: str, **updates: object) -> None:
     _db.upsert_job(job_id, **updates)
+
+
+def _job_stream_callback_throttled(job_id: str):
+    """Обновляет jobs.stream_log для live-текста оценки (без агрессивного throttle — иначе мелкие чанки не доходят до UI)."""
+    state: dict[str, str | None] = {"last": None}
+
+    def cb(text: str) -> None:
+        s = text if isinstance(text, str) else ""
+        if s == state["last"]:
+            return
+        state["last"] = s
+        _job_set(job_id, stream_log=s, updated_at=_utc_now())
+
+    return cb
 
 
 def _stem_from_path_param(stem: str) -> str:
@@ -294,19 +360,74 @@ def _safe_stem(name: str) -> str:
     return stem[:200]
 
 
-def _run_pipeline_job(job_id: str, video_path: Path) -> None:
+def _delete_pipeline_derived_artifacts(stem_key: str) -> None:
+    """Транскрипт, тон и оценки — без видео и без meta (для «с начала»)."""
+    delete_derived_artifacts_for_stem(stem_key)
+
+
+def _enqueue_pipeline_job_common(
+    job_id: str,
+    stem_key: str,
+    video_path: Path,
+    *,
+    resume: bool,
+) -> None:
+    with _job_cancel_lock:
+        _job_cancel_events[job_id] = threading.Event()
+    _db.upsert_job(
+        job_id,
+        stem=stem_key,
+        kind="pipeline",
+        status="queued",
+        stage="queued",
+        video_file=video_path.name,
+    )
+    _db.upsert_video_meta(stem_key, filename=video_path.name, status="processing")
+    if resume:
+        _executor.submit(_run_pipeline_resume_job, job_id, video_path)
+    else:
+        _executor.submit(_run_pipeline_job, job_id, video_path)
+
+
+def _run_pipeline_resume_job(job_id: str, video_path: Path) -> None:
     stem = video_path.stem
-    _job_set(job_id, status="running", stage="starting", updated_at=_utc_now())
-
-    def on_progress(phase: str) -> None:
-        _job_set(job_id, stage=phase, updated_at=_utc_now())
-
     try:
-        tr, ev, tone = process_one_video(
+        with _job_cancel_lock:
+            ev = _job_cancel_events.get(job_id)
+
+        def cancel_check() -> None:
+            if ev is not None and ev.is_set():
+                raise PipelineCancelled()
+            jx = _db.get_job(job_id)
+            if jx and jx.get("status") == "cancelled":
+                raise PipelineCancelled()
+
+        j0 = _db.get_job(job_id)
+        if j0 and j0.get("status") == "cancelled":
+            return
+
+        _job_set(job_id, status="running", stage="starting", updated_at=_utc_now())
+        stream_cb = _job_stream_callback_throttled(job_id)
+
+        def on_progress(phase: str) -> None:
+            jp = _db.get_job(job_id)
+            if jp and jp.get("status") == "cancelled":
+                raise PipelineCancelled()
+            if phase == "evaluating":
+                _job_set(job_id, stream_log="", updated_at=_utc_now())
+            _job_set(job_id, stage=phase, updated_at=_utc_now())
+
+        tr, ev, tone = process_one_video_resume(
             video_path,
             on_progress=on_progress,
-            criteria_path=_active_criteria_path(),
+            criteria_path=Path(_db.get_active_checklist_slug()),
+            db=_db,
+            cancel_check=cancel_check,
+            eval_stream_callback=stream_cb,
         )
+        j_done = _db.get_job(job_id)
+        if j_done and j_done.get("status") == "cancelled":
+            return
         _job_set(
             job_id,
             status="done",
@@ -315,16 +436,103 @@ def _run_pipeline_job(job_id: str, video_path: Path) -> None:
             transcript=str(tr.relative_to(ROOT)),
             evaluation=str(ev.relative_to(ROOT)) if ev else None,
             tone_file=str(tone.relative_to(ROOT)) if tone else None,
+            stream_log="",
             updated_at=_utc_now(),
         )
+    except PipelineCancelled:
+        _job_set(
+            job_id,
+            status="cancelled",
+            stage="cancelled",
+            stream_log="",
+            updated_at=_utc_now(),
+        )
+        _db.upsert_video_meta(stem, status="pending")
     except Exception as e:
         _job_set(
             job_id,
             status="error",
             stage="error",
             error=str(e),
+            stream_log="",
             updated_at=_utc_now(),
         )
+    finally:
+        with _job_cancel_lock:
+            _job_cancel_events.pop(job_id, None)
+
+
+def _run_pipeline_job(job_id: str, video_path: Path) -> None:
+    stem = video_path.stem
+    try:
+        with _job_cancel_lock:
+            ev = _job_cancel_events.get(job_id)
+
+        def cancel_check() -> None:
+            if ev is not None and ev.is_set():
+                raise PipelineCancelled()
+            jx = _db.get_job(job_id)
+            if jx and jx.get("status") == "cancelled":
+                raise PipelineCancelled()
+
+        j0 = _db.get_job(job_id)
+        if j0 and j0.get("status") == "cancelled":
+            return
+
+        _job_set(job_id, status="running", stage="starting", updated_at=_utc_now())
+        stream_cb = _job_stream_callback_throttled(job_id)
+
+        def on_progress(phase: str) -> None:
+            jp = _db.get_job(job_id)
+            if jp and jp.get("status") == "cancelled":
+                raise PipelineCancelled()
+            if phase == "evaluating":
+                _job_set(job_id, stream_log="", updated_at=_utc_now())
+            _job_set(job_id, stage=phase, updated_at=_utc_now())
+
+        tr, ev, tone = process_one_video(
+            video_path,
+            on_progress=on_progress,
+            criteria_path=Path(_db.get_active_checklist_slug()),
+            db=_db,
+            cancel_check=cancel_check,
+            eval_stream_callback=stream_cb,
+        )
+        j_done = _db.get_job(job_id)
+        if j_done and j_done.get("status") == "cancelled":
+            return
+        _job_set(
+            job_id,
+            status="done",
+            stage="done",
+            stem=stem,
+            transcript=str(tr.relative_to(ROOT)),
+            evaluation=str(ev.relative_to(ROOT)) if ev else None,
+            tone_file=str(tone.relative_to(ROOT)) if tone else None,
+            stream_log="",
+            updated_at=_utc_now(),
+        )
+    except PipelineCancelled:
+        _job_set(
+            job_id,
+            status="cancelled",
+            stage="cancelled",
+            stream_log="",
+            updated_at=_utc_now(),
+        )
+        _db.upsert_video_meta(stem, status="pending")
+    except Exception as e:
+        _job_set(
+            job_id,
+            status="error",
+            stage="error",
+            error=str(e),
+            stream_log="",
+            updated_at=_utc_now(),
+        )
+    finally:
+        with _job_cancel_lock:
+            _job_cancel_events.pop(job_id, None)
 
 
 def _utc_now() -> str:
@@ -405,17 +613,7 @@ async def upload_video(file: UploadFile = File(...)) -> JSONResponse:
     dest.write_bytes(data)
 
     job_id = str(uuid.uuid4())
-    _db.upsert_job(
-        job_id,
-        stem=dest.stem,
-        kind="pipeline",
-        status="queued",
-        stage="queued",
-        video_file=dest.name,
-    )
-    _db.upsert_video_meta(dest.stem, filename=dest.name, status="processing")
-
-    _executor.submit(_run_pipeline_job, job_id, dest)
+    _enqueue_pipeline_job_common(job_id, dest.stem, dest, resume=False)
 
     return JSONResponse(
         {
@@ -438,6 +636,7 @@ def _job_payload(stem: str, jobs_by: dict[str, dict]) -> dict | None:
         "kind": job.get("kind"),
         "error": job.get("error"),
         "updated_at": job.get("updated_at"),
+        "stream_log": job.get("stream_log"),
     }
 
 
@@ -495,6 +694,7 @@ def _library_row(
         "location_id": meta.get("location_id"),
         "location_name": meta.get("location_name"),
         "tags": meta.get("tags") or [],
+        "display_title": meta.get("display_title"),
         "job": _job_payload(stem, jobs_by),
     }
 
@@ -582,11 +782,20 @@ def api_workspace(stem: str, criteria: str | None = None) -> dict:
 
     transcript: dict | None = None
     tone: dict | None = None
-    evaluation: dict | None = None
+    transcript_load_error = False
+    tone_load_error = False
     if tr_path.is_file():
-        transcript = json.loads(tr_path.read_text(encoding="utf-8"))
+        try:
+            transcript = json.loads(tr_path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError, UnicodeError):
+            transcript = None
+            transcript_load_error = True
     if tone_path.is_file():
-        tone = json.loads(tone_path.read_text(encoding="utf-8"))
+        try:
+            tone = json.loads(tone_path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError, UnicodeError):
+            tone = None
+            tone_load_error = True
     evaluation = _load_evaluation_for_stem(stem_key, crit_name)
     human_evaluation = _load_human_eval_for_stem(stem_key, crit_name)
 
@@ -599,12 +808,14 @@ def api_workspace(stem: str, criteria: str | None = None) -> dict:
         "video_url": f"/api/videos/{stem_key}" if vf and vf.is_file() else None,
         "transcript": transcript,
         "tone": tone,
+        "transcript_load_error": transcript_load_error,
+        "tone_load_error": tone_load_error,
         "evaluation": evaluation,
         "human_evaluation": human_evaluation,
         "evaluation_criteria": crit_name,
         "criteria": {
-            "active": _active_criteria_path().name,
-            "files": _list_criteria_files(),
+            "active": _db.get_active_checklist_slug(),
+            "files": _db.list_checklist_files(),
         },
         "meta": _db.get_video_meta(stem_key),
         "managers": _db.list_managers(),
@@ -629,6 +840,65 @@ def get_job(job_id: str) -> dict:
     if not j:
         raise HTTPException(404, "Задача не найдена")
     return j
+
+
+@app.post("/api/jobs/{job_id}/cancel")
+def api_job_cancel(job_id: str) -> JSONResponse:
+    """Кооперативная остановка пайплайна или пересчёта оценки (queued / running)."""
+    jid = (job_id or "").strip()
+    if not jid:
+        raise HTTPException(400, "Пустой идентификатор")
+    row = _db.get_job(jid)
+    if not row:
+        raise HTTPException(404, "Задача не найдена")
+    st = row.get("status")
+    if st not in ("queued", "running"):
+        raise HTTPException(400, "Задача уже завершена")
+    with _job_cancel_lock:
+        ev = _job_cancel_events.setdefault(jid, threading.Event())
+        ev.set()
+    # Сразу в БД — иначе UI до выхода из Whisper видит status=running и поллинг не останавливается.
+    _job_set(jid, status="cancelled", stage="cancelled", updated_at=_utc_now())
+    stem_q = row.get("stem")
+    if isinstance(stem_q, str) and stem_q:
+        meta = _db.get_video_meta(stem_q)
+        if (meta.get("status") or "") == "processing":
+            _db.upsert_video_meta(stem_q, status="pending")
+    return JSONResponse({"ok": True})
+
+
+def _assert_pipeline_can_restart(stem_key: str, vp: Path | None) -> None:
+    if not vp or not vp.is_file():
+        raise HTTPException(400, "Нет исходного файла в 01.Video для этой записи")
+    jobs_by = _jobs_latest_by_stem()
+    job = jobs_by.get(stem_key)
+    if not job or job.get("kind") != "pipeline":
+        raise HTTPException(400, "Для этой записи нет задачи полного пайплайна")
+    if job.get("status") not in ("cancelled", "error"):
+        raise HTTPException(400, "Доступно после остановки или ошибки обработки")
+
+
+@app.post("/api/workspace/{stem}/pipeline/resume")
+def api_workspace_pipeline_resume(stem: str) -> JSONResponse:
+    """Возобновить без удаления файлов: пропуск готовых этапов (транскрипт → тон → оценка)."""
+    stem_key = _stem_from_path_param(stem)
+    vp = find_video_for_stem(stem_key)
+    _assert_pipeline_can_restart(stem_key, vp)
+    job_id = str(uuid.uuid4())
+    _enqueue_pipeline_job_common(job_id, stem_key, vp, resume=True)
+    return JSONResponse({"ok": True, "job_id": job_id})
+
+
+@app.post("/api/workspace/{stem}/pipeline/restart")
+def api_workspace_pipeline_restart(stem: str) -> JSONResponse:
+    """Удалить транскрипт/тон/оценки и запустить пайплайн с нуля."""
+    stem_key = _stem_from_path_param(stem)
+    vp = find_video_for_stem(stem_key)
+    _assert_pipeline_can_restart(stem_key, vp)
+    _delete_pipeline_derived_artifacts(stem_key)
+    job_id = str(uuid.uuid4())
+    _enqueue_pipeline_job_common(job_id, stem_key, vp, resume=False)
+    return JSONResponse({"ok": True, "job_id": job_id})
 
 
 @app.get("/api/transcripts")
@@ -767,6 +1037,7 @@ def _save_video_meta(stem: str, meta: dict[str, Any]) -> None:
 
 
 class VideoMetaBody(BaseModel):
+    display_title: str | None = None
     manager_id: str | None = None
     manager_name: str | None = None
     location_id: str | None = None
@@ -836,8 +1107,10 @@ def api_workspace_meta_get(stem: str) -> dict:
 @app.put("/api/workspace/{stem}/meta")
 def api_workspace_meta_put(stem: str, body: VideoMetaBody) -> dict:
     stem_key = _stem_from_path_param(stem)
+    disp = (body.display_title or "").strip() or None
     meta = _db.upsert_video_meta(
         stem_key,
+        display_title=disp,
         manager_id=body.manager_id,
         manager_name=body.manager_name,
         location_id=body.location_id,
@@ -868,101 +1141,49 @@ class CriteriaCreateBody(BaseModel):
     copy_from: str | None = None
 
 
-def _criteria_file_path(name: str) -> Path:
-    fn = _safe_criteria_filename(name)
-    return CONFIG_DIR / fn
-
-
 def _normalize_new_criteria_filename(raw: str) -> str:
     s = (raw or "").strip()
     if not s:
-        raise HTTPException(400, "Укажите имя файла")
-    if not s.lower().endswith((".yaml", ".yml")):
-        s += ".yaml"
+        raise HTTPException(400, "Укажите имя чеклиста")
     return _safe_criteria_filename(s)
-
-
-def _parse_criteria_yaml_dict(raw: dict[str, Any]) -> tuple[str, list[dict[str, str]]]:
-    version = str(raw.get("version", "1"))
-    out: list[dict[str, str]] = []
-    for row in raw.get("criteria") or []:
-        if not isinstance(row, dict):
-            continue
-        cid = str(row.get("id", "")).strip()
-        if not cid:
-            continue
-        out.append(
-            {
-                "id": cid,
-                "name": str(row.get("name", cid)).strip(),
-                "description": str(row.get("description", "")).strip(),
-            }
-        )
-    return version, out
-
-
-def _dump_criteria_yaml(version: str, criteria: list[CriterionItem]) -> str:
-    data: dict[str, Any] = {
-        "version": version,
-        "criteria": [
-            {"id": c.id.strip(), "name": c.name.strip(), "description": c.description.strip()}
-            for c in criteria
-        ],
-    }
-    return yaml.dump(
-        data,
-        allow_unicode=True,
-        default_flow_style=False,
-        sort_keys=False,
-        width=1000,
-    )
-
-
-def _clear_active_marker_if_points_to(name: str) -> None:
-    if not _ACTIVE_CRITERIA_MARKER.is_file():
-        return
-    try:
-        if _ACTIVE_CRITERIA_MARKER.read_text(encoding="utf-8").strip() == name:
-            _ACTIVE_CRITERIA_MARKER.unlink(missing_ok=True)
-    except OSError:
-        pass
 
 
 @app.get("/api/criteria")
 def api_criteria_list() -> dict:
-    """Список YAML чеклистов в config/ и текущий активный файл."""
+    """Список чеклистов в БД и текущий активный slug."""
     return {
-        "active": _active_criteria_path().name,
-        "files": _list_criteria_files(),
+        "active": _db.get_active_checklist_slug(),
+        "files": _db.list_checklist_files(),
     }
 
 
 def _api_criteria_create_impl(body: CriteriaCreateBody) -> dict:
-    """Новый YAML в config/ (пустой шаблон или копия существующего)."""
+    """Новый чеклист в БД (шаблон или копия существующего)."""
     fn = _normalize_new_criteria_filename(body.filename)
-    dst = CONFIG_DIR / fn
-    if dst.is_file():
-        raise HTTPException(409, "Файл с таким именем уже есть")
-
-    CONFIG_DIR.mkdir(parents=True, exist_ok=True)
+    if _db.checklist_exists(fn):
+        raise HTTPException(409, "Чеклист с таким именем уже есть")
     if body.copy_from:
-        src = _criteria_file_path(body.copy_from)
-        if not src.is_file():
+        try:
+            src_slug = _safe_criteria_filename(body.copy_from.strip())
+        except HTTPException as e:
+            raise HTTPException(400, "Некорректное имя исходного чеклиста") from e
+        if not _db.checklist_exists(src_slug):
             raise HTTPException(404, "Исходный чеклист для копирования не найден")
-        shutil.copy2(src, dst)
+        src_data = _db.get_checklist_content(src_slug)
+        if not src_data:
+            raise HTTPException(404, "Исходный чеклист для копирования не найден")
+        crits = list(src_data["criteria"])
+        ver = str(src_data["version"])
     else:
-        template = _dump_criteria_yaml(
-            "1",
-            [
-                CriterionItem(
-                    id="criterion_1",
-                    name="Новый критерий",
-                    description="Опишите, что проверяет ИИ по этому пункту.",
-                )
-            ],
-        )
-        dst.write_text(template, encoding="utf-8")
-
+        ver = "1"
+        crits = [
+            {
+                "id": "criterion_1",
+                "name": "Новый критерий",
+                "description": "Опишите, что проверяет ИИ по этому пункту.",
+            }
+        ]
+    _db.insert_checklist(fn, ver, crits)
     return {"ok": True, "filename": fn}
 
 
@@ -976,52 +1197,46 @@ def api_criteria_post_create(body: CriteriaCreateBody) -> dict:
 def api_criteria_set_active(body: CriteriaActiveBody) -> dict:
     """Сохранить активный чеклист (новые загрузки и «Обновить оценку» используют его)."""
     name = _safe_criteria_filename(body.file)
-    path = CONFIG_DIR / name
-    if not path.is_file():
-        raise HTTPException(404, "Файл не найден в папке config")
-    _ACTIVE_CRITERIA_MARKER.parent.mkdir(parents=True, exist_ok=True)
-    _ACTIVE_CRITERIA_MARKER.write_text(name, encoding="utf-8")
+    if not _db.checklist_exists(name):
+        raise HTTPException(404, "Чеклист не найден")
+    try:
+        _db.set_active_checklist_slug(name)
+    except ValueError as e:
+        raise HTTPException(400, str(e)) from e
     return {"ok": True, "active": name}
 
 
 @app.get("/api/criteria/content/{name}")
 def api_criteria_get_content(name: str) -> dict:
     """Содержимое чеклиста для редактора (JSON)."""
-    path = _criteria_file_path(name)
-    if not path.is_file():
-        raise HTTPException(404, "Файл не найден")
     try:
-        raw = yaml.safe_load(path.read_text(encoding="utf-8"))
-    except (OSError, yaml.YAMLError) as e:
-        raise HTTPException(400, f"Не удалось прочитать YAML: {e}") from e
-    if not isinstance(raw, dict):
-        raise HTTPException(400, "Ожидался объект в корне YAML")
-    version, criteria = _parse_criteria_yaml_dict(raw)
-    files = _list_criteria_files()
-    can_delete = len(files) > 1
-    return {
-        "filename": path.name,
-        "version": version,
-        "criteria": criteria,
-        "can_delete": can_delete,
-    }
+        fn = _safe_criteria_filename(name)
+    except HTTPException as e:
+        raise HTTPException(404, "Чеклист не найден") from e
+    data = _db.get_checklist_content(fn)
+    if not data:
+        raise HTTPException(404, "Чеклист не найден")
+    return data
 
 
 @app.put("/api/criteria/content/{name}")
 def api_criteria_put_content(name: str, body: CriteriaPayload) -> dict:
-    """Сохранить чеклист из редактора."""
-    path = _criteria_file_path(name)
-    if not path.is_file():
-        raise HTTPException(404, "Файл не найден")
+    """Сохранить чеклист из редактора в БД."""
+    try:
+        fn = _safe_criteria_filename(name)
+    except HTTPException as e:
+        raise HTTPException(404, "Чеклист не найден") from e
+    if not _db.checklist_exists(fn):
+        raise HTTPException(404, "Чеклист не найден")
     for c in body.criteria:
         if not c.id.strip():
             raise HTTPException(400, "У каждого критерия должен быть непустой id")
-    text = _dump_criteria_yaml(body.version, body.criteria)
-    try:
-        path.write_text(text, encoding="utf-8")
-    except OSError as e:
-        raise HTTPException(500, f"Не удалось записать файл: {e}") from e
-    return {"ok": True, "filename": path.name}
+    rows = [
+        {"id": c.id.strip(), "name": c.name.strip(), "description": (c.description or "").strip()}
+        for c in body.criteria
+    ]
+    _db.replace_checklist(fn, (body.version or "1").strip(), rows)
+    return {"ok": True, "filename": fn}
 
 
 @app.post("/api/criteria/create")
@@ -1032,18 +1247,19 @@ def api_criteria_create_alias(body: CriteriaCreateBody) -> dict:
 
 @app.delete("/api/criteria/content/{name}")
 def api_criteria_delete(name: str) -> dict:
-    """Удалить файл чеклиста (не единственный в config/)."""
-    path = _criteria_file_path(name)
-    if not path.is_file():
-        raise HTTPException(404, "Файл не найден")
-    files = _list_criteria_files()
-    if len(files) <= 1:
-        raise HTTPException(400, "Нельзя удалить единственный чеклист")
+    """Удалить чеклист из БД (не единственный)."""
     try:
-        path.unlink()
-    except OSError as e:
-        raise HTTPException(500, f"Не удалось удалить: {e}") from e
-    _clear_active_marker_if_points_to(path.name)
+        fn = _safe_criteria_filename(name)
+    except HTTPException as e:
+        raise HTTPException(404, "Чеклист не найден") from e
+    if _db.checklist_count() <= 1:
+        raise HTTPException(400, "Нельзя удалить единственный чеклист")
+    if not _db.checklist_exists(fn):
+        raise HTTPException(404, "Чеклист не найден")
+    if not _db.delete_checklist(fn):
+        raise HTTPException(500, "Не удалось удалить")
+    if _db.checklist_count():
+        _db.get_active_checklist_slug()
     return {"ok": True}
 
 
@@ -1069,6 +1285,8 @@ def api_workspace_re_evaluate(
             raise HTTPException(400, "Некорректное имя чеклиста") from None
 
     job_id = str(uuid.uuid4())
+    with _job_cancel_lock:
+        _job_cancel_events[job_id] = threading.Event()
     _db.upsert_job(
         job_id,
         stem=stem_key,

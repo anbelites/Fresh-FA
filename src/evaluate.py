@@ -5,12 +5,14 @@ import json
 import os
 from datetime import datetime, timezone
 from pathlib import Path
+from collections.abc import Callable
 from typing import Any
 
 from openai import OpenAI
 
-from src.criteria_loader import Criterion, criteria_to_prompt_block, load_criteria
-from src.paths import CRITERIA_FILE
+from src.criteria_loader import Criterion, criteria_to_prompt_block, load_criteria, load_criteria_from_db
+from src.database import DB
+from src.paths import DEFAULT_CHECKLIST_SLUG
 from src.speech_emotion import speech_emotion_context_for_eval
 
 
@@ -40,6 +42,80 @@ def _model() -> str:
 
 def _is_reasoner_model(name: str) -> bool:
     return "reasoner" in name.lower()
+
+
+def _delta_reasoning_and_content(delta: Any) -> tuple[str | None, str | None]:
+    """Извлекает фрагменты из delta (OpenAI SDK / совместимые провайдеры)."""
+    if delta is None:
+        return None, None
+    rc = getattr(delta, "reasoning_content", None)
+    ct = getattr(delta, "content", None)
+    if rc is None and ct is None and hasattr(delta, "model_dump"):
+        try:
+            d = delta.model_dump()
+            rc = d.get("reasoning_content")
+            ct = d.get("content")
+        except Exception:
+            pass
+    return (
+        rc if isinstance(rc, str) else None,
+        ct if isinstance(ct, str) else None,
+    )
+
+
+def _message_reasoning_and_content(msg: Any) -> tuple[str | None, str]:
+    rc = getattr(msg, "reasoning_content", None)
+    if rc is None and hasattr(msg, "model_dump"):
+        try:
+            d = msg.model_dump()
+            r2 = d.get("reasoning_content")
+            if isinstance(r2, str):
+                rc = r2
+        except Exception:
+            pass
+    raw = getattr(msg, "content", None) or "{}"
+    if not isinstance(raw, str):
+        raw = "{}"
+    return (rc if isinstance(rc, str) else None), raw
+
+
+def _stream_completion_chunks(
+    client: OpenAI,
+    create_kw: dict[str, Any],
+    *,
+    cancel_check: Callable[[], None] | None,
+    stream_callback: Callable[[str], None],
+) -> tuple[str, str | None]:
+    """Стриминг чата; возвращает (content, reasoning_trace или None). response_format убирается — не все провайдеры совместимы со stream."""
+    kw = dict(create_kw)
+    kw["stream"] = True
+    kw.pop("response_format", None)
+    reasoning_parts: list[str] = []
+    content_parts: list[str] = []
+    stream = client.chat.completions.create(**kw)
+    for chunk in stream:
+        if cancel_check:
+            cancel_check()
+        choices = getattr(chunk, "choices", None) or []
+        if not choices:
+            continue
+        delta = getattr(choices[0], "delta", None)
+        if delta is None:
+            continue
+        rc, ct = _delta_reasoning_and_content(delta)
+        if rc:
+            reasoning_parts.append(rc)
+            stream_callback("".join(reasoning_parts))
+        if ct:
+            content_parts.append(ct)
+            if not reasoning_parts:
+                stream_callback("Текст ответа модели:\n" + "".join(content_parts))
+    raw = "".join(content_parts)
+    reasoning = "".join(reasoning_parts) if reasoning_parts else None
+    disp = reasoning if reasoning else raw
+    if disp:
+        stream_callback(disp)
+    return raw, reasoning
 
 
 def build_eval_prompt(transcript_text: str, criteria: list[Criterion]) -> tuple[str, str]:
@@ -188,10 +264,25 @@ def evaluate_transcript(
     criteria_path: Path | None = None,
     *,
     transcript_path: Path | None = None,
+    cancel_check: Callable[[], None] | None = None,
+    db: DB | None = None,
+    stream_callback: Callable[[str], None] | None = None,
 ) -> dict[str, Any]:
-    cp = criteria_path or CRITERIA_FILE
+    cp = criteria_path or Path(DEFAULT_CHECKLIST_SLUG)
+
+    def _load_crit() -> tuple[str, list[Criterion]]:
+        if db is not None:
+            return load_criteria_from_db(db, cp.name)
+        if not cp.is_file():
+            raise FileNotFoundError(
+                f"Чеклист не найден: {cp} (ожидается запись в БД или YAML в config/)"
+            )
+        return load_criteria(cp)
+
+    if cancel_check:
+        cancel_check()
     if not os.environ.get("OPENAI_API_KEY"):
-        version, criteria = load_criteria(criteria_path)
+        version, criteria = _load_crit()
         return {
             "schema_version": 2,
             "criteria_version": version,
@@ -213,7 +304,7 @@ def evaluate_transcript(
             ],
         }
 
-    version, criteria = load_criteria(criteria_path)
+    version, criteria = _load_crit()
 
     tone_data: dict[str, Any] | None = None
     if transcript_path is not None:
@@ -250,10 +341,38 @@ def evaluate_transcript(
     else:
         create_kw["temperature"] = float(os.environ.get("OPENAI_EVAL_TEMPERATURE", "0.2"))
 
-    response = client.chat.completions.create(**create_kw)
-    msg = response.choices[0].message
-    raw = msg.content or "{}"
-    reasoning_trace = getattr(msg, "reasoning_content", None)
+    if cancel_check:
+        cancel_check()
+
+    raw: str
+    reasoning_trace: str | None = None
+    if stream_callback:
+        try:
+            raw, reasoning_trace = _stream_completion_chunks(
+                client,
+                create_kw,
+                cancel_check=cancel_check,
+                stream_callback=stream_callback,
+            )
+        except Exception:
+            if cancel_check:
+                cancel_check()
+            response = client.chat.completions.create(**create_kw)
+            msg = response.choices[0].message
+            reasoning_trace, raw = _message_reasoning_and_content(msg)
+            acc: list[str] = []
+            if reasoning_trace and str(reasoning_trace).strip():
+                acc.append(str(reasoning_trace).strip())
+            if raw and str(raw).strip():
+                acc.append(str(raw).strip())
+            if acc:
+                stream_callback("\n\n---\n\n".join(acc))
+    else:
+        response = client.chat.completions.create(**create_kw)
+        msg = response.choices[0].message
+        reasoning_trace, raw = _message_reasoning_and_content(msg)
+
+    raw = raw if (raw or "").strip() else "{}"
     parse_err: str | None = None
     try:
         parsed = _parse_json_from_message(raw)
@@ -312,7 +431,6 @@ def evaluate_transcript(
 
 
 def write_evaluation_json(data: dict[str, Any], out_path: Path) -> None:
-    out_path.parent.mkdir(parents=True, exist_ok=True)
-    out_path.write_text(
-        json.dumps(data, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
-    )
+    from src.atomic_json import atomic_write_json
+
+    atomic_write_json(out_path, data, indent=2)

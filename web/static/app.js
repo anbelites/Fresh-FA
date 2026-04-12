@@ -40,6 +40,8 @@ const STAGE_LABELS = {
   evaluating: "7/7 — оценка по чеклисту (ИИ)",
   done: "Готово",
   error: "Ошибка",
+  cancelled: "Остановлено",
+  resume: "Возобновление (пропуск готовых шагов)",
 };
 
 /** Подписи для задачи «только пересчёт оценки» (не шаг 7/7 полного пайплайна). */
@@ -50,10 +52,14 @@ const EVAL_ONLY_STAGE_LABELS = {
   evaluating: "Запрос к модели оценки (ИИ)…",
   done: "Готово",
   error: "Ошибка",
+  cancelled: "Остановлено",
 };
 
 function jobStageLabel(job) {
   if (!job) return "…";
+  if (job.status === "cancelled") {
+    return "Остановлено";
+  }
   const stage = job.stage;
   if (job.kind === "eval_only") {
     return EVAL_ONLY_STAGE_LABELS[stage] || STAGE_LABELS[stage] || stage || "…";
@@ -77,6 +83,8 @@ let workspaceJobPollTimer = null;
 let criteriaPopulate = false;
 let _currentEvalMode = "ai"; // "ai" | "human" | "compare"
 let _lastWorkspaceData = null;
+/** Кеш ответа POST /compare-eval: пересчёт только если ИИ/человек на диске изменились. */
+let _compareEvalCache = null;
 
 /** Какой чеклист запросить у API: явный override, иначе последний успешный ответ для этого stem (не DOM — избегаем гонки с <select>). */
 function resolveWorkspaceCriteriaQuery(stem, criteriaOverride) {
@@ -111,6 +119,7 @@ function clearWorkspaceView() {
   document.getElementById("workspace").style.display = "none";
   lastWorkspaceStem = null;
   lastWorkspaceCriteriaRequested = null;
+  _compareEvalCache = null;
 }
 
 function detachTranscriptMedia() {
@@ -170,6 +179,294 @@ function escapeHtml(s) {
   return d.innerHTML;
 }
 
+function appendEvidenceChipButtons(wrap, segments) {
+  let n = 0;
+  for (const { t0, t1 } of segments) {
+    if (!Number.isFinite(t0) || !Number.isFinite(t1)) continue;
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "evidence-chip";
+    btn.dataset.evStart = String(t0);
+    btn.dataset.evEnd = String(t1);
+    btn.textContent = `[${t0.toFixed(1)}–${t1.toFixed(1)}]`;
+    btn.title = "Перейти к началу этого отрезка";
+    btn.addEventListener("click", (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      seekMediaToSeconds(t0);
+    });
+    wrap.appendChild(btn);
+    n += 1;
+  }
+  return n;
+}
+
+function makeEvidenceChipsWrapFromSegments(segments) {
+  const wrap = document.createElement("span");
+  wrap.className = "evidence-chips evidence-chips--inline";
+  const lab = document.createElement("span");
+  lab.className = "evidence-chips-label";
+  lab.textContent = "В записи: ";
+  wrap.appendChild(lab);
+  if (appendEvidenceChipButtons(wrap, segments) === 0) return null;
+  return wrap;
+}
+
+/**
+ * Один фрагмент: `[11.82, 13.58]` или `[11.82–13.58]` / `[11.82-13.58]` (запятая или тире/en-dash/U+2212).
+ */
+const BRACKET_TIME_RANGE_RE =
+  /^\[\s*([\d.]+)\s*(?:,\s*|\s*[\u2013\u2212\-]\s*)([\d.]+)\s*\]/;
+
+/** Сканирует от позиции `[` цепочку диапазонов через ` и ` или `,` */
+function extractBracketTupleRun(s, bracketIndex) {
+  let i = bracketIndex;
+  const segments = [];
+  while (i < s.length) {
+    const m = s.slice(i).match(BRACKET_TIME_RANGE_RE);
+    if (!m) break;
+    segments.push({ t0: Number(m[1]), t1: Number(m[2]) });
+    i += m[0].length;
+    const sep = s.slice(i).match(/^\s*(?:и|,)\s*/);
+    if (sep) i += sep[0].length;
+    else break;
+  }
+  if (segments.length === 0) return null;
+  return { start: bracketIndex, end: i, segments };
+}
+
+function findNextTupleBracketIndex(s, from) {
+  const re = /\[\s*[\d.]/g;
+  re.lastIndex = from;
+  const m = re.exec(s);
+  return m ? m.index : -1;
+}
+
+/**
+ * Заменяет в тексте узла:
+ * - `evidence_segments: [{"start":…,"end":…}, …]`
+ * - пары `[205.38, 207.74]` или `[11.82–13.58]` и цепочки через ` и ` / `,`
+ */
+function replaceEvidenceSegmentsInTextNode(wholeText) {
+  if (!wholeText) return null;
+  const frag = document.createDocumentFragment();
+  let pos = 0;
+  let replaced = false;
+
+  while (pos < wholeText.length) {
+    const idxSeg = wholeText.indexOf("evidence_segments", pos);
+    const idxTuple = findNextTupleBracketIndex(wholeText, pos);
+    const segAt = idxSeg >= 0 ? idxSeg : Infinity;
+    const tupAt = idxTuple >= 0 ? idxTuple : Infinity;
+
+    if (segAt === Infinity && tupAt === Infinity) {
+      frag.appendChild(document.createTextNode(wholeText.slice(pos)));
+      break;
+    }
+
+    if (segAt <= tupAt) {
+      frag.appendChild(document.createTextNode(wholeText.slice(pos, idxSeg)));
+      const rest = wholeText.slice(idxSeg);
+      const cm = rest.match(/^evidence_segments\s*:\s*/);
+      if (!cm) {
+        frag.appendChild(document.createTextNode(wholeText[idxSeg]));
+        pos = idxSeg + 1;
+        continue;
+      }
+      let j = cm[0].length;
+      while (j < rest.length && /\s/.test(rest[j])) j++;
+      if (rest[j] !== "[") {
+        frag.appendChild(document.createTextNode(wholeText[idxSeg]));
+        pos = idxSeg + 1;
+        continue;
+      }
+      let depth = 0;
+      let k = j;
+      for (; k < rest.length; k++) {
+        if (rest[k] === "[") depth++;
+        else if (rest[k] === "]") {
+          depth--;
+          if (depth === 0) break;
+        }
+      }
+      if (k >= rest.length || depth !== 0) {
+        frag.appendChild(document.createTextNode(wholeText[idxSeg]));
+        pos = idxSeg + 1;
+        continue;
+      }
+      const jsonStr = rest.slice(j, k + 1);
+      const matchLen = cm[0].length + (k - j + 1);
+      let arr;
+      try {
+        arr = JSON.parse(jsonStr);
+      } catch {
+        frag.appendChild(document.createTextNode(wholeText.slice(idxSeg, idxSeg + matchLen)));
+        pos = idxSeg + matchLen;
+        continue;
+      }
+      if (!Array.isArray(arr)) {
+        frag.appendChild(document.createTextNode(wholeText.slice(idxSeg, idxSeg + matchLen)));
+        pos = idxSeg + matchLen;
+        continue;
+      }
+      const segments = [];
+      for (const seg of arr) {
+        if (!seg || seg.start == null || seg.end == null) continue;
+        const t0 = Number(seg.start);
+        const t1 = Number(seg.end);
+        if (!Number.isFinite(t0) || !Number.isFinite(t1)) continue;
+        segments.push({ t0, t1 });
+      }
+      const wrap = makeEvidenceChipsWrapFromSegments(segments);
+      if (wrap) {
+        frag.appendChild(wrap);
+        replaced = true;
+      } else {
+        frag.appendChild(document.createTextNode(wholeText.slice(idxSeg, idxSeg + matchLen)));
+      }
+      pos = idxSeg + matchLen;
+    } else {
+      frag.appendChild(document.createTextNode(wholeText.slice(pos, idxTuple)));
+      const run = extractBracketTupleRun(wholeText, idxTuple);
+      if (!run) {
+        frag.appendChild(document.createTextNode(wholeText[idxTuple]));
+        pos = idxTuple + 1;
+        continue;
+      }
+      const wrap = makeEvidenceChipsWrapFromSegments(run.segments);
+      if (wrap) {
+        frag.appendChild(wrap);
+        replaced = true;
+      } else {
+        frag.appendChild(document.createTextNode(wholeText.slice(run.start, run.end)));
+      }
+      pos = run.end;
+    }
+  }
+  return replaced ? frag : null;
+}
+
+function upgradeEvalReasoningEvidenceSegments(root) {
+  if (!root) return;
+  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+  const textNodes = [];
+  let n;
+  while ((n = walker.nextNode())) {
+    const t = n.textContent;
+    if (
+      !t ||
+      (!t.includes("evidence_segments") &&
+        !/\[\s*[\d.]+\s*(?:,\s*|[\u2013\u2212\-]\s*)[\d.]+\s*\]/.test(t))
+    ) {
+      continue;
+    }
+    const p = n.parentElement;
+    if (!p || p.closest("pre, code")) continue;
+    textNodes.push(n);
+  }
+  for (const textNode of textNodes) {
+    const frag = replaceEvidenceSegmentsInTextNode(textNode.textContent);
+    if (frag && textNode.parentNode) {
+      textNode.parentNode.replaceChild(frag, textNode);
+    }
+  }
+}
+
+/** Блок «ход рассуждений»: Markdown → безопасный HTML или plain pre. */
+function renderEvalReasoningBody(raw) {
+  const text = raw == null ? "" : String(raw);
+  const pre = document.createElement("pre");
+  pre.className = "eval-reasoning-body eval-reasoning-body--plain";
+  pre.textContent = text;
+
+  const g = globalThis;
+  const parse = g.marked && typeof g.marked.parse === "function" ? g.marked.parse.bind(g.marked) : null;
+  const purify = g.DOMPurify && typeof g.DOMPurify.sanitize === "function" ? g.DOMPurify.sanitize : null;
+  if (!parse || !purify || !text.trim()) {
+    return pre;
+  }
+  try {
+    let html = parse(text, { async: false, breaks: true, gfm: true });
+    if (html && typeof html.then === "function") {
+      return pre;
+    }
+    const clean = purify(html, {
+      ALLOWED_TAGS: [
+        "p",
+        "br",
+        "strong",
+        "em",
+        "b",
+        "i",
+        "del",
+        "s",
+        "ul",
+        "ol",
+        "li",
+        "h1",
+        "h2",
+        "h3",
+        "h4",
+        "h5",
+        "h6",
+        "blockquote",
+        "code",
+        "pre",
+        "hr",
+        "a",
+        "table",
+        "thead",
+        "tbody",
+        "tr",
+        "th",
+        "td",
+      ],
+      ALLOWED_ATTR: ["href", "title", "colspan", "rowspan"],
+      ALLOW_DATA_ATTR: false,
+    });
+    const div = document.createElement("div");
+    div.className = "eval-reasoning-body eval-reasoning-md";
+    div.innerHTML = clean;
+    upgradeEvalReasoningEvidenceSegments(div);
+    return div;
+  } catch {
+    return pre;
+  }
+}
+
+/** Текст анализа ИИ: безопасный HTML — абзацы, **жирный**, списки. */
+function formatCompareAnalysisHtml(raw) {
+  let s = raw == null ? "" : String(raw).trim();
+  if (!s) return "";
+  let esc = escapeHtml(s);
+  esc = esc.replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
+  const blocks = esc.split(/\n{2,}/).map((b) => b.trim()).filter(Boolean);
+  return blocks.map((block) => formatCompareAnalysisBlock(block)).join("");
+}
+
+function formatCompareAnalysisBlock(block) {
+  const lines = block.split("\n");
+  const nonEmpty = lines.map((l) => l.trim()).filter((l) => l.length);
+  if (nonEmpty.length >= 2) {
+    const allBullet = nonEmpty.every((l) => /^[-*•]\s+/.test(l));
+    if (allBullet) {
+      const items = nonEmpty
+        .map((l) => `<li>${l.replace(/^[-*•]\s+/, "").trim()}</li>`)
+        .join("");
+      return `<ul class="compare-analysis-ul">${items}</ul>`;
+    }
+    const allNum = nonEmpty.every((l) => /^\d+\.\s+/.test(l));
+    if (allNum) {
+      const items = nonEmpty
+        .map((l) => `<li>${l.replace(/^\d+\.\s+/, "").trim()}</li>`)
+        .join("");
+      return `<ol class="compare-analysis-ol">${items}</ol>`;
+    }
+  }
+  const inner = lines.join("<br />");
+  return `<p class="compare-analysis-p">${inner}</p>`;
+}
+
 /** Переход к таймкоду в плеере (та же запись, что и транскрипт). */
 function getActiveMediaElement() {
   const v = document.getElementById("transcript-video");
@@ -192,11 +489,15 @@ function syncEvalHighlight(t, evaluation) {
   const segList = document.getElementById("transcript-segments");
   if (!evaluation) return;
 
+  const aiView = document.getElementById("eval-ai-view");
+  if (aiView) {
+    aiView.querySelectorAll(".evidence-chip").forEach((b) => b.classList.remove("evidence-chip--active"));
+  }
+
   if (tbody) {
     const rows = tbody.querySelectorAll("tr[data-criterion-id]");
     rows.forEach((tr) => {
       tr.classList.remove("eval-row--evidence-active");
-      tr.querySelectorAll(".evidence-chip").forEach((b) => b.classList.remove("evidence-chip--active"));
     });
     for (const c of evaluation.criteria || []) {
       const tr = tbody.querySelector(`tr[data-criterion-id="${CSS.escape(c.id)}"]`);
@@ -212,6 +513,16 @@ function syncEvalHighlight(t, evaluation) {
       });
       if (rowHit) tr.classList.add("eval-row--evidence-active");
     }
+  }
+
+  if (aiView) {
+    aiView.querySelectorAll(".eval-reasoning-md .evidence-chip").forEach((btn) => {
+      const a = Number(btn.dataset.evStart);
+      const b = Number(btn.dataset.evEnd);
+      if (Number.isFinite(a) && Number.isFinite(b) && t >= a && t < b) {
+        btn.classList.add("evidence-chip--active");
+      }
+    });
   }
 
   if (segList) {
@@ -230,9 +541,11 @@ function syncEvalHighlight(t, evaluation) {
 
   const activeInTranscript =
     segList && segList.querySelector(".seg-eval-item.seg-eval-item--active");
-  const activeChip = tbody && tbody.querySelector(".evidence-chip--active");
+  const activeChip =
+    (aiView && aiView.querySelector(".evidence-chip--active")) ||
+    (tbody && tbody.querySelector(".evidence-chip--active"));
   const activeRow = tbody && tbody.querySelector("tr.eval-row--evidence-active");
-  /* Сначала прокрутка чеклиста справа; иначе — встроенный блок в транскрипте */
+  /* Сначала таймкод (чеклист или «ход рассуждений»), иначе строка, иначе транскрипт */
   const scrollTarget = activeChip || activeRow || activeInTranscript;
   const scrollKey = scrollTarget
     ? activeChip
@@ -266,6 +579,9 @@ function jobTooltip(item) {
     const label = jobStageLabel(j);
     return `${label} (нажмите для просмотра)`;
   }
+  if (j && j.status === "cancelled") {
+    return "Обработка остановлена";
+  }
   if (j && j.status === "error") {
     return `Ошибка: ${j.error || "неизвестно"}`;
   }
@@ -281,10 +597,72 @@ function jobTooltip(item) {
 function statusDotClass(item) {
   const j = item.job;
   if (j && (j.status === "queued" || j.status === "running")) return "status-dot--processing";
+  if (j && j.status === "cancelled") return "status-dot--cancelled";
   if (j && j.status === "error") return "status-dot--error";
   if (item.has_transcript && item.has_tone && item.has_evaluation) return "status-dot--ready";
   if (item.has_transcript) return "status-dot--partial";
   return "status-dot--waiting";
+}
+
+function workspaceArtifactParts(ws) {
+  const parts = [];
+  if (ws && ws.transcript) parts.push("текст");
+  if (ws && ws.tone) parts.push("тон");
+  if (ws && ws.evaluation) parts.push("оценка");
+  return parts;
+}
+
+/**
+ * Строка под заголовком: готовые этапы, иначе состояние пайплайна / ожидание (не «—»).
+ */
+function formatWorkspaceMetaLine(ws) {
+  if (!ws || !ws.video_url) {
+    return "Видео отсутствует";
+  }
+  const parts = workspaceArtifactParts(ws);
+  const j = ws.job;
+
+  if (j) {
+    if (j.status === "queued" || j.status === "running") {
+      return `Сейчас: ${jobStageLabel(j)}`;
+    }
+    if (j.status === "error") {
+      const err = j.error && String(j.error).trim();
+      return err ? `Ошибка: ${err}` : "Ошибка пайплайна";
+    }
+    if (j.status === "cancelled") {
+      return parts.length ? `Остановлено · ${parts.join(" · ")}` : "Обработка остановлена";
+    }
+    if (j.status === "done") {
+      return parts.length ? parts.join(" · ") : "Готово";
+    }
+  }
+
+  if (parts.length) {
+    return parts.join(" · ");
+  }
+  return "Ожидает обработки";
+}
+
+function workspaceToStatusItem(ws) {
+  return {
+    job: ws && ws.job,
+    has_transcript: Boolean(ws && ws.transcript),
+    has_tone: Boolean(ws && ws.tone),
+    has_evaluation: Boolean(ws && ws.evaluation),
+  };
+}
+
+function updateWorkspaceHeadStatus(ws) {
+  const wrap = document.getElementById("workspace-head-status-wrap");
+  const dot = document.getElementById("workspace-head-status-dot");
+  if (!wrap || !dot) return;
+  const item = workspaceToStatusItem(ws);
+  dot.className = "status-dot " + statusDotClass(item);
+  wrap.title = jobTooltip({
+    ...item,
+    has_video_file: Boolean(ws && ws.video_url),
+  });
 }
 
 async function fetchLibrary() {
@@ -294,9 +672,189 @@ async function fetchLibrary() {
 }
 
 function getLibrarySortValue() {
-  const active = document.querySelector(".library-sort-segment .segment-btn--active");
-  const v = active?.dataset?.sort;
+  const sel = document.getElementById("library-sort-select");
+  const v = sel?.value;
   return v && String(v).trim() !== "" ? v : "date_desc";
+}
+
+function setupLibrarySortCustom() {
+  const root = document.getElementById("library-sort");
+  const select = document.getElementById("library-sort-select");
+  const trigger = document.getElementById("library-sort-trigger");
+  const label = document.getElementById("library-sort-trigger-label");
+  const menu = document.getElementById("library-sort-listbox");
+  if (!root || !select || !trigger || !label || !menu) {
+    return { syncFromSelect: () => {}, closeMenu: () => {} };
+  }
+
+  const getOptions = () => [...menu.querySelectorAll(".library-sort-option[data-value]")];
+
+  function syncFromSelect() {
+    const opt = select.options[select.selectedIndex];
+    label.textContent = opt ? opt.text : "";
+    const v = select.value;
+    getOptions().forEach((el) => {
+      const on = el.dataset.value === v;
+      el.setAttribute("aria-selected", on ? "true" : "false");
+      el.classList.toggle("library-sort-option--selected", on);
+    });
+    root.classList.toggle("library-sort--nondefault", v !== "date_desc");
+  }
+
+  function layoutMenuPosition() {
+    const r = trigger.getBoundingClientRect();
+    menu.style.position = "fixed";
+    menu.style.left = `${Math.max(8, r.left)}px`;
+    menu.style.top = `${r.bottom + 4}px`;
+    menu.style.width = `${r.width}px`;
+    menu.style.right = "auto";
+    menu.style.maxHeight = `min(240px, calc(100vh - ${r.bottom + 12}px))`;
+    menu.style.overflowY = "auto";
+  }
+
+  function clearMenuPosition() {
+    menu.style.position = "";
+    menu.style.left = "";
+    menu.style.top = "";
+    menu.style.width = "";
+    menu.style.right = "";
+    menu.style.maxHeight = "";
+    menu.style.overflowY = "";
+  }
+
+  function closeMenu() {
+    if (menu.hidden) return;
+    menu.hidden = true;
+    clearMenuPosition();
+    root.classList.remove("library-sort--open");
+    trigger.setAttribute("aria-expanded", "false");
+    getOptions().forEach((el) => {
+      el.tabIndex = -1;
+    });
+  }
+
+  function openMenu() {
+    menu.hidden = false;
+    root.classList.add("library-sort--open");
+    trigger.setAttribute("aria-expanded", "true");
+    layoutMenuPosition();
+    getOptions().forEach((el) => {
+      el.tabIndex = -1;
+    });
+  }
+
+  window.addEventListener("resize", () => {
+    if (!menu.hidden) layoutMenuPosition();
+  });
+  document.addEventListener(
+    "scroll",
+    () => {
+      if (!menu.hidden) layoutMenuPosition();
+    },
+    true
+  );
+
+  function selectValue(value) {
+    if (value == null || value === "") return;
+    if (select.value !== value) {
+      select.value = value;
+      select.dispatchEvent(new Event("change", { bubbles: true }));
+    }
+    syncFromSelect();
+    closeMenu();
+    trigger.focus();
+  }
+
+  trigger.addEventListener("click", (e) => {
+    e.stopPropagation();
+    if (menu.hidden) openMenu();
+    else closeMenu();
+  });
+
+  getOptions().forEach((el) => {
+    el.addEventListener("click", (e) => {
+      e.stopPropagation();
+      selectValue(el.dataset.value);
+    });
+    el.addEventListener("keydown", (e) => {
+      const opts = getOptions();
+      const i = opts.indexOf(el);
+      if (e.key === "ArrowDown") {
+        e.preventDefault();
+        if (i < opts.length - 1) {
+          el.tabIndex = -1;
+          opts[i + 1].tabIndex = 0;
+          opts[i + 1].focus();
+        }
+      } else if (e.key === "ArrowUp") {
+        e.preventDefault();
+        if (i > 0) {
+          el.tabIndex = -1;
+          opts[i - 1].tabIndex = 0;
+          opts[i - 1].focus();
+        } else {
+          closeMenu();
+          trigger.focus();
+        }
+      } else if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        selectValue(el.dataset.value);
+      } else if (e.key === "Escape") {
+        e.preventDefault();
+        closeMenu();
+        trigger.focus();
+      } else if (e.key === "Home") {
+        e.preventDefault();
+        el.tabIndex = -1;
+        opts[0].tabIndex = 0;
+        opts[0].focus();
+      } else if (e.key === "End") {
+        e.preventDefault();
+        el.tabIndex = -1;
+        opts[opts.length - 1].tabIndex = 0;
+        opts[opts.length - 1].focus();
+      }
+    });
+  });
+
+  trigger.addEventListener("keydown", (e) => {
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      if (menu.hidden) openMenu();
+      const opts = getOptions();
+      opts.forEach((o) => {
+        o.tabIndex = -1;
+      });
+      if (opts.length) {
+        opts[0].tabIndex = 0;
+        opts[0].focus();
+      }
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      if (menu.hidden) openMenu();
+      const opts = getOptions();
+      opts.forEach((o) => {
+        o.tabIndex = -1;
+      });
+      if (opts.length) {
+        const last = opts[opts.length - 1];
+        last.tabIndex = 0;
+        last.focus();
+      }
+    } else if (e.key === "Escape" && !menu.hidden) {
+      e.preventDefault();
+      closeMenu();
+    }
+  });
+
+  document.addEventListener("click", (e) => {
+    if (!root.contains(e.target)) closeMenu();
+  });
+
+  syncFromSelect();
+  select.addEventListener("change", syncFromSelect);
+
+  return { syncFromSelect, closeMenu };
 }
 
 function filterAndSortLibrary(items) {
@@ -308,6 +866,7 @@ function filterAndSortLibrary(items) {
   if (q) {
     filtered = items.filter((item) => {
       const haystack = [
+        item.display_title,
         item.video_file,
         item.stem,
         item.manager_name,
@@ -327,10 +886,20 @@ function filterAndSortLibrary(items) {
       sorted.sort((a, b) => (a.mtime || 0) - (b.mtime || 0));
       break;
     case "name_asc":
-      sorted.sort((a, b) => (a.video_file || "").localeCompare(b.video_file || "", "ru"));
+      sorted.sort((a, b) =>
+        (a.display_title || a.video_file || a.stem || "").localeCompare(
+          b.display_title || b.video_file || b.stem || "",
+          "ru",
+        ),
+      );
       break;
     case "name_desc":
-      sorted.sort((a, b) => (b.video_file || "").localeCompare(a.video_file || "", "ru"));
+      sorted.sort((a, b) =>
+        (b.display_title || b.video_file || b.stem || "").localeCompare(
+          a.display_title || a.video_file || a.stem || "",
+          "ru",
+        ),
+      );
       break;
     default:
       sorted.sort((a, b) => (b.mtime || 0) - (a.mtime || 0));
@@ -388,33 +957,18 @@ function createLibraryRow(item) {
   dotWrap.appendChild(dot);
   dotWrap.title = jobTooltip(item);
 
-  const text = document.createElement("div");
-  text.style.minWidth = "0";
   const name = document.createElement("div");
   name.className = "library-item-name";
-  name.textContent = item.video_file || item.stem;
-  const meta = document.createElement("div");
-  meta.className = "library-item-meta";
-  if (item.has_video_file === false) {
-    meta.textContent = "Видео отсутствует";
-  } else {
-    const parts = [];
-    if (item.has_transcript) parts.push("текст");
-    if (item.has_tone) parts.push("тон");
-    if (item.has_evaluation) parts.push("оценка");
-    meta.textContent = parts.length ? parts.join(" · ") : "—";
-  }
-
-  text.appendChild(name);
-  text.appendChild(meta);
+  name.textContent = item.display_title || item.video_file || item.stem;
 
   row.appendChild(dotWrap);
-  row.appendChild(text);
+  row.appendChild(name);
   row.addEventListener("click", () => {
     selectedStem = item.stem;
     document.querySelectorAll(".library-row").forEach((el) => {
       el.classList.toggle("selected", el.dataset.stem === selectedStem);
     });
+    collapseSidebarOnMobileIfNeeded();
     loadWorkspace(item.stem);
   });
 
@@ -428,7 +982,7 @@ function createLibraryRow(item) {
   delBtn.addEventListener("click", async (e) => {
     e.stopPropagation();
     e.preventDefault();
-    const label = item.video_file || item.stem;
+    const label = item.display_title || item.video_file || item.stem;
     if (
       !confirm(
         `Удалить «${label}»? Будут удалены файл в 01.Video (если есть), транскрипт, тон и оценки.`
@@ -561,34 +1115,36 @@ function setupLibraryControls() {
   const searchEl = document.getElementById("library-search");
   const searchWrap = document.getElementById("library-search-wrap");
   const searchToggle = document.getElementById("library-search-toggle");
-  const sortWrap = document.getElementById("library-sort-wrap");
-  const sortToggle = document.getElementById("library-sort-toggle");
-  const seg = document.querySelector(".library-sort-segment");
+  const sortRoot = document.getElementById("library-sort");
+  const sortTrigger = document.getElementById("library-sort-trigger");
+  const sortSelect = document.getElementById("library-sort-select");
+  const sortUi = setupLibrarySortCustom();
+  const filterIcon = document.getElementById("library-search-filter-icon");
+  const labelRow = document.getElementById("library-toolbar-label-row");
 
   function isSearchPanelOpen() {
     return Boolean(searchWrap?.classList.contains("library-toolbar-slide--open"));
   }
 
-  function isSortPanelOpen() {
-    return Boolean(sortWrap?.classList.contains("library-toolbar-slide--open"));
-  }
-
-  function setSortPanelOpen(open) {
-    if (!sortWrap || !seg) return;
-    if (open) setSearchPanelOpen(false);
-    sortWrap.classList.toggle("library-toolbar-slide--open", open);
-    sortWrap.setAttribute("aria-hidden", open ? "false" : "true");
-    for (const b of seg.querySelectorAll(".segment-btn")) {
-      b.tabIndex = open ? 0 : -1;
-    }
-  }
-
   function setSearchPanelOpen(open) {
     if (!searchWrap || !searchEl) return;
-    if (open) setSortPanelOpen(false);
     searchWrap.classList.toggle("library-toolbar-slide--open", open);
     searchWrap.setAttribute("aria-hidden", open ? "false" : "true");
     searchEl.tabIndex = open ? 0 : -1;
+    labelRow?.classList.toggle("sidebar-label-row--search-open", open);
+    if (open) sortUi.closeMenu();
+    if (sortRoot) {
+      sortRoot.setAttribute("aria-hidden", open ? "true" : "false");
+    }
+    if (sortTrigger) {
+      sortTrigger.tabIndex = open ? -1 : 0;
+    }
+    if (sortSelect) {
+      sortSelect.tabIndex = -1;
+    }
+    if (filterIcon) {
+      filterIcon.setAttribute("aria-hidden", open ? "false" : "true");
+    }
   }
 
   function syncLibrarySearchToggle() {
@@ -599,11 +1155,8 @@ function setupLibraryControls() {
     searchToggle.classList.toggle("library-search-toggle--filter-active", q.length > 0);
   }
 
-  function syncSortToggle() {
-    if (!sortToggle) return;
-    const sort = getLibrarySortValue();
-    sortToggle.setAttribute("aria-expanded", isSortPanelOpen() ? "true" : "false");
-    sortToggle.classList.toggle("library-sort-toggle--nondefault", sort !== "date_desc");
+  function syncLibrarySortSelect() {
+    sortUi.syncFromSelect();
   }
 
   if (searchEl) {
@@ -617,7 +1170,6 @@ function setupLibraryControls() {
     searchToggle.addEventListener("click", () => {
       setSearchPanelOpen(!isSearchPanelOpen());
       syncLibrarySearchToggle();
-      syncSortToggle();
       if (isSearchPanelOpen()) {
         searchEl.focus();
       }
@@ -626,29 +1178,15 @@ function setupLibraryControls() {
       if (e.key === "Escape") {
         setSearchPanelOpen(false);
         syncLibrarySearchToggle();
-        syncSortToggle();
         searchToggle.focus();
       }
     });
   }
 
-  if (sortToggle && sortWrap && seg) {
-    sortToggle.addEventListener("click", () => {
-      const next = !isSortPanelOpen();
-      setSortPanelOpen(next);
-      syncSortToggle();
-      syncLibrarySearchToggle();
-      if (next) {
-        const active = seg.querySelector(".segment-btn--active");
-        (active || seg.querySelector(".segment-btn"))?.focus();
-      }
-    });
-    seg.addEventListener("keydown", (e) => {
-      if (e.key !== "Escape") return;
-      if (!isSortPanelOpen()) return;
-      setSortPanelOpen(false);
-      syncSortToggle();
-      sortToggle.focus();
+  if (sortSelect) {
+    sortSelect.addEventListener("change", () => {
+      renderLibrary(_allLibraryItems);
+      syncLibrarySortSelect();
     });
   }
 
@@ -660,25 +1198,62 @@ function setupLibraryControls() {
     syncLibrarySearchToggle();
   }
 
-  setSortPanelOpen(false);
-  syncSortToggle();
+  syncLibrarySortSelect();
+}
 
-  if (seg) {
-    seg.addEventListener("click", (e) => {
-      const btn = e.target.closest(".segment-btn");
-      if (!btn || !seg.contains(btn)) return;
-      for (const b of seg.querySelectorAll(".segment-btn")) {
-        const on = b === btn;
-        b.classList.toggle("segment-btn--active", on);
-        b.setAttribute("aria-pressed", on ? "true" : "false");
-      }
-      renderLibrary(_allLibraryItems);
-      syncSortToggle();
-    });
+function workspaceJobShowsReasoningStream(j) {
+  if (!j || j.status === "error" || j.status === "cancelled") return false;
+  const run = j.status === "queued" || j.status === "running";
+  if (!run) return false;
+  if (j.kind === "eval_only") return true;
+  if (j.kind === "pipeline" && j.stage === "evaluating") return true;
+  return false;
+}
+
+function updateWorkspaceJobStreamPanel(j) {
+  const btn = document.getElementById("workspace-job-details");
+  const wrap = document.getElementById("workspace-job-stream-wrap");
+  const pre = document.getElementById("workspace-job-stream-text");
+  if (!btn || !wrap || !pre) return;
+  if (!j || !workspaceJobShowsReasoningStream(j)) {
+    btn.hidden = true;
+    wrap.hidden = true;
+    btn.setAttribute("aria-expanded", "false");
+    btn.classList.remove("btn-job-details--open");
+    pre.textContent = "";
+    return;
+  }
+  btn.hidden = false;
+  const log = j.stream_log != null ? String(j.stream_log) : "";
+  if (log) {
+    pre.textContent = log;
+    if (!wrap.hidden) {
+      pre.scrollTop = pre.scrollHeight;
+    }
   }
 }
 
+function setupWorkspaceJobStreamToggle() {
+  const btn = document.getElementById("workspace-job-details");
+  const wrap = document.getElementById("workspace-job-stream-wrap");
+  const pre = document.getElementById("workspace-job-stream-text");
+  if (!btn || !wrap || !pre) return;
+  btn.addEventListener("click", () => {
+    if (btn.hidden) return;
+    const open = wrap.hidden;
+    wrap.hidden = !open;
+    btn.setAttribute("aria-expanded", open ? "true" : "false");
+    btn.classList.toggle("btn-job-details--open", open);
+    if (!wrap.hidden && pre.textContent) {
+      pre.scrollTop = pre.scrollHeight;
+    }
+  });
+}
+
 async function loadWorkspace(stem, silent, criteriaOverride) {
+  if (_compareEvalCache && _compareEvalCache.stem !== stem) {
+    _compareEvalCache = null;
+  }
   const crit = resolveWorkspaceCriteriaQuery(stem, criteriaOverride);
   const q = crit ? `?criteria=${encodeURIComponent(crit)}` : "";
   const r = await apiFetch(`${API}/api/workspace/${encodeURIComponent(stem)}${q}`);
@@ -691,15 +1266,36 @@ async function loadWorkspace(stem, silent, criteriaOverride) {
   document.getElementById("workspace").style.display = "flex";
 
   const titleEl = document.getElementById("workspace-title");
-  titleEl.textContent = ws.video_file || ws.stem;
+  const metaEl = document.getElementById("workspace-title-meta");
+  const disp = ws.meta && ws.meta.display_title;
+  titleEl.textContent = (disp && String(disp).trim()) || ws.video_file || ws.stem;
+  if (metaEl) {
+    metaEl.textContent = formatWorkspaceMetaLine(ws);
+  }
+  updateWorkspaceHeadStatus(ws);
 
   const jobBanner = document.getElementById("workspace-job-banner");
+  const jobText = document.getElementById("workspace-job-text");
+  const jobCancel = document.getElementById("workspace-job-cancel");
   const j = ws.job;
   stopWorkspaceJobPoll();
+
+  function setJobCancelVisible(show, jobId) {
+    if (!jobCancel) return;
+    if (show && jobId) {
+      jobCancel.hidden = false;
+      jobCancel.dataset.jobId = jobId;
+    } else {
+      jobCancel.hidden = true;
+      delete jobCancel.dataset.jobId;
+    }
+  }
+
   if (j && (j.status === "queued" || j.status === "running")) {
-    jobBanner.style.display = "block";
-    const label = jobStageLabel(j);
-    jobBanner.textContent = `Сейчас: ${label}`;
+    if (jobBanner) jobBanner.style.display = "flex";
+    if (jobText) jobText.textContent = `Сейчас: ${jobStageLabel(j)}`;
+    setJobCancelVisible(true, j.id);
+    updateWorkspaceJobStreamPanel(j);
     workspaceJobPollTimer = setInterval(async () => {
       const cPoll = resolveWorkspaceCriteriaQuery(stem, undefined);
       const qPoll = cPoll ? `?criteria=${encodeURIComponent(cPoll)}` : "";
@@ -712,23 +1308,48 @@ async function loadWorkspace(stem, silent, criteriaOverride) {
         await loadWorkspace(stem, true, lastWorkspaceCriteriaRequested || undefined);
         return;
       }
-      const b = document.getElementById("workspace-job-banner");
-      if (b) {
-        b.style.display = "block";
-        b.textContent = `Сейчас: ${jobStageLabel(j2)}`;
+      const tEl = document.getElementById("workspace-job-text");
+      if (tEl) tEl.textContent = `Сейчас: ${jobStageLabel(j2)}`;
+      const metaPoll = document.getElementById("workspace-title-meta");
+      if (metaPoll) metaPoll.textContent = formatWorkspaceMetaLine(w2);
+      updateWorkspaceHeadStatus(w2);
+      const jc = document.getElementById("workspace-job-cancel");
+      if (jc && j2 && j2.id) {
+        jc.hidden = false;
+        jc.dataset.jobId = j2.id;
       }
+      updateWorkspaceJobStreamPanel(j2);
     }, 500);
   } else if (j && j.status === "error") {
-    jobBanner.style.display = "block";
-    jobBanner.textContent = `Ошибка пайплайна: ${j.error || "неизвестно"}`;
+    if (jobBanner) jobBanner.style.display = "flex";
+    if (jobText) jobText.textContent = `Ошибка пайплайна: ${j.error || "неизвестно"}`;
+    setJobCancelVisible(false);
+    updateWorkspaceJobStreamPanel(null);
+  } else if (j && j.status === "cancelled") {
+    if (jobBanner) jobBanner.style.display = "flex";
+    if (jobText) jobText.textContent = "Обработка остановлена.";
+    setJobCancelVisible(false);
+    updateWorkspaceJobStreamPanel(null);
   } else {
-    jobBanner.style.display = "none";
+    if (jobBanner) jobBanner.style.display = "none";
+    setJobCancelVisible(false);
+    updateWorkspaceJobStreamPanel(null);
+  }
+
+  const afterStop = document.getElementById("workspace-job-after-stop");
+  const showAfterStop =
+    Boolean(ws.video_url) &&
+    j &&
+    j.kind === "pipeline" &&
+    (j.status === "cancelled" || j.status === "error");
+  if (afterStop) {
+    afterStop.hidden = !showAfterStop;
   }
 
   _lastWorkspaceData = ws;
 
   renderMediaAndTranscript(ws);
-  renderToneHint(ws.tone);
+  renderToneHint(ws.tone, ws.tone_load_error);
   renderEvaluation(ws.evaluation, {
     hasTranscript: !!ws.transcript,
     criteriaLabel: ws.evaluation_criteria || ws.criteria?.active || "",
@@ -785,7 +1406,9 @@ function renderMediaAndTranscript(ws) {
 
   if (!data) {
     miss.style.display = "block";
-    miss.textContent = "Транскрипт появится после этапа распознавания речи.";
+    miss.textContent = ws.transcript_load_error
+      ? "Файл транскрипта повреждён или не читается. Запустите пайплайн заново или «С начала»."
+      : "Транскрипт появится после этапа распознавания речи.";
     segs.innerHTML = "";
     const eh = document.getElementById("transcript-eval-hint");
     const ar = document.getElementById("transcript-asr-hint");
@@ -1121,9 +1744,16 @@ function formatSerHintText(tone) {
   return parts.join("\n");
 }
 
-function renderToneHint(tone) {
+function renderToneHint(tone, toneLoadError) {
   const hint = document.getElementById("transcript-ser-hint");
   if (!hint) return;
+  if (toneLoadError && !tone) {
+    hint.textContent =
+      "Файл данных тона повреждён или не читается. Перезапустите обработку или «С начала».";
+    hint.style.display = "block";
+    syncTranscriptHintsPopover();
+    return;
+  }
   if (!tone) {
     hint.style.display = "none";
     hint.textContent = "";
@@ -1222,12 +1852,18 @@ function openMetaNameDialog({ title, label, placeholder }) {
   });
 }
 
-function fillMetaForm({ managers = [], locations = [], meta = {} }) {
+function fillMetaForm({ managers = [], locations = [], meta = {}, videoFileFallback = "" }) {
   const managerSel = document.getElementById("meta-manager");
   const locationSel = document.getElementById("meta-location");
   const dateIn = document.getElementById("meta-date");
   const tagsIn = document.getElementById("meta-tags");
+  const titleIn = document.getElementById("meta-display-title");
   if (!managerSel || !locationSel) return;
+
+  if (titleIn) {
+    const custom = (meta.display_title && String(meta.display_title).trim()) || "";
+    titleIn.value = custom || videoFileFallback || "";
+  }
 
   managerSel.innerHTML = '<option value="">—</option>';
   for (const m of managers) {
@@ -1253,10 +1889,10 @@ function fillMetaForm({ managers = [], locations = [], meta = {} }) {
 
 async function openMetaDialog(stem) {
   const dlg = document.getElementById("meta-dialog");
-  const stemLabel = document.getElementById("meta-dialog-stem-label");
+  const stemCode = document.getElementById("meta-dialog-stem-code");
   if (!dlg || !stem) return;
   metaEditStem = stem;
-  if (stemLabel) stemLabel.textContent = stem;
+  if (stemCode) stemCode.textContent = stem;
   try {
     const [metaR, mR, lR] = await Promise.all([
       apiFetch(`${API}/api/workspace/${encodeURIComponent(stem)}/meta`),
@@ -1270,16 +1906,18 @@ async function openMetaDialog(stem) {
     const meta = await metaR.json();
     const managers = await mR.json();
     const locations = await lR.json();
-    fillMetaForm({ managers, locations, meta });
+    let videoFileFallback = stem;
     try {
       const wsR = await apiFetch(`${API}/api/workspace/${encodeURIComponent(stem)}`);
       if (wsR.ok) {
         const ws = await wsR.json();
+        videoFileFallback = ws.video_file || stem;
         updateEvalToolbar(ws);
       }
     } catch (_) {
       /* чеклист подтянется при следующем loadWorkspace */
     }
+    fillMetaForm({ managers, locations, meta, videoFileFallback });
     if (typeof dlg.showModal === "function") dlg.showModal();
   } catch (e) {
     metaEditStem = null;
@@ -1349,11 +1987,14 @@ function setupMetaPanel() {
       const locationId = locationSel?.value || null;
       const locationName = locationId ? locationSel.selectedOptions[0]?.textContent || null : null;
       const tagsRaw = (tagsIn?.value || "").split(",").map((s) => s.trim()).filter(Boolean);
+      const titleIn = document.getElementById("meta-display-title");
+      const displayTitleRaw = (titleIn?.value || "").trim();
       try {
         const r = await apiFetch(`${API}/api/workspace/${encodeURIComponent(stem)}/meta`, {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
+            display_title: displayTitleRaw || null,
             manager_id: managerId,
             manager_name: managerName,
             location_id: locationId,
@@ -1382,9 +2023,9 @@ function updateEvalToolbar(ws) {
   const btn = document.getElementById("eval-refresh");
   if (!sel || !btn) return;
 
-  const crit = ws.criteria || { active: "criteria.yaml", files: [] };
+  const crit = ws.criteria || { active: "criteria", files: [] };
   const files = crit.files || [];
-  const active = crit.active || "criteria.yaml";
+  const active = crit.active || "criteria";
 
   criteriaPopulate = true;
   sel.innerHTML = "";
@@ -1404,6 +2045,7 @@ function updateEvalToolbar(ws) {
   const hasTr = !!ws.transcript;
   btn.disabled = !hasTr || busy;
   sel.disabled = busy;
+  btn.toggleAttribute("aria-busy", Boolean(busy && hasTr));
 
   btn.title = busy
     ? "Дождитесь окончания задачи"
@@ -1453,6 +2095,10 @@ function setupEvalToolbar() {
   btn.addEventListener("click", async () => {
     if (!selectedStem || btn.disabled) return;
     const crit = sel.value || "";
+    btn.disabled = true;
+    sel.disabled = true;
+    btn.setAttribute("aria-busy", "true");
+    btn.title = "Выполняется оценка…";
     try {
       const r = await apiFetch(
         `${API}/api/workspace/${encodeURIComponent(selectedStem)}/re-evaluate`,
@@ -1472,12 +2118,28 @@ function setupEvalToolbar() {
               ? d.map((x) => x.msg || x).join("; ")
               : data.message || "Ошибка запуска";
         alert(msg);
+        if (_lastWorkspaceData) updateEvalToolbar(_lastWorkspaceData);
+        else {
+          btn.removeAttribute("aria-busy");
+          btn.disabled = false;
+          sel.disabled = false;
+          btn.title =
+            "Сгенерировать или пересчитать оценку по выбранному в списке чеклисту";
+        }
         return;
       }
       loadLibrary();
       await loadWorkspace(selectedStem, true, crit || undefined);
     } catch (e) {
       alert(String(e));
+      if (_lastWorkspaceData) updateEvalToolbar(_lastWorkspaceData);
+      else {
+        btn.removeAttribute("aria-busy");
+        btn.disabled = false;
+        sel.disabled = false;
+        btn.title =
+          "Сгенерировать или пересчитать оценку по выбранному в списке чеклисту";
+      }
     }
   });
 }
@@ -1747,12 +2409,7 @@ function renderEvaluation(evaluation, options = {}) {
       : `<dd class="eval-summary__value">—</dd>`;
   summary.innerHTML = `
     <div class="eval-summary-card">
-      <div class="eval-summary__file">${escapeHtml(evaluation.video_file || "")}</div>
       <dl class="eval-summary__meta">
-        <div class="eval-summary__field">
-          <dt class="eval-summary__label">Модель</dt>
-          <dd class="eval-summary__value eval-summary__mono">${escapeHtml(evaluation.model || "—")}</dd>
-        </div>
         <div class="eval-summary__field">
           <dt class="eval-summary__label">Средний балл</dt>
           <dd class="eval-summary__value eval-summary__avg eval-summary__avg--${avgCls}">${escapeHtml(avgStr)}</dd>
@@ -1761,9 +2418,25 @@ function renderEvaluation(evaluation, options = {}) {
           <dt class="eval-summary__label">Дата оценки</dt>
           ${dateDd}
         </div>
+        <div class="eval-summary__field">
+          <dt class="eval-summary__label">Модель</dt>
+          <dd class="eval-summary__value eval-summary__mono">${escapeHtml(evaluation.model || "—")}</dd>
+        </div>
       </dl>
     </div>
   `;
+
+  const traceRaw = evaluation.reasoning_trace;
+  if (traceRaw != null && String(traceRaw).trim()) {
+    const det = document.createElement("details");
+    det.className = "eval-reasoning";
+    const summ = document.createElement("summary");
+    summ.className = "eval-reasoning-summary";
+    summ.textContent = "Ход рассуждений модели";
+    det.appendChild(summ);
+    det.appendChild(renderEvalReasoningBody(traceRaw));
+    summary.appendChild(det);
+  }
 
   tbody.innerHTML = "";
   for (const c of evaluation.criteria || []) {
@@ -1851,6 +2524,9 @@ function switchEvalMode(mode) {
   const saveBtn = document.getElementById("human-eval-save");
   if (saveBtn) saveBtn.style.display = mode === "human" ? "" : "none";
 
+  const refreshBtn = document.getElementById("eval-refresh");
+  if (refreshBtn) refreshBtn.style.display = mode === "ai" ? "" : "none";
+
   document.querySelectorAll("#eval-mode-toggle .eval-mode-btn").forEach((b) => {
     b.classList.toggle("eval-mode-btn--active", b.dataset.mode === mode);
   });
@@ -1884,6 +2560,11 @@ function setupEvalModeToggle() {
     compareBtn.addEventListener("click", async () => {
       if (compareBtn.disabled || !selectedStem) return;
       switchEvalMode("compare");
+      const ws = _lastWorkspaceData;
+      if (ws && compareEvalCacheMatches(ws, selectedStem)) {
+        renderCompareResult(_compareEvalCache.data);
+        return;
+      }
       await runComparison(selectedStem);
     });
   }
@@ -1925,17 +2606,21 @@ function renderHumanEvalForm(ws) {
   if (humanEval && humanEval.overall_average != null) {
     const avg = Number(humanEval.overall_average).toFixed(1);
     const cls = scoreClass(humanEval.overall_average);
-    const when = formatEvaluatedAt(humanEval.evaluated_at);
+    const iso = humanEval.evaluated_at || "";
+    const when = formatEvaluatedAt(iso);
+    const dateDd = iso
+      ? `<dd class="eval-summary__value"><time datetime="${escapeHtml(iso)}">${escapeHtml(when)}</time></dd>`
+      : `<dd class="eval-summary__value">—</dd>`;
     summaryEl.innerHTML = `
       <div class="eval-summary-card">
         <dl class="eval-summary__meta">
           <div class="eval-summary__field">
-            <dt class="eval-summary__label">Средний балл (ручной)</dt>
+            <dt class="eval-summary__label">Средний балл</dt>
             <dd class="eval-summary__value eval-summary__avg eval-summary__avg--${cls}">${escapeHtml(avg)}</dd>
           </div>
-          <div class="eval-summary__field">
-            <dt class="eval-summary__label">Сохранено</dt>
-            <dd class="eval-summary__value"><time>${escapeHtml(when)}</time></dd>
+          <div class="eval-summary__field eval-summary__field--wide">
+            <dt class="eval-summary__label">Дата оценки</dt>
+            ${dateDd}
           </div>
         </dl>
       </div>
@@ -2022,6 +2707,34 @@ async function saveHumanEval(stem) {
 
 /* --- Compare view --- */
 
+function evaluationFingerprint(ev) {
+  if (!ev || typeof ev !== "object") return "";
+  const crit = Array.isArray(ev.criteria) ? ev.criteria : [];
+  const sorted = crit
+    .slice()
+    .sort((a, b) => String(a.id).localeCompare(String(b.id)))
+    .map((c) => [c.id, c.score, c.comment != null ? String(c.comment) : ""]);
+  return JSON.stringify({
+    oa: ev.overall_average,
+    at: ev.evaluated_at != null ? String(ev.evaluated_at) : "",
+    c: sorted,
+  });
+}
+
+function compareEvalCacheMatches(ws, stem) {
+  if (!_compareEvalCache || !ws || stem !== selectedStem) return false;
+  const crit = ws.evaluation_criteria || "";
+  const aiFp = evaluationFingerprint(ws.evaluation);
+  const huFp = evaluationFingerprint(ws.human_evaluation);
+  const c = _compareEvalCache;
+  return (
+    c.stem === stem &&
+    c.criteria === crit &&
+    c.aiFp === aiFp &&
+    c.huFp === huFp
+  );
+}
+
 function diffClass(pct) {
   if (pct == null) return "";
   if (pct <= 20) return "ok";
@@ -2052,6 +2765,16 @@ async function runComparison(stem) {
       return;
     }
     const data = await r.json();
+    const wsSnap = _lastWorkspaceData;
+    if (wsSnap && selectedStem === stem) {
+      _compareEvalCache = {
+        stem,
+        criteria: wsSnap.evaluation_criteria || "",
+        aiFp: evaluationFingerprint(wsSnap.evaluation),
+        huFp: evaluationFingerprint(wsSnap.human_evaluation),
+        data,
+      };
+    }
     renderCompareResult(data);
   } catch (e) {
     if (summaryEl) summaryEl.innerHTML = `<p style="color:var(--danger)">${escapeHtml(String(e))}</p>`;
@@ -2112,7 +2835,7 @@ function renderCompareResult(data) {
   if (data.llm_analysis) {
     analysisEl.innerHTML = `
       <div class="compare-analysis-title">Анализ ИИ</div>
-      <div>${escapeHtml(data.llm_analysis)}</div>
+      <div class="compare-analysis-body">${formatCompareAnalysisHtml(data.llm_analysis)}</div>
     `;
   } else {
     analysisEl.innerHTML = "";
@@ -2134,21 +2857,28 @@ async function uploadFile(file) {
 async function uploadFiles(files) {
   if (!files || !files.length) return;
   const banner = document.getElementById("workspace-job-banner");
-  if (banner) {
-    banner.style.display = "block";
-    banner.textContent = `Загрузка ${files.length} файл(ов)…`;
+  const bannerText = document.getElementById("workspace-job-text");
+  const cancelBtn = document.getElementById("workspace-job-cancel");
+  const afterStop = document.getElementById("workspace-job-after-stop");
+  if (banner && bannerText) {
+    banner.style.display = "flex";
+    bannerText.textContent = `Загрузка ${files.length} файл(ов)…`;
+    if (cancelBtn) cancelBtn.hidden = true;
+    if (afterStop) afterStop.hidden = true;
   }
   let lastStem = null;
   for (let i = 0; i < files.length; i++) {
-    if (banner) banner.textContent = `Загрузка ${i + 1} / ${files.length}: ${files[i].name}…`;
+    if (bannerText) bannerText.textContent = `Загрузка ${i + 1} / ${files.length}: ${files[i].name}…`;
     const stem = await uploadFile(files[i]);
     if (stem) lastStem = stem;
   }
   if (banner) banner.style.display = "none";
+  if (cancelBtn) cancelBtn.hidden = true;
   if (lastStem) {
     selectedStem = lastStem;
     await loadLibrary();
     startLibraryPoll();
+    collapseSidebarOnMobileIfNeeded();
     await loadWorkspace(lastStem);
     document.querySelectorAll(".library-row").forEach((el) => {
       el.classList.toggle("selected", el.dataset.stem === selectedStem);
@@ -2186,24 +2916,48 @@ function setupDropzone() {
 }
 
 const SIDEBAR_COLLAPSED_KEY = "fresh-fa-sidebar-collapsed";
+/** Совпадает с max-width в app.css (колонка + мобильная сетка). */
+const MOBILE_LAYOUT_MAX_PX = 880;
+
+/** @type {((collapsed: boolean, persist?: boolean) => void) | null} */
+let applySidebarCollapsed = null;
+
+/** После выбора записи на узком экране — как «Скрыть панель», без записи в localStorage (десктоп-настройка не затирается). */
+function collapseSidebarOnMobileIfNeeded() {
+  if (!applySidebarCollapsed) return;
+  try {
+    if (!window.matchMedia(`(max-width: ${MOBILE_LAYOUT_MAX_PX}px)`).matches) return;
+  } catch (_) {
+    return;
+  }
+  applySidebarCollapsed(true, false);
+}
 
 function setupSidebarToggle() {
   const shell = document.getElementById("app-shell");
   const collapseBtn = document.getElementById("sidebar-collapse");
   const expandBtn = document.getElementById("sidebar-expand");
+  const expandMobile = document.getElementById("sidebar-expand-mobile");
   if (!shell || !collapseBtn || !expandBtn) return;
 
-  function apply(collapsed) {
+  function apply(collapsed, persist = true) {
     shell.classList.toggle("sidebar-collapsed", collapsed);
     expandBtn.setAttribute("aria-hidden", collapsed ? "false" : "true");
     collapseBtn.setAttribute("aria-hidden", collapsed ? "true" : "false");
-    try {
-      if (collapsed) localStorage.setItem(SIDEBAR_COLLAPSED_KEY, "1");
-      else localStorage.removeItem(SIDEBAR_COLLAPSED_KEY);
-    } catch (_) {
-      /* ignore */
+    if (expandMobile) {
+      expandMobile.setAttribute("aria-hidden", collapsed ? "false" : "true");
+    }
+    if (persist) {
+      try {
+        if (collapsed) localStorage.setItem(SIDEBAR_COLLAPSED_KEY, "1");
+        else localStorage.removeItem(SIDEBAR_COLLAPSED_KEY);
+      } catch (_) {
+        /* ignore */
+      }
     }
   }
+
+  applySidebarCollapsed = apply;
 
   let initial = false;
   try {
@@ -2215,6 +2969,7 @@ function setupSidebarToggle() {
 
   collapseBtn.addEventListener("click", () => apply(true));
   expandBtn.addEventListener("click", () => apply(false));
+  if (expandMobile) expandMobile.addEventListener("click", () => apply(false));
 }
 
 async function initAuthUi() {
@@ -2267,6 +3022,109 @@ async function initAuthUi() {
   }
 }
 
+function setupWorkspaceJobCancel() {
+  document.addEventListener(
+    "click",
+    async (e) => {
+      const raw = e.target;
+      const btn = raw && raw.closest && raw.closest("#workspace-job-cancel");
+      if (!btn || btn.disabled) return;
+      const id =
+        btn.getAttribute("data-job-id") ||
+        (btn.dataset && btn.dataset.jobId) ||
+        "";
+      if (!id) {
+        alert("Нет id задачи — обновите страницу.");
+        return;
+      }
+      e.preventDefault();
+      e.stopPropagation();
+      btn.disabled = true;
+      btn.setAttribute("aria-busy", "true");
+      const ac = new AbortController();
+      const to = setTimeout(() => ac.abort(), 45000);
+      try {
+        const r = await apiFetch(`${API}/api/jobs/${encodeURIComponent(id)}/cancel`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: "{}",
+          signal: ac.signal,
+        });
+        clearTimeout(to);
+        let data = {};
+        const ct = (r.headers.get("content-type") || "").includes("application/json");
+        if (ct) data = await r.json().catch(() => ({}));
+        else if (!r.ok) {
+          const t = await r.text().catch(() => "");
+          data = { detail: t || r.statusText };
+        }
+        if (!r.ok) {
+          const d = data.detail;
+          alert(
+            typeof d === "string"
+              ? d
+              : Array.isArray(d)
+                ? d.map((x) => (x && x.msg) || String(x)).join("; ")
+                : d
+                  ? JSON.stringify(d)
+                  : "Не удалось остановить",
+          );
+          return;
+        }
+        if (selectedStem) await loadWorkspace(selectedStem, true);
+        await loadLibrary();
+      } catch (err) {
+        clearTimeout(to);
+        if (err && err.name === "AbortError") {
+          alert("Таймаут запроса — сервер не ответил. Проверьте, что веб-сервер запущен.");
+        } else {
+          alert(String(err));
+        }
+      } finally {
+        btn.disabled = false;
+        btn.removeAttribute("aria-busy");
+      }
+    },
+    true,
+  );
+}
+
+function setupWorkspacePipelineRestart() {
+  document.addEventListener(
+    "click",
+    async (e) => {
+      const res = e.target && e.target.closest && e.target.closest("#workspace-job-resume");
+      const rst = e.target && e.target.closest && e.target.closest("#workspace-job-restart-full");
+      if (!res && !rst) return;
+      e.preventDefault();
+      e.stopPropagation();
+      const stem = selectedStem;
+      if (!stem) return;
+      const url = res
+        ? `${API}/api/workspace/${encodeURIComponent(stem)}/pipeline/resume`
+        : `${API}/api/workspace/${encodeURIComponent(stem)}/pipeline/restart`;
+      try {
+        const r = await apiFetch(url, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: "{}",
+        });
+        const data = await r.json().catch(() => ({}));
+        if (!r.ok) {
+          alert(flattenApiDetail(data.detail) || "Не удалось запустить");
+          return;
+        }
+        await loadLibrary();
+        startLibraryPoll();
+        await loadWorkspace(stem, true);
+      } catch (err) {
+        alert(String(err));
+      }
+    },
+    true,
+  );
+}
+
 document.addEventListener("DOMContentLoaded", () => {
   initAuthUi();
   setupSidebarToggle();
@@ -2276,5 +3134,8 @@ document.addEventListener("DOMContentLoaded", () => {
   setupCriteriaDialogs();
   setupMetaPanel();
   setupDropzone();
+  setupWorkspaceJobCancel();
+  setupWorkspacePipelineRestart();
+  setupWorkspaceJobStreamToggle();
   loadLibrary();
 });

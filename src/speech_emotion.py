@@ -483,10 +483,9 @@ def build_speech_emotion_sidecar(
 
 
 def write_tone_json(data: dict[str, Any], out_path: Path) -> None:
-    out_path.parent.mkdir(parents=True, exist_ok=True)
-    out_path.write_text(
-        json.dumps(data, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
-    )
+    from src.atomic_json import atomic_write_json
+
+    atomic_write_json(out_path, data, indent=2)
 
 
 SER_LABEL_RU: dict[str, str] = {

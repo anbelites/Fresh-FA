@@ -10,7 +10,7 @@
       href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="/static/app.css" />
+    <link rel="stylesheet" href="/static/app.css?v=43" />
   </head>
   <body>
     <div class="app-shell" id="app-shell">
@@ -40,8 +40,25 @@
             aria-label="Скрыть панель"
             title="Скрыть панель"
           >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <svg class="sidebar-toggle-icon sidebar-toggle-icon--when-wide" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
               <polyline points="15 18 9 12 15 6" />
+            </svg>
+            <svg class="sidebar-toggle-icon sidebar-toggle-icon--when-narrow" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <polyline points="6 15 12 9 18 15" />
+            </svg>
+          </button>
+          <button
+            type="button"
+            class="sidebar-icon-btn"
+            id="sidebar-expand-mobile"
+            aria-label="Показать панель"
+            title="Показать панель"
+          >
+            <svg class="sidebar-toggle-icon sidebar-toggle-icon--when-wide" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <polyline points="9 18 15 12 9 6" />
+            </svg>
+            <svg class="sidebar-toggle-icon sidebar-toggle-icon--when-narrow" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <polyline points="6 9 12 15 18 9" />
             </svg>
           </button>
         </div>
@@ -50,8 +67,51 @@
           <label for="file-input">Загрузить видео</label>
           <span class="dropzone-or">или перетащите</span>
         </div>
-        <div class="sidebar-label-row">
+        <div class="sidebar-label-row" id="library-toolbar-label-row">
           <div class="sidebar-label">Видео</div>
+          <div class="library-sort" id="library-sort">
+            <button
+              type="button"
+              class="library-sort-trigger"
+              id="library-sort-trigger"
+              aria-haspopup="listbox"
+              aria-expanded="false"
+              aria-controls="library-sort-listbox"
+              aria-label="Сортировка списка"
+              title="Порядок записей в списке"
+            >
+              <span class="library-sort-trigger-label" id="library-sort-trigger-label">Сначала новые</span>
+              <span class="library-sort-trigger-chevron" aria-hidden="true">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M6 9l6 6 6-6" />
+                </svg>
+              </span>
+            </button>
+            <ul class="library-sort-menu" id="library-sort-listbox" role="listbox" aria-labelledby="library-sort-trigger" hidden>
+              <li role="option" class="library-sort-option" tabindex="-1" data-value="date_desc">Сначала новые</li>
+              <li role="option" class="library-sort-option" tabindex="-1" data-value="date_asc">Сначала старые</li>
+              <li role="option" class="library-sort-option" tabindex="-1" data-value="name_asc">По имени A→Z</li>
+              <li role="option" class="library-sort-option" tabindex="-1" data-value="name_desc">По имени Z→A</li>
+            </ul>
+            <select id="library-sort-select" class="library-sort-select-native visually-hidden" tabindex="-1" aria-hidden="true">
+              <option value="date_desc">Сначала новые</option>
+              <option value="date_asc">Сначала старые</option>
+              <option value="name_asc">По имени A→Z</option>
+              <option value="name_desc">По имени Z→A</option>
+            </select>
+          </div>
+          <button
+            type="button"
+            class="library-toolbar-toggle library-search-filter-icon"
+            id="library-search-filter-icon"
+            aria-label="Фильтрация списка"
+            aria-hidden="true"
+            title="Фильтрация списка"
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
+            </svg>
+          </button>
           <div
             class="library-toolbar-slide library-toolbar-slide--search"
             id="library-search-wrap"
@@ -77,30 +137,6 @@
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
               <circle cx="11" cy="11" r="7" />
               <path d="M21 21l-4.35-4.35" />
-            </svg>
-          </button>
-          <div
-            class="library-toolbar-slide library-toolbar-slide--sort"
-            id="library-sort-wrap"
-            aria-hidden="true"
-          >
-            <div class="library-sort-segment segment-group segment-group--sidebar" role="radiogroup" aria-label="Сортировка списка">
-              <button type="button" class="segment-btn segment-btn--active" data-sort="date_desc" aria-pressed="true" tabindex="-1" title="Сначала новые">Новые</button>
-              <button type="button" class="segment-btn" data-sort="date_asc" aria-pressed="false" tabindex="-1" title="Сначала старые">Старые</button>
-              <button type="button" class="segment-btn" data-sort="name_asc" aria-pressed="false" tabindex="-1" title="По имени A→Z">A → Z</button>
-              <button type="button" class="segment-btn" data-sort="name_desc" aria-pressed="false" tabindex="-1" title="По имени Z→A">Z → A</button>
-            </div>
-          </div>
-          <button
-            type="button"
-            class="library-toolbar-toggle library-sort-toggle"
-            id="library-sort-toggle"
-            aria-label="Сортировка списка"
-            aria-expanded="false"
-            aria-controls="library-sort-wrap"
-          >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-              <path d="M3 6h18M7 12h10M11 18h2" />
             </svg>
           </button>
         </div>
@@ -131,8 +167,11 @@
         aria-label="Показать панель"
         title="Показать панель"
       >
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <svg class="sidebar-toggle-icon sidebar-toggle-icon--when-wide" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
           <polyline points="9 18 15 12 9 6" />
+        </svg>
+        <svg class="sidebar-toggle-icon sidebar-toggle-icon--when-narrow" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <polyline points="6 9 12 15 18 9" />
         </svg>
       </button>
 
@@ -140,7 +179,7 @@
         <div id="workspace-empty" class="workspace-empty-state">
           <div class="workspace-hero-card">
             <header class="workspace-hero__header">
-              <h2 class="workspace-hero__title">Выберите запись слева</h2>
+              <h2 class="workspace-hero__title">Выберите запись</h2>
               <p class="workspace-hero__lead">
                 Плеер, транскрипт с эмоциями по аудио и оценка по чеклисту — на одном экране.
               </p>
@@ -150,8 +189,61 @@
 
         <div id="workspace" class="workspace" style="display: none">
           <header class="workspace-head workspace-head--card">
-            <h2 class="workspace-title" id="workspace-title">—</h2>
-            <p class="workspace-banner workspace-banner--job" id="workspace-job-banner" style="display: none"></p>
+            <div class="workspace-title-row">
+              <span
+                class="status-dot-wrap workspace-head-status-wrap"
+                id="workspace-head-status-wrap"
+                title=""
+              >
+                <span class="status-dot" id="workspace-head-status-dot" aria-hidden="true"></span>
+              </span>
+              <div class="workspace-title-text">
+                <h2 class="workspace-title" id="workspace-title">—</h2>
+                <p class="workspace-title-meta" id="workspace-title-meta"></p>
+              </div>
+            </div>
+            <div
+              class="workspace-banner workspace-banner--job workspace-job-banner"
+              id="workspace-job-banner"
+              style="display: none"
+              role="status"
+            >
+              <div class="workspace-job-banner-main">
+                <span class="workspace-job-text" id="workspace-job-text"></span>
+                <div class="workspace-job-actions">
+                  <button
+                    type="button"
+                    class="btn-job-details"
+                    id="workspace-job-details"
+                    hidden
+                    aria-expanded="false"
+                    aria-controls="workspace-job-stream-wrap"
+                  >
+                    Подробности
+                  </button>
+                  <button type="button" class="btn-job-cancel" id="workspace-job-cancel" hidden>
+                    Остановить
+                  </button>
+                  <div class="workspace-job-after-stop" id="workspace-job-after-stop" hidden>
+                    <button type="button" class="btn-job-resume" id="workspace-job-resume">
+                      Возобновить
+                    </button>
+                    <button type="button" class="btn-job-restart" id="workspace-job-restart-full">
+                      С начала
+                    </button>
+                  </div>
+                </div>
+              </div>
+              <div
+                class="workspace-job-stream-wrap"
+                id="workspace-job-stream-wrap"
+                hidden
+                role="region"
+                aria-label="Ход рассуждений модели"
+              >
+                <pre class="workspace-job-stream-text" id="workspace-job-stream-text"></pre>
+              </div>
+            </div>
           </header>
 
           <div class="workspace-layout">
@@ -198,6 +290,13 @@
                 <div class="eval-block-head-actions">
                   <button
                     type="button"
+                    class="eval-compare-btn"
+                    id="eval-compare"
+                    title="Сравнить ИИ и ручную оценку"
+                    disabled
+                  >Сравнить</button>
+                  <button
+                    type="button"
                     class="eval-action-btn eval-save-human-btn"
                     id="human-eval-save"
                     title="Сохранить ручную оценку"
@@ -210,13 +309,6 @@
                       <polyline points="7 3 7 8 15 8"/>
                     </svg>
                   </button>
-                  <button
-                    type="button"
-                    class="eval-compare-btn"
-                    id="eval-compare"
-                    title="Сравнить ИИ и ручную оценку"
-                    disabled
-                  >Сравнить</button>
                   <button
                     type="button"
                     class="eval-refresh-btn"
@@ -267,15 +359,15 @@
       <form class="criteria-dlg-form" id="criteria-new-form">
         <h3 class="criteria-dlg-title" id="criteria-new-title">Новый чеклист</h3>
         <p class="criteria-dlg-hint">
-          Файл сохранится в папку <code>config</code>. Имя — латиница, цифры, дефис, например
-          <code>sales_checklist.yaml</code>.
+          Чеклист хранится в базе данных. Имя — латиница, цифры, дефис, например
+          <code>sales_checklist</code>.
         </p>
-        <label class="criteria-dlg-label" for="criteria-new-name">Имя файла</label>
+        <label class="criteria-dlg-label" for="criteria-new-name">Имя чеклиста</label>
         <input
           type="text"
           id="criteria-new-name"
           class="criteria-dlg-input"
-          placeholder="my_checklist.yaml"
+          placeholder="my_checklist"
           autocomplete="off"
         />
         <label class="criteria-dlg-label" for="criteria-new-copy-from">Основа</label>
@@ -317,8 +409,22 @@
           <h3 class="meta-dialog-title" id="meta-dialog-title">Настройки записи</h3>
           <button type="button" class="meta-dialog-close" id="meta-dialog-close" aria-label="Закрыть">×</button>
         </div>
-        <p class="meta-dialog-stem" id="meta-dialog-stem-label"></p>
         <div class="meta-form" id="meta-form">
+          <div class="meta-row">
+            <label class="meta-label" for="meta-display-title">Название</label>
+            <input
+              type="text"
+              id="meta-display-title"
+              class="meta-input"
+              maxlength="200"
+              autocomplete="off"
+              placeholder="Как показывать в списке и в заголовке"
+            />
+          </div>
+          <p class="meta-dialog-stem" id="meta-dialog-stem-hint">
+            <span class="meta-dialog-stem-prefix">Запись (stem):</span>
+            <code id="meta-dialog-stem-code"></code>
+          </p>
           <div class="meta-row">
             <label class="meta-label" for="criteria-select">Чеклист</label>
             <select id="criteria-select" class="meta-select" aria-label="Чеклист для просмотра и генерации оценки"></select>
@@ -370,6 +476,8 @@
       </div>
     </dialog>
 
-    <script src="/static/app.js?v=23"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked@15.0.6/marked.min.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/dompurify@3.2.4/dist/purify.min.js" crossorigin="anonymous"></script>
+    <script src="/static/app.js?v=45"></script>
   </body>
 </html>
