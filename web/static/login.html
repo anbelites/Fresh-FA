@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Вход — Fresh FA</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/static/app.css" />
+    <style>
+      .login-page {
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 1.5rem;
+        background: var(--paper);
+      }
+      .login-card {
+        width: 100%;
+        max-width: 400px;
+        background: var(--card);
+        border-radius: var(--radius-lg);
+        box-shadow: var(--shadow);
+        padding: 2rem 1.75rem;
+        border: 1px solid var(--line);
+      }
+      .login-card h1 {
+        font-family: var(--font-body);
+        font-size: 1.5rem;
+        font-weight: 700;
+        letter-spacing: -0.03em;
+        margin: 0 0 0.35rem;
+        color: var(--ink);
+      }
+      .login-card p.sub {
+        color: var(--muted);
+        font-size: 0.88rem;
+        margin: 0 0 1.5rem;
+      }
+      .login-field {
+        margin-bottom: 1rem;
+      }
+      .login-field label {
+        display: block;
+        font-size: 0.72rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: var(--muted);
+        margin-bottom: 0.35rem;
+      }
+      .login-field input {
+        width: 100%;
+        font: inherit;
+        padding: 0.55rem 0.75rem;
+        border-radius: var(--radius-sm);
+        border: 1px solid var(--line);
+        background: #fff;
+      }
+      .login-field input:focus {
+        outline: 2px solid rgba(0, 61, 255, 0.25);
+        border-color: var(--brand);
+      }
+      .login-actions {
+        margin-top: 1.25rem;
+      }
+      .login-btn {
+        width: 100%;
+        font: inherit;
+        font-weight: 600;
+        padding: 0.65rem 1rem;
+        border: none;
+        border-radius: 10px;
+        background: var(--brand);
+        color: #fff;
+        cursor: pointer;
+      }
+      .login-btn:hover {
+        filter: brightness(1.06);
+      }
+      .login-btn:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+      }
+      .login-error {
+        color: var(--danger);
+        font-size: 0.88rem;
+        margin-top: 0.75rem;
+        display: none;
+      }
+      .login-error.visible {
+        display: block;
+      }
+      .login-disabled {
+        color: var(--muted);
+        font-size: 0.9rem;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="login-page">
+      <div class="login-card">
+        <h1>Вход</h1>
+        <p class="sub">Учётная запись домена (Active Directory)</p>
+        <p id="login-disabled" class="login-disabled" style="display: none">
+          Вход через AD не включён на сервере. Задайте AD_AUTH_ENABLED и параметры LDAP в конфигурации.
+        </p>
+        <form id="login-form" autocomplete="on">
+          <div class="login-field">
+            <label for="username">Имя пользователя</label>
+            <input
+              id="username"
+              name="username"
+              type="text"
+              autocomplete="username"
+              placeholder="CRM\пользователь"
+              title="Формат: ИМЯ_ДОМЕНА\логин (например CRM\ivanov)"
+              required
+              maxlength="256"
+            />
+          </div>
+          <div class="login-field">
+            <label for="password">Пароль</label>
+            <input id="password" name="password" type="password" autocomplete="current-password" required />
+          </div>
+          <div class="login-actions">
+            <button type="submit" class="login-btn" id="login-submit">Войти</button>
+          </div>
+          <p id="login-error" class="login-error" role="alert"></p>
+        </form>
+      </div>
+    </div>
+    <script>
+      const API = "";
+      const params = new URLSearchParams(location.search);
+      const nextUrl = params.get("next") || "/";
+
+      function humanizeLoginError(raw) {
+        const s = String(raw || "").trim();
+        const low = s.toLowerCase();
+        if (low === "invalidcredentials" || low.includes("invalid credentials")) {
+          return "Неверное имя пользователя или пароль.";
+        }
+        return s;
+      }
+
+      async function init() {
+        const r = await fetch(API + "/api/auth/status", { credentials: "same-origin" });
+        const s = await r.json();
+        if (!s.ad_auth_enabled) {
+          document.getElementById("login-form").style.display = "none";
+          document.getElementById("login-disabled").style.display = "block";
+          return;
+        }
+        document.getElementById("login-form").addEventListener("submit", onSubmit);
+      }
+
+      async function onSubmit(e) {
+        e.preventDefault();
+        const errEl = document.getElementById("login-error");
+        const btn = document.getElementById("login-submit");
+        errEl.classList.remove("visible");
+        errEl.textContent = "";
+        const username = document.getElementById("username").value.trim();
+        const password = document.getElementById("password").value;
+        btn.disabled = true;
+        try {
+          const r = await fetch(API + "/api/auth/login", {
+            method: "POST",
+            credentials: "same-origin",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ username, password }),
+          });
+          if (!r.ok) {
+            let msg = "Ошибка входа";
+            try {
+              const j = await r.json();
+              if (j.detail) msg = typeof j.detail === "string" ? j.detail : JSON.stringify(j.detail);
+            } catch (_) {}
+            errEl.textContent = humanizeLoginError(msg);
+            errEl.classList.add("visible");
+            return;
+          }
+          location.href = nextUrl.startsWith("/") ? nextUrl : "/";
+        } catch (x) {
+          errEl.textContent = String(x);
+          errEl.classList.add("visible");
+        } finally {
+          btn.disabled = false;
+        }
+      }
+
+      init();
+    </script>
+  </body>
+</html>

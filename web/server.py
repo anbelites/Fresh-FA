@@ -7,6 +7,7 @@ from __future__ import annotations
 import csv
 import io
 import json
+import os
 import re
 import shutil
 import sys
@@ -26,10 +27,20 @@ load_dotenv(ROOT / ".env", override=True)
 
 from pydantic import BaseModel
 
-from fastapi import FastAPI, File, HTTPException, UploadFile
+from fastapi import FastAPI, File, HTTPException, Request, UploadFile
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
+from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.middleware.sessions import SessionMiddleware
+from starlette.responses import RedirectResponse
 
+from src.ad_auth import (
+    ad_auth_enabled,
+    fetch_ad_display_name,
+    require_session_secret,
+    validate_ad_config_at_startup,
+    verify_user_password,
+)
 from src.paths import (
     CONFIG_DIR,
     CRITERIA_FILE,
@@ -67,17 +78,70 @@ init_db()
 
 app = FastAPI(title="Fresh FA", version="2")
 
+_SESSION_MAX_AGE = int(os.environ.get("SESSION_MAX_AGE_SEC", str(60 * 60 * 24 * 7)))
+_SESSION_HTTPS_ONLY = os.environ.get("SESSION_COOKIE_SECURE", "").strip().lower() in (
+    "1",
+    "true",
+    "yes",
+)
+
+
+class _AuthEnforcementMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: Request, call_next):  # type: ignore[override]
+        if not ad_auth_enabled():
+            return await call_next(request)
+        path = request.scope.get("path") or ""
+        if path.startswith("/static/"):
+            return await call_next(request)
+        public_api = frozenset(
+            {
+                "/api/health",
+                "/api/auth/login",
+                "/api/auth/logout",
+                "/api/auth/me",
+                "/api/auth/status",
+            }
+        )
+        if path in public_api:
+            return await call_next(request)
+        if path.startswith("/api/"):
+            if not request.session.get("user"):
+                return JSONResponse(
+                    {"detail": "Требуется вход в систему"},
+                    status_code=401,
+                )
+            return await call_next(request)
+        if path == "/login.html":
+            return await call_next(request)
+        if path in ("/", "/dashboard"):
+            if not request.session.get("user"):
+                return RedirectResponse(url="/login.html", status_code=302)
+            return await call_next(request)
+        return await call_next(request)
+
+
+app.add_middleware(_AuthEnforcementMiddleware)
+app.add_middleware(
+    SessionMiddleware,
+    secret_key=require_session_secret(),
+    session_cookie="fa_session",
+    max_age=_SESSION_MAX_AGE,
+    same_site="lax",
+    https_only=_SESSION_HTTPS_ONLY,
+)
+
 
 @app.on_event("startup")
 def _migrate_yaml_to_db() -> None:
     """One-time import of managers/locations from YAML config if DB tables are empty."""
+    validate_ad_config_at_startup()
     if not _db.list_managers():
         _db.import_managers_from_yaml(_load_yaml_list(MANAGERS_FILE, "managers"))
     if not _db.list_locations():
         _db.import_locations_from_yaml(_load_yaml_list(LOCATIONS_FILE, "locations"))
 
+
 import concurrent.futures
-import os
 
 _db = DB()
 _MAX_WORKERS = int(os.environ.get("FA_MAX_WORKERS", "2"))
@@ -275,6 +339,47 @@ def _jobs_latest_by_stem() -> dict[str, dict]:
 @app.get("/api/health")
 def health() -> dict:
     return {"ok": True}
+
+
+@app.get("/api/auth/status")
+def auth_status() -> dict[str, bool]:
+    return {"ad_auth_enabled": ad_auth_enabled()}
+
+
+@app.get("/api/auth/me")
+def auth_me(request: Request) -> dict[str, Any]:
+    return {
+        "user": request.session.get("user"),
+        "display_name": request.session.get("display_name"),
+        "ad_auth_enabled": ad_auth_enabled(),
+    }
+
+
+class _LoginBody(BaseModel):
+    username: str
+    password: str
+
+
+@app.post("/api/auth/login")
+async def auth_login(request: Request, body: _LoginBody) -> JSONResponse:
+    if not ad_auth_enabled():
+        raise HTTPException(400, "Вход через Active Directory не включён (AD_AUTH_ENABLED).")
+    ok, err = verify_user_password(body.username, body.password)
+    if not ok:
+        raise HTTPException(401, err or "Ошибка входа")
+    name = body.username.strip()
+    display_name = fetch_ad_display_name(body.username, body.password)
+    request.session["user"] = name
+    request.session["display_name"] = display_name
+    return JSONResponse(
+        {"ok": True, "user": name, "display_name": display_name}
+    )
+
+
+@app.post("/api/auth/logout")
+async def auth_logout(request: Request) -> JSONResponse:
+    request.session.clear()
+    return JSONResponse({"ok": True})
 
 
 @app.post("/api/upload")
@@ -1292,6 +1397,14 @@ def api_export_csv(
 
 if STATIC_DIR.is_dir():
     app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
+
+
+@app.get("/login.html")
+def login_page() -> FileResponse:
+    f = STATIC_DIR / "login.html"
+    if not f.is_file():
+        raise HTTPException(404, "login.html не найден")
+    return FileResponse(f, media_type="text/html; charset=utf-8")
 
 
 @app.get("/")

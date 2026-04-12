@@ -1,5 +1,13 @@
 const API = "";
 
+/** Все запросы к API с cookie-сессией (вход через AD). */
+function apiFetch(input, init) {
+  const opts = init
+    ? { ...init, credentials: "same-origin" }
+    : { credentials: "same-origin" };
+  return globalThis.fetch(input, opts);
+}
+
 /** Человекочитаемые подписи SER; uncertain — после калибровки «плоского» softmax. */
 const SER_LABEL_DISPLAY = {
   uncertain: "неопределённо",
@@ -23,6 +31,7 @@ const STAGE_LABELS = {
   extract_audio: "1/7 — извлечение WAV из видео",
   diarization: "2/7 — диаризация (pyannote: кто когда говорит)",
   diarization_skip: "2/7 — без HF: диаризация будет грубее (MFCC)",
+  diarization_skip_windows: "2/7 — Windows: pyannote выкл., MFCC (см. PYANNOTE_ON_WINDOWS)",
   whisper_load: "3/7 — загрузка модели Whisper",
   asr_whisper: "4/7 — распознавание речи (Whisper, обычно самый долгий шаг)",
   segments_build: "5/7 — спикеры, слова, скорость речи, тон по кускам",
@@ -98,7 +107,7 @@ function stopWorkspaceJobPoll() {
 function clearWorkspaceView() {
   stopWorkspaceJobPoll();
   detachTranscriptMedia();
-  document.getElementById("workspace-empty").style.display = "block";
+  document.getElementById("workspace-empty").style.display = "flex";
   document.getElementById("workspace").style.display = "none";
   lastWorkspaceStem = null;
   lastWorkspaceCriteriaRequested = null;
@@ -279,16 +288,21 @@ function statusDotClass(item) {
 }
 
 async function fetchLibrary() {
-  const r = await fetch(`${API}/api/library`);
+  const r = await apiFetch(`${API}/api/library`);
   if (!r.ok) return [];
   return r.json();
 }
 
+function getLibrarySortValue() {
+  const active = document.querySelector(".library-sort-segment .segment-btn--active");
+  const v = active?.dataset?.sort;
+  return v && String(v).trim() !== "" ? v : "date_desc";
+}
+
 function filterAndSortLibrary(items) {
   const searchEl = document.getElementById("library-search");
-  const sortEl = document.getElementById("library-sort");
   const q = (searchEl?.value || "").trim().toLowerCase();
-  const sort = sortEl?.value || "date_desc";
+  const sort = getLibrarySortValue();
 
   let filtered = items;
   if (q) {
@@ -381,12 +395,15 @@ function createLibraryRow(item) {
   name.textContent = item.video_file || item.stem;
   const meta = document.createElement("div");
   meta.className = "library-item-meta";
-  const parts = [];
-  if (item.has_transcript) parts.push("текст");
-  if (item.has_tone) parts.push("тон");
-  if (item.has_evaluation) parts.push("оценка");
-  if (item.has_video_file === false) parts.push("нет файла в 01.Video");
-  meta.textContent = parts.length ? parts.join(" · ") : "—";
+  if (item.has_video_file === false) {
+    meta.textContent = "Видео отсутствует";
+  } else {
+    const parts = [];
+    if (item.has_transcript) parts.push("текст");
+    if (item.has_tone) parts.push("тон");
+    if (item.has_evaluation) parts.push("оценка");
+    meta.textContent = parts.length ? parts.join(" · ") : "—";
+  }
 
   text.appendChild(name);
   text.appendChild(meta);
@@ -419,7 +436,7 @@ function createLibraryRow(item) {
     ) {
       return;
     }
-    const r = await fetch(`${API}/api/library/${encodeURIComponent(item.stem)}`, {
+    const r = await apiFetch(`${API}/api/library/${encodeURIComponent(item.stem)}`, {
       method: "DELETE",
     });
     const data = await r.json().catch(() => ({}));
@@ -463,7 +480,7 @@ function renderLibrary(items) {
     empty.style.display = "block";
     empty.textContent = items.length
       ? "Нет записей по фильтру"
-      : "В папке 01.Video пока пусто — загрузите файл выше.";
+      : "Пока нет видео — загрузите файл выше.";
     return;
   }
   empty.style.display = "none";
@@ -542,26 +559,136 @@ async function loadLibrary() {
 
 function setupLibraryControls() {
   const searchEl = document.getElementById("library-search");
-  const sortEl = document.getElementById("library-sort");
-  if (searchEl) {
-    searchEl.addEventListener("input", () => renderLibrary(_allLibraryItems));
+  const searchWrap = document.getElementById("library-search-wrap");
+  const searchToggle = document.getElementById("library-search-toggle");
+  const sortWrap = document.getElementById("library-sort-wrap");
+  const sortToggle = document.getElementById("library-sort-toggle");
+  const seg = document.querySelector(".library-sort-segment");
+
+  function isSearchPanelOpen() {
+    return Boolean(searchWrap?.classList.contains("library-toolbar-slide--open"));
   }
-  if (sortEl) {
-    sortEl.addEventListener("change", () => renderLibrary(_allLibraryItems));
+
+  function isSortPanelOpen() {
+    return Boolean(sortWrap?.classList.contains("library-toolbar-slide--open"));
+  }
+
+  function setSortPanelOpen(open) {
+    if (!sortWrap || !seg) return;
+    if (open) setSearchPanelOpen(false);
+    sortWrap.classList.toggle("library-toolbar-slide--open", open);
+    sortWrap.setAttribute("aria-hidden", open ? "false" : "true");
+    for (const b of seg.querySelectorAll(".segment-btn")) {
+      b.tabIndex = open ? 0 : -1;
+    }
+  }
+
+  function setSearchPanelOpen(open) {
+    if (!searchWrap || !searchEl) return;
+    if (open) setSortPanelOpen(false);
+    searchWrap.classList.toggle("library-toolbar-slide--open", open);
+    searchWrap.setAttribute("aria-hidden", open ? "false" : "true");
+    searchEl.tabIndex = open ? 0 : -1;
+  }
+
+  function syncLibrarySearchToggle() {
+    if (!searchToggle) return;
+    const q = (searchEl?.value || "").trim();
+    const open = isSearchPanelOpen();
+    searchToggle.setAttribute("aria-expanded", open ? "true" : "false");
+    searchToggle.classList.toggle("library-search-toggle--filter-active", q.length > 0);
+  }
+
+  function syncSortToggle() {
+    if (!sortToggle) return;
+    const sort = getLibrarySortValue();
+    sortToggle.setAttribute("aria-expanded", isSortPanelOpen() ? "true" : "false");
+    sortToggle.classList.toggle("library-sort-toggle--nondefault", sort !== "date_desc");
+  }
+
+  if (searchEl) {
+    searchEl.addEventListener("input", () => {
+      renderLibrary(_allLibraryItems);
+      syncLibrarySearchToggle();
+    });
+  }
+
+  if (searchToggle && searchWrap && searchEl) {
+    searchToggle.addEventListener("click", () => {
+      setSearchPanelOpen(!isSearchPanelOpen());
+      syncLibrarySearchToggle();
+      syncSortToggle();
+      if (isSearchPanelOpen()) {
+        searchEl.focus();
+      }
+    });
+    searchEl.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") {
+        setSearchPanelOpen(false);
+        syncLibrarySearchToggle();
+        syncSortToggle();
+        searchToggle.focus();
+      }
+    });
+  }
+
+  if (sortToggle && sortWrap && seg) {
+    sortToggle.addEventListener("click", () => {
+      const next = !isSortPanelOpen();
+      setSortPanelOpen(next);
+      syncSortToggle();
+      syncLibrarySearchToggle();
+      if (next) {
+        const active = seg.querySelector(".segment-btn--active");
+        (active || seg.querySelector(".segment-btn"))?.focus();
+      }
+    });
+    seg.addEventListener("keydown", (e) => {
+      if (e.key !== "Escape") return;
+      if (!isSortPanelOpen()) return;
+      setSortPanelOpen(false);
+      syncSortToggle();
+      sortToggle.focus();
+    });
+  }
+
+  if (searchEl && searchWrap && (searchEl.value || "").trim()) {
+    setSearchPanelOpen(true);
+    syncLibrarySearchToggle();
+  } else {
+    setSearchPanelOpen(false);
+    syncLibrarySearchToggle();
+  }
+
+  setSortPanelOpen(false);
+  syncSortToggle();
+
+  if (seg) {
+    seg.addEventListener("click", (e) => {
+      const btn = e.target.closest(".segment-btn");
+      if (!btn || !seg.contains(btn)) return;
+      for (const b of seg.querySelectorAll(".segment-btn")) {
+        const on = b === btn;
+        b.classList.toggle("segment-btn--active", on);
+        b.setAttribute("aria-pressed", on ? "true" : "false");
+      }
+      renderLibrary(_allLibraryItems);
+      syncSortToggle();
+    });
   }
 }
 
 async function loadWorkspace(stem, silent, criteriaOverride) {
   const crit = resolveWorkspaceCriteriaQuery(stem, criteriaOverride);
   const q = crit ? `?criteria=${encodeURIComponent(crit)}` : "";
-  const r = await fetch(`${API}/api/workspace/${encodeURIComponent(stem)}${q}`);
+  const r = await apiFetch(`${API}/api/workspace/${encodeURIComponent(stem)}${q}`);
   if (!r.ok) return;
   const ws = await r.json();
   lastWorkspaceStem = stem;
   lastWorkspaceCriteriaRequested = ws.evaluation_criteria || ws.criteria?.active || null;
 
   document.getElementById("workspace-empty").style.display = "none";
-  document.getElementById("workspace").style.display = "block";
+  document.getElementById("workspace").style.display = "flex";
 
   const titleEl = document.getElementById("workspace-title");
   titleEl.textContent = ws.video_file || ws.stem;
@@ -576,7 +703,7 @@ async function loadWorkspace(stem, silent, criteriaOverride) {
     workspaceJobPollTimer = setInterval(async () => {
       const cPoll = resolveWorkspaceCriteriaQuery(stem, undefined);
       const qPoll = cPoll ? `?criteria=${encodeURIComponent(cPoll)}` : "";
-      const r2 = await fetch(`${API}/api/workspace/${encodeURIComponent(stem)}${qPoll}`);
+      const r2 = await apiFetch(`${API}/api/workspace/${encodeURIComponent(stem)}${qPoll}`);
       if (!r2.ok) return;
       const w2 = await r2.json();
       const j2 = w2.job;
@@ -610,9 +737,6 @@ async function loadWorkspace(stem, silent, criteriaOverride) {
   updateEvalToggleState(ws);
   updateEvalToolbar(ws);
 
-  if (!silent) {
-    document.getElementById("workspace").scrollIntoView({ behavior: "smooth", block: "start" });
-  }
 }
 
 function renderMediaAndTranscript(ws) {
@@ -1135,9 +1259,9 @@ async function openMetaDialog(stem) {
   if (stemLabel) stemLabel.textContent = stem;
   try {
     const [metaR, mR, lR] = await Promise.all([
-      fetch(`${API}/api/workspace/${encodeURIComponent(stem)}/meta`),
-      fetch(`${API}/api/managers`),
-      fetch(`${API}/api/locations`),
+      apiFetch(`${API}/api/workspace/${encodeURIComponent(stem)}/meta`),
+      apiFetch(`${API}/api/managers`),
+      apiFetch(`${API}/api/locations`),
     ]);
     if (!metaR.ok) {
       const d = await metaR.json().catch(() => ({}));
@@ -1147,6 +1271,15 @@ async function openMetaDialog(stem) {
     const managers = await mR.json();
     const locations = await lR.json();
     fillMetaForm({ managers, locations, meta });
+    try {
+      const wsR = await apiFetch(`${API}/api/workspace/${encodeURIComponent(stem)}`);
+      if (wsR.ok) {
+        const ws = await wsR.json();
+        updateEvalToolbar(ws);
+      }
+    } catch (_) {
+      /* чеклист подтянется при следующем loadWorkspace */
+    }
     if (typeof dlg.showModal === "function") dlg.showModal();
   } catch (e) {
     metaEditStem = null;
@@ -1182,7 +1315,7 @@ function setupMetaPanel() {
       const id = slugifyMetaId(name);
       const url = isManager ? `${API}/api/managers` : `${API}/api/locations`;
       try {
-        const r = await fetch(url, {
+        const r = await apiFetch(url, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ id, name }),
@@ -1217,7 +1350,7 @@ function setupMetaPanel() {
       const locationName = locationId ? locationSel.selectedOptions[0]?.textContent || null : null;
       const tagsRaw = (tagsIn?.value || "").split(",").map((s) => s.trim()).filter(Boolean);
       try {
-        const r = await fetch(`${API}/api/workspace/${encodeURIComponent(stem)}/meta`, {
+        const r = await apiFetch(`${API}/api/workspace/${encodeURIComponent(stem)}/meta`, {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -1293,7 +1426,7 @@ function setupEvalToolbar() {
     if (criteriaPopulate) return;
     const file = sel.value;
     try {
-      const r = await fetch(`${API}/api/criteria/active`, {
+      const r = await apiFetch(`${API}/api/criteria/active`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ file }),
@@ -1321,7 +1454,7 @@ function setupEvalToolbar() {
     if (!selectedStem || btn.disabled) return;
     const crit = sel.value || "";
     try {
-      const r = await fetch(
+      const r = await apiFetch(
         `${API}/api/workspace/${encodeURIComponent(selectedStem)}/re-evaluate`,
         {
           method: "POST",
@@ -1439,7 +1572,7 @@ function setupCriteriaDialogs() {
     const copyRaw = (newCopy.value || "").trim();
     const copyFrom = copyRaw ? copyRaw : null;
     try {
-      const r = await fetch(`${API}/api/criteria`, {
+      const r = await apiFetch(`${API}/api/criteria`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ filename: fn, copy_from: copyFrom }),
@@ -1450,7 +1583,7 @@ function setupCriteriaDialogs() {
         return;
       }
       const created = data.filename || fn;
-      await fetch(`${API}/api/criteria/active`, {
+      await apiFetch(`${API}/api/criteria/active`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ file: created }),
@@ -1469,7 +1602,7 @@ function setupCriteriaDialogs() {
       if (!sel || !sel.value || editBtn.disabled) return;
       const filename = sel.value;
       try {
-        const r = await fetch(`${API}/api/criteria/content/${encodeURIComponent(filename)}`);
+        const r = await apiFetch(`${API}/api/criteria/content/${encodeURIComponent(filename)}`);
         const data = await r.json().catch(() => ({}));
         if (!r.ok) {
           alert(flattenApiDetail(data.detail) || "Не удалось загрузить чеклист");
@@ -1533,7 +1666,7 @@ function setupCriteriaDialogs() {
         return;
       }
       try {
-        const r = await fetch(
+        const r = await apiFetch(
           `${API}/api/criteria/content/${encodeURIComponent(criteriaEditingFilename)}`,
           {
             method: "PUT",
@@ -1562,7 +1695,7 @@ function setupCriteriaDialogs() {
       if (!criteriaEditingFilename || editDelete.hidden) return;
       if (!confirm(`Удалить файл «${criteriaEditingFilename}» с диска?`)) return;
       try {
-        const r = await fetch(
+        const r = await apiFetch(
           `${API}/api/criteria/content/${encodeURIComponent(criteriaEditingFilename)}`,
           { method: "DELETE" }
         );
@@ -1871,7 +2004,7 @@ async function saveHumanEval(stem) {
   const q = critFile ? `?criteria=${encodeURIComponent(critFile)}` : "";
 
   try {
-    const r = await fetch(`${API}/api/workspace/${encodeURIComponent(stem)}/human-eval${q}`, {
+    const r = await apiFetch(`${API}/api/workspace/${encodeURIComponent(stem)}/human-eval${q}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ criteria, criteria_file: critFile }),
@@ -1908,7 +2041,7 @@ async function runComparison(stem) {
   const critFile = ws ? ws.evaluation_criteria : null;
 
   try {
-    const r = await fetch(`${API}/api/workspace/${encodeURIComponent(stem)}/compare-eval`, {
+    const r = await apiFetch(`${API}/api/workspace/${encodeURIComponent(stem)}/compare-eval`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ criteria: critFile }),
@@ -1989,7 +2122,7 @@ function renderCompareResult(data) {
 async function uploadFile(file) {
   const fd = new FormData();
   fd.append("file", file);
-  const r = await fetch(`${API}/api/upload`, { method: "POST", body: fd });
+  const r = await apiFetch(`${API}/api/upload`, { method: "POST", body: fd });
   const data = await r.json().catch(() => ({}));
   if (!r.ok) {
     alert(`${file.name}: ${data.detail || data.message || "Ошибка загрузки"}`);
@@ -2084,7 +2217,58 @@ function setupSidebarToggle() {
   expandBtn.addEventListener("click", () => apply(false));
 }
 
+async function initAuthUi() {
+  const bar = document.getElementById("auth-user-bar");
+  if (!bar) return;
+  try {
+    const sr = await apiFetch(`${API}/api/auth/status`);
+    const st = await sr.json();
+    if (!st.ad_auth_enabled) {
+      bar.style.display = "none";
+      return;
+    }
+    const mr = await apiFetch(`${API}/api/auth/me`);
+    const me = await mr.json();
+    if (me.user) {
+      const nameEl = bar.querySelector(".auth-user-name");
+      const subEl = bar.querySelector(".auth-user-sub");
+      const labelEl = bar.querySelector(".auth-user-label");
+      const dn = me.display_name && String(me.display_name).trim();
+      if (nameEl) {
+        if (dn) {
+          nameEl.textContent = dn;
+          if (subEl) {
+            subEl.textContent = me.user;
+            subEl.hidden = false;
+          }
+          if (labelEl) labelEl.textContent = "Пользователь";
+        } else {
+          nameEl.textContent = me.user;
+          if (subEl) {
+            subEl.textContent = "";
+            subEl.hidden = true;
+          }
+          if (labelEl) labelEl.textContent = "Учётная запись";
+        }
+      }
+      bar.style.display = "";
+      const logoutBtn = bar.querySelector(".auth-logout");
+      if (logoutBtn) {
+        logoutBtn.onclick = async () => {
+          await apiFetch(`${API}/api/auth/logout`, { method: "POST" });
+          window.location.href = "/login.html";
+        };
+      }
+    } else {
+      bar.style.display = "none";
+    }
+  } catch (_) {
+    bar.style.display = "none";
+  }
+}
+
 document.addEventListener("DOMContentLoaded", () => {
+  initAuthUi();
   setupSidebarToggle();
   setupLibraryControls();
   setupEvalToolbar();

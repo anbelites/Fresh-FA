@@ -5,6 +5,8 @@
 Переменные окружения (опционально):
   HF_TOKEN — токен Hugging Face (диаризация, загрузка моделей с Hub); в .env подхватывается с приоритетом над пустым env (см. load_dotenv override в run.py);
     примите условия модели pyannote/speaker-diarization-3.1 на huggingface.co
+  PYANNOTE_ON_WINDOWS=1 — на Windows pyannote по умолчанию отключён (torchcodec); включите только если настроили FFmpeg/torchcodec
+  SKIP_PYANNOTE=1 — не вызывать pyannote (MFCC-диаризация), на любой ОС
   PYANNOTE_NUM_SPEAKERS — если число говорящих известно (например 3: ведущий + два в диалоге), точнее кластеризация
   PYANNOTE_LABEL_SMOOTH_RADIUS — сглаживание меток pyannote по потоку слов (по умолчанию 3; 0 = выкл.)
   PYANNOTE_SEGMENT_SMOOTH_RADIUS — доп. сглаживание по строкам транскрипта с pyannote (по умолчанию 0; 1 — осторожно)
@@ -29,6 +31,21 @@
   OPENAI_BASE_URL — например https://api.deepseek.com/v1 для DeepSeek
   OPENAI_EVAL_MODEL — deepseek-reasoner (цепочка рассуждений) или deepseek-chat
   OPENAI_EVAL_MAX_TOKENS — для reasoner, лимит выхода JSON (по умолчанию 65536; у DeepSeek верхняя граница 65536)
+
+  Вход через Active Directory (LDAP), опционально:
+  AD_AUTH_ENABLED=1 — включить проверку логина для веб-интерфейса и /api (кроме /api/health и /api/auth/*)
+  SESSION_SECRET — обязательна длинная случайная строка (подпись cookie-сессии)
+  AD_LDAP_URI — ldap://dc.corp.local:389 или ldaps://… (на Windows можно не задавать — см. автообнаружение)
+  AD_LDAP_AUTO_DISCOVER=1 — по умолчанию: при пустом AD_LDAP_URI на Windows взять DC и DNS-имя домена из AD (WMI + .NET)
+  AD_LDAP_DISCOVER_PORT — порт для авто-URI (по умолчанию 389)
+  AD_USE_STARTTLS=1 — STARTTLS к ldap://; для ручного URI по умолчанию выкл., при автообнаружении — вкл., если не задано явно
+  Режим A (UPN): AD_BIND_UPN_TEMPLATE="{username}@corp.local"
+  Режим B (поиск): AD_SERVICE_BIND_DN, AD_SERVICE_BIND_PASSWORD, AD_SEARCH_BASE,
+    опционально AD_USER_SEARCH_FILTER="(sAMAccountName={username})", AD_SEARCH_SCOPE=BASE|SUBTREE
+  AD_USER_SEARCH_BASE — при UPN-входе можно задать DN базы поиска ФИО вместо defaultNamingContext с root DSE
+  AD_SKIP_DISPLAY_NAME=1 — не запрашивать displayName/ФИО в LDAP после входа
+  SESSION_MAX_AGE_SEC — время жизни сессии (по умолчанию 604800)
+  SESSION_COOKIE_SECURE=1 — cookie только по HTTPS
 
   python run.py serve [--host 127.0.0.1] [--port 8765] — веб-интерфейс (загрузка видео, списки, оценки)
 

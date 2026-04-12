@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import json
 import os
+import sys
 from collections import Counter
 from datetime import datetime, timezone
 from collections.abc import Callable
@@ -123,6 +124,26 @@ def _mfcc_word_level_enabled() -> bool:
         "true",
         "yes",
     )
+
+
+def _should_run_pyannote(hf: str | None) -> bool:
+    """
+    Pyannote 4.x тянет torchcodec; на Windows без «полного» FFmpeg shared DLL часто не грузятся
+    (OSError / libtorchcodec_*.dll). По умолчанию на win32 pyannote не вызываем — MFCC.
+    Включить вручную: PYANNOTE_ON_WINDOWS=1 (и настроить FFmpeg по доке torchcodec).
+    Полностью отключить pyannote: SKIP_PYANNOTE=1.
+    """
+    if not hf:
+        return False
+    if os.environ.get("SKIP_PYANNOTE", "").lower() in ("1", "true", "yes"):
+        return False
+    if sys.platform == "win32":
+        return os.environ.get("PYANNOTE_ON_WINDOWS", "").lower() in (
+            "1",
+            "true",
+            "yes",
+        )
+    return True
 
 
 def _load_diarization_rows(
@@ -555,12 +576,22 @@ def transcribe_video_to_structure(
         hf = _hf_token()
         diar_rows: list[tuple[float, float, str]] = []
         diar_error = ""
-        if hf:
+        skipped_pyannote: str | None = None
+        if _should_run_pyannote(hf):
             ping("diarization")
             try:
                 diar_rows = _load_diarization_rows(wav, hf)
             except Exception as e:
                 diar_error = str(e)
+        elif hf:
+            if sys.platform == "win32":
+                ping("diarization_skip_windows")
+                skipped_pyannote = "windows"
+                diar_error = ""
+            else:
+                ping("diarization_skip")
+                skipped_pyannote = "skip_env"
+                diar_error = "Pyannote отключён (SKIP_PYANNOTE=1) — используется MFCC."
         else:
             ping("diarization_skip")
             diar_error = "HF_TOKEN не задан — говорящие не различаются."
@@ -786,7 +817,15 @@ def transcribe_video_to_structure(
         if hf and not diar_rows and diar_error:
             result["diarization_error"] = diar_error
 
-        if diar_method == "mfcc_word_kmeans":
+        if skipped_pyannote == "windows":
+            result["diarization_note"] = (
+                "На Windows pyannote по умолчанию отключён (torchcodec/FFmpeg на этой ОС часто несовместимы). "
+                "Используется локальная диаризация (MFCC). Чтобы попытаться pyannote: PYANNOTE_ON_WINDOWS=1 в .env "
+                "(нужны совместимые FFmpeg DLL; см. документацию torchcodec)."
+            )
+        elif skipped_pyannote == "skip_env":
+            result["diarization_note"] = diar_error
+        elif diar_method == "mfcc_word_kmeans":
             if not hf:
                 result["diarization_note"] = (
                     "HF_TOKEN не задан — спикеры оценены локально: MFCC по каждому слову + KMeans и разрез по паузам. "

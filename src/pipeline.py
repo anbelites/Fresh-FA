@@ -10,6 +10,7 @@ _PIPELINE_STAGE_TEXT: dict[str, str] = {
     "extract_audio": "Аудио: извлечение WAV 16 kHz из видео",
     "diarization": "Диаризация: кто когда говорит (pyannote, может занять несколько минут)",
     "diarization_skip": "Диаризация: HF_TOKEN не задан — позже грубое разделение по MFCC",
+    "diarization_skip_windows": "Диаризация: на Windows без pyannote (MFCC); pyannote — только с PYANNOTE_ON_WINDOWS=1",
     "whisper_load": "Загрузка модели Whisper в память",
     "asr_whisper": "Распознавание речи (Whisper — обычно самый долгий этап)",
     "segments_build": "Сборка сегментов: спикеры, слова, скорость речи, тон по кускам",

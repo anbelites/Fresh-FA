@@ -7,7 +7,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;0,9..144,700&display=swap"
+      href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&display=swap"
       rel="stylesheet"
     />
     <link rel="stylesheet" href="/static/app.css" />
@@ -45,26 +45,82 @@
             </svg>
           </button>
         </div>
-        <div class="dropzone dropzone--sidebar" id="dropzone">
+        <div class="dropzone dropzone--sidebar dropzone--cta" id="dropzone">
           <input type="file" id="file-input" accept=".mp4,.mov,.mkv,.avi,.webm,.m4v,.m4a" multiple />
           <label for="file-input">Загрузить видео</label>
           <span class="dropzone-or">или перетащите</span>
         </div>
-        <div class="sidebar-label">Видео</div>
-        <div class="library-controls">
-          <input type="text" id="library-search" class="library-search" placeholder="Поиск по имени, менеджеру, тегам…" autocomplete="off" />
-          <select id="library-sort" class="library-sort" title="Сортировка">
-            <option value="date_desc">Новые</option>
-            <option value="date_asc">Старые</option>
-            <option value="name_asc">A → Z</option>
-            <option value="name_desc">Z → A</option>
-          </select>
+        <div class="sidebar-label-row">
+          <div class="sidebar-label">Видео</div>
+          <div
+            class="library-toolbar-slide library-toolbar-slide--search"
+            id="library-search-wrap"
+            aria-hidden="true"
+          >
+            <input
+              type="text"
+              id="library-search"
+              class="library-search library-search--slide"
+              placeholder="Поиск по имени, менеджеру, тегам…"
+              autocomplete="off"
+              tabindex="-1"
+            />
+          </div>
+          <button
+            type="button"
+            class="library-toolbar-toggle library-search-toggle"
+            id="library-search-toggle"
+            aria-label="Поиск по библиотеке"
+            aria-expanded="false"
+            aria-controls="library-search-wrap"
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <circle cx="11" cy="11" r="7" />
+              <path d="M21 21l-4.35-4.35" />
+            </svg>
+          </button>
+          <div
+            class="library-toolbar-slide library-toolbar-slide--sort"
+            id="library-sort-wrap"
+            aria-hidden="true"
+          >
+            <div class="library-sort-segment segment-group segment-group--sidebar" role="radiogroup" aria-label="Сортировка списка">
+              <button type="button" class="segment-btn segment-btn--active" data-sort="date_desc" aria-pressed="true" tabindex="-1" title="Сначала новые">Новые</button>
+              <button type="button" class="segment-btn" data-sort="date_asc" aria-pressed="false" tabindex="-1" title="Сначала старые">Старые</button>
+              <button type="button" class="segment-btn" data-sort="name_asc" aria-pressed="false" tabindex="-1" title="По имени A→Z">A → Z</button>
+              <button type="button" class="segment-btn" data-sort="name_desc" aria-pressed="false" tabindex="-1" title="По имени Z→A">Z → A</button>
+            </div>
+          </div>
+          <button
+            type="button"
+            class="library-toolbar-toggle library-sort-toggle"
+            id="library-sort-toggle"
+            aria-label="Сортировка списка"
+            aria-expanded="false"
+            aria-controls="library-sort-wrap"
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M3 6h18M7 12h10M11 18h2" />
+            </svg>
+          </button>
         </div>
         <div id="library-list" class="library-list"></div>
-        <p id="library-empty" class="library-empty" style="display: none">В папке 01.Video пока пусто — загрузите файл выше.</p>
-        <div class="sidebar-bottom">
-          <a href="/dashboard" class="sidebar-dashboard-link" target="_blank">Дашборд</a>
-          <a href="/api/export/csv" class="sidebar-export-link" target="_blank">Экспорт CSV</a>
+        <p id="library-empty" class="library-empty" style="display: none">Пока нет видео — загрузите файл выше.</p>
+        <div id="auth-user-bar" class="auth-user-bar" style="display: none" aria-live="polite">
+          <div class="auth-user-block">
+            <span class="auth-user-icon" aria-hidden="true">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                <circle cx="12" cy="7" r="4" />
+              </svg>
+            </span>
+            <div class="auth-user-text">
+              <span class="auth-user-label">Учётная запись</span>
+              <span class="auth-user-name"></span>
+              <span class="auth-user-sub" hidden></span>
+            </div>
+          </div>
+          <button type="button" class="auth-logout">Выйти</button>
         </div>
       </aside>
 
@@ -81,12 +137,19 @@
       </button>
 
       <main class="main">
-        <div id="workspace-empty" class="workspace-placeholder">
-          <p>Выберите запись слева — плеер, транскрипт с эмоциями по аудио и оценка по чеклисту.</p>
+        <div id="workspace-empty" class="workspace-empty-state">
+          <div class="workspace-hero-card">
+            <header class="workspace-hero__header">
+              <h2 class="workspace-hero__title">Выберите запись слева</h2>
+              <p class="workspace-hero__lead">
+                Плеер, транскрипт с эмоциями по аудио и оценка по чеклисту — на одном экране.
+              </p>
+            </header>
+          </div>
         </div>
 
         <div id="workspace" class="workspace" style="display: none">
-          <header class="workspace-head">
+          <header class="workspace-head workspace-head--card">
             <h2 class="workspace-title" id="workspace-title">—</h2>
             <p class="workspace-banner workspace-banner--job" id="workspace-job-banner" style="display: none"></p>
           </header>
@@ -95,47 +158,40 @@
             <div class="workspace-main">
               <div class="workspace-stack">
                 <div class="workspace-media-col">
-                  <p class="media-hint">Клик по строке транскрипта — переход к таймкоду</p>
                   <video id="transcript-video" controls playsinline preload="metadata"></video>
                   <audio id="transcript-audio" controls preload="metadata" style="display: none; width: 100%"></audio>
                   <p id="transcript-media-error" class="media-error" style="display: none"></p>
                 </div>
                 <div class="workspace-transcript-col">
-                  <div class="transcript-head-row">
-                    <h3 class="block-title">Транскрипт</h3>
-                    <details class="transcript-hints-details" id="transcript-hints-details" hidden>
-                      <summary class="transcript-hints-summary" aria-label="Справка по транскрипту">
-                        <span aria-hidden="true">?</span>
-                      </summary>
-                      <div class="transcript-hints-panel">
-                        <p id="transcript-asr-hint" class="tone-inline-hint tone-inline-hint--popover" style="display: none"></p>
-                        <p id="transcript-eval-hint" class="tone-inline-hint tone-inline-hint--popover" style="display: none"></p>
-                        <p id="transcript-ser-hint" class="tone-inline-hint tone-inline-hint--popover" style="display: none"></p>
+                  <section class="workspace-block transcript-head-plank" aria-label="Транскрипт">
+                    <div class="transcript-head-row">
+                      <div class="transcript-head-row__start">
+                        <h3 class="block-title">Транскрипт</h3>
+                        <details class="transcript-hints-details" id="transcript-hints-details" hidden>
+                          <summary class="transcript-hints-summary" aria-label="Справка по транскрипту">
+                            <span aria-hidden="true">?</span>
+                          </summary>
+                          <div class="transcript-hints-panel">
+                            <p id="transcript-asr-hint" class="tone-inline-hint tone-inline-hint--popover" style="display: none"></p>
+                            <p id="transcript-eval-hint" class="tone-inline-hint tone-inline-hint--popover" style="display: none"></p>
+                            <p id="transcript-ser-hint" class="tone-inline-hint tone-inline-hint--popover" style="display: none"></p>
+                          </div>
+                        </details>
                       </div>
-                    </details>
-                  </div>
-                  <p id="transcript-missing" class="block-missing" style="display: none"></p>
-                  <div class="seg-list" id="transcript-segments"></div>
+                      <p class="media-hint media-hint--transcript-head">Клик по строке транскрипта — переход к таймкоду</p>
+                    </div>
+                    <p id="transcript-missing" class="block-missing" style="display: none"></p>
+                    <div class="seg-list" id="transcript-segments"></div>
+                  </section>
                 </div>
               </div>
             </div>
 
             <div class="workspace-eval-col">
-              <div class="eval-criteria-bar" aria-label="Настройки чеклиста">
-                <label class="eval-criteria-label" for="criteria-select">Чеклист</label>
-                <select id="criteria-select" class="eval-criteria-select" aria-label="Чеклист для просмотра и генерации оценки"></select>
-                <button type="button" class="eval-criteria-btn" id="criteria-edit-btn" title="Редактировать состав критериев">
-                  Изменить
-                </button>
-                <button type="button" class="eval-criteria-btn eval-criteria-btn--primary" id="criteria-new-btn" title="Создать новый файл чеклиста">
-                  Новый чеклист
-                </button>
-              </div>
-
               <section class="workspace-block workspace-block--eval">
               <div class="eval-block-head">
                 <h3 class="block-title">Оценка по чеклисту</h3>
-                <div class="eval-mode-toggle" id="eval-mode-toggle">
+                <div class="eval-mode-toggle segment-group segment-group--panel" id="eval-mode-toggle">
                   <button type="button" class="eval-mode-btn eval-mode-btn--active" data-mode="ai">ИИ</button>
                   <button type="button" class="eval-mode-btn" data-mode="human">Человек</button>
                 </div>
@@ -258,11 +314,23 @@
     <dialog class="meta-dialog" id="meta-dialog" aria-labelledby="meta-dialog-title">
       <div class="meta-dialog-inner">
         <div class="meta-dialog-head">
-          <h3 class="meta-dialog-title" id="meta-dialog-title">Менеджер · Локация · Теги</h3>
+          <h3 class="meta-dialog-title" id="meta-dialog-title">Настройки записи</h3>
           <button type="button" class="meta-dialog-close" id="meta-dialog-close" aria-label="Закрыть">×</button>
         </div>
         <p class="meta-dialog-stem" id="meta-dialog-stem-label"></p>
         <div class="meta-form" id="meta-form">
+          <div class="meta-row">
+            <label class="meta-label" for="criteria-select">Чеклист</label>
+            <select id="criteria-select" class="meta-select" aria-label="Чеклист для просмотра и генерации оценки"></select>
+          </div>
+          <div class="meta-row meta-row--criteria-actions">
+            <button type="button" class="eval-criteria-btn" id="criteria-edit-btn" title="Редактировать состав критериев">
+              Изменить
+            </button>
+            <button type="button" class="eval-criteria-btn eval-criteria-btn--primary" id="criteria-new-btn" title="Создать новый файл чеклиста">
+              Новый чеклист
+            </button>
+          </div>
           <div class="meta-row">
             <label class="meta-label" for="meta-manager">Менеджер</label>
             <div class="meta-combo">
@@ -302,6 +370,6 @@
       </div>
     </dialog>
 
-    <script src="/static/app.js?v=10"></script>
+    <script src="/static/app.js?v=23"></script>
   </body>
 </html>

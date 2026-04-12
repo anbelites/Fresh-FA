@@ -99,7 +99,7 @@ async function loadDashboard() {
   const url = `${API}/api/dashboard?${params}`;
   let data;
   try {
-    const r = await fetch(url);
+    const r = await fetch(url, { credentials: "same-origin" });
     data = await r.json();
   } catch (e) {
     console.error(e);

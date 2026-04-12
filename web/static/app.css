@@ -1,11 +1,11 @@
-/* Тема как в qlik-bi-portal: бренд #003dff, фон #e4e9f2, карточки белые */
+/* Единая тема: нейтральный холст, карточки, один шрифт, согласованные радиусы/тени */
 :root {
   --brand: #003dff;
   --brand-rgb: 0, 61, 255;
-  --paper: #e4e9f2;
-  --paper-deep: #d8e0ed;
+  --paper: #e8ecf3;
+  --paper-deep: #dce3ef;
   --card: #ffffff;
-  --ink: #1a1b22;
+  --ink: #12151c;
   --muted: #5c6370;
   --accent: #003dff;
   --accent-light: #3d6bff;
@@ -13,12 +13,24 @@
   --warn: #b45309;
   --ok: #166534;
   --null: #78716c;
-  --line: rgba(26, 27, 34, 0.1);
-  --shadow: 0 8px 32px rgba(0, 61, 255, 0.08);
-  --radius: 16px;
+  --line: rgba(18, 24, 40, 0.09);
+  --shadow: 0 4px 24px rgba(15, 23, 42, 0.07);
+  --shadow-brand: 0 8px 28px rgba(0, 45, 200, 0.18);
+  --radius-sm: 10px;
+  --radius-md: 14px;
+  --radius-lg: 18px;
+  --radius: var(--radius-lg);
+  --radius-pill: 999px;
+  /* Поиск, загрузка, сегменты в сайдбаре — один радиус */
+  --radius-sidebar-ui: var(--radius-md);
   --sidebar-w: 300px;
-  --font-display: "Fraunces", "Georgia", serif;
-  --font-body: "Inter", system-ui, -apple-system, sans-serif;
+  --sidebar-inset: 0.75rem;
+  /* Вертикальный шаг между блоками в сайдбаре (бренд, загрузка, «Видео», поиск…) */
+  --sidebar-gap: 0.7rem;
+  --control-h: 42px;
+  --font-sans: "DM Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-body: var(--font-sans);
+  --font-display: var(--font-sans);
 }
 
 .visually-hidden {
@@ -43,32 +55,60 @@ html {
   scroll-behavior: smooth;
 }
 
+/* Только в приложении фиксируем viewport; login.html остаётся с обычным скроллом */
+html:has(#app-shell) {
+  height: 100%;
+  overflow: hidden;
+  /* Один слой холста на корне — без наслоения с тем же цветом на .app-shell / .main */
+  background: var(--paper);
+}
+
 body {
   margin: 0;
   min-height: 100vh;
   font-family: var(--font-body);
   font-size: 15px;
-  line-height: 1.5;
+  line-height: 1.55;
+  font-optical-sizing: auto;
   color: var(--ink);
   background: var(--paper);
 }
 
-/* Shell */
+body:has(#app-shell) {
+  height: 100%;
+  overflow: hidden;
+}
+
+/* Shell — одна высота окна, без скролла у document */
 .app-shell {
   display: flex;
-  min-height: 100vh;
+  height: 100vh;
+  height: 100dvh;
+  max-height: 100vh;
+  max-height: 100dvh;
+  min-height: 0;
+  overflow: hidden;
   position: relative;
+  background: transparent;
 }
 
 .sidebar {
   width: var(--sidebar-w);
   flex-shrink: 0;
+  min-height: 0;
+  align-self: stretch;
   background: var(--brand);
   color: #ffffff;
-  border-right: 1px solid rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  margin: var(--sidebar-inset);
+  box-shadow: var(--shadow-brand);
   display: flex;
   flex-direction: column;
-  padding: 1rem 0 1.5rem;
+  gap: var(--sidebar-gap);
+  padding: var(--sidebar-inset);
+  padding-bottom: 0;
   transition:
     width 0.22s ease,
     min-height 0.22s ease,
@@ -83,11 +123,12 @@ body {
   align-items: center;
   justify-content: space-between;
   gap: 0.5rem;
-  font-family: var(--font-display);
-  font-weight: 600;
-  font-size: 1.25rem;
-  letter-spacing: -0.02em;
-  padding: 0 1rem 1rem;
+  flex-shrink: 0;
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: 1.05rem;
+  letter-spacing: -0.03em;
+  padding: 0;
   color: #fff;
 }
 
@@ -136,7 +177,7 @@ body {
   margin: 0;
   padding: 0;
   border: none;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   background: rgba(255, 255, 255, 0.06);
   color: rgba(255, 255, 255, 0.85);
   cursor: pointer;
@@ -193,12 +234,14 @@ body {
   .app-shell.sidebar-collapsed .sidebar {
     width: 0;
     min-width: 0;
+    margin: 0;
     padding-top: 0;
     padding-bottom: 0;
     overflow: hidden;
     opacity: 0;
     visibility: hidden;
-    border-right: none;
+    border: none;
+    box-shadow: none;
     pointer-events: none;
   }
 }
@@ -208,12 +251,14 @@ body {
     width: 100%;
     max-height: 0;
     min-height: 0;
+    margin: 0;
     padding-top: 0;
     padding-bottom: 0;
     overflow: hidden;
     opacity: 0;
     visibility: hidden;
-    border-bottom: none;
+    border: none;
+    box-shadow: none;
     pointer-events: none;
   }
 
@@ -222,12 +267,185 @@ body {
   }
 }
 
+.sidebar-label-row {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 0.35rem;
+  min-width: 0;
+}
+
+.library-toolbar-slide {
+  flex: 1 1 0;
+  min-width: 0;
+  max-width: 0;
+  overflow: hidden;
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  transition: max-width 0.22s ease;
+}
+
+.library-toolbar-slide--search {
+  --library-slide-max: 15rem;
+}
+
+.library-toolbar-slide--sort {
+  --library-slide-max: 17.5rem;
+}
+
+.library-toolbar-slide.library-toolbar-slide--open {
+  max-width: var(--library-slide-max);
+}
+
+.library-toolbar-slide[aria-hidden="true"] .library-search--slide,
+.library-toolbar-slide[aria-hidden="true"] .segment-group {
+  pointer-events: none;
+}
+
+.library-toolbar-slide--sort .segment-group {
+  width: 100%;
+  min-width: 0;
+}
+
 .sidebar-label {
-  font-size: 0.72rem;
+  flex-shrink: 0;
+  font-size: 0.6875rem;
+  font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.12em;
+  letter-spacing: 0.11em;
+  color: rgba(255, 255, 255, 0.48);
+  padding: 0;
+  margin: 0;
+}
+
+.library-toolbar-toggle {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  margin: 0;
+  padding: 0;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.85);
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.library-toolbar-toggle:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+}
+
+.library-toolbar-toggle:focus-visible {
+  outline: 2px solid var(--accent-light);
+  outline-offset: 2px;
+}
+
+.library-toolbar-toggle[aria-expanded="true"],
+.library-search-toggle.library-search-toggle--filter-active,
+.library-sort-toggle.library-sort-toggle--nondefault {
+  background: rgba(255, 255, 255, 0.14);
+  color: #fff;
+}
+
+.auth-user-bar {
+  flex-shrink: 0;
+  margin-top: auto;
+  margin-left: calc(-1 * var(--sidebar-inset));
+  margin-right: calc(-1 * var(--sidebar-inset));
+  padding: 0.65rem var(--sidebar-inset);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(0, 0, 0, 0.12);
+}
+
+.auth-user-block {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  min-width: 0;
+  flex: 1;
+}
+
+.auth-user-icon {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.12);
+  color: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.12) inset;
+}
+
+.auth-user-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 0;
+}
+
+.auth-user-label {
+  font-size: 0.62rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
   color: rgba(255, 255, 255, 0.45);
-  padding: 1rem 1rem 0.5rem;
+}
+
+.auth-user-name {
+  font-size: 0.8rem;
+  font-weight: 600;
+  line-height: 1.25;
+  letter-spacing: 0.01em;
+  color: #fff;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.auth-user-sub {
+  font-size: 0.68rem;
+  font-weight: 500;
+  line-height: 1.2;
+  color: rgba(255, 255, 255, 0.55);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.auth-logout {
+  flex-shrink: 0;
+  font: inherit;
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 0.45rem 0.65rem;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  background: rgba(255, 255, 255, 0.14);
+  color: #fff;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease, transform 0.1s ease;
+}
+
+.auth-logout:hover {
+  background: rgba(255, 255, 255, 0.24);
+  border-color: rgba(255, 255, 255, 0.45);
+}
+
+.auth-logout:active {
+  transform: scale(0.97);
 }
 
 .sidebar-bottom {
@@ -235,7 +453,6 @@ body {
   display: flex;
   gap: 0.5rem;
   border-top: 1px solid rgba(255,255,255,0.08);
-  margin-top: auto;
 }
 .sidebar-dashboard-link,
 .sidebar-export-link {
@@ -258,23 +475,24 @@ body {
   background: rgba(255,255,255,0.14);
 }
 
-.library-controls {
-  display: flex;
-  gap: 0.35rem;
-  padding: 0 0.75rem 0.45rem;
-}
-
 .library-search {
   flex: 1;
   min-width: 0;
   font: inherit;
-  font-size: 0.78rem;
-  padding: 0.3rem 0.5rem;
-  border-radius: 8px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  background: rgba(255, 255, 255, 0.06);
-  color: #e8e4dc;
+  font-size: 0.8125rem;
+  min-height: var(--control-h);
+  padding: 0 0.65rem;
+  border-radius: var(--radius-sidebar-ui);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.07);
+  color: #f1f5ff;
   outline: none;
+}
+
+.library-search--slide {
+  flex: 1 1 auto;
+  width: 100%;
+  min-width: 0;
 }
 
 .library-search::placeholder {
@@ -286,28 +504,88 @@ body {
   background: rgba(255, 255, 255, 0.1);
 }
 
-.library-sort {
-  flex-shrink: 0;
+/* Сегменты: один трек + белая «таблетка» — как фильтры на витрине */
+.segment-group {
+  display: flex;
+  align-items: stretch;
+  width: 100%;
+  min-height: var(--control-h);
+  padding: 4px;
+  border-radius: var(--radius-pill);
+  background: rgba(0, 0, 0, 0.2);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+.segment-group--sidebar {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius-sidebar-ui);
+}
+
+.segment-group--sidebar .segment-btn {
+  border-radius: calc(var(--radius-sidebar-ui) - 4px);
+}
+
+.segment-group--panel {
+  width: auto;
+  min-height: calc(var(--control-h) - 4px);
+  background: rgba(0, 61, 255, 0.05);
+  border: 1px solid var(--line);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.65);
+}
+
+.segment-btn {
+  flex: 1 1 0;
+  min-width: 0;
+  margin: 0;
+  padding: 0.25rem 0.2rem;
   font: inherit;
-  font-size: 0.72rem;
-  padding: 0.25rem 0.35rem;
-  border-radius: 6px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  background: rgba(255, 255, 255, 0.06);
-  color: #e8e4dc;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  line-height: 1.2;
+  border: none;
+  border-radius: var(--radius-pill);
+  background: transparent;
+  color: rgba(255, 255, 255, 0.52);
+  cursor: pointer;
+  transition:
+    background 0.16s ease,
+    color 0.16s ease,
+    box-shadow 0.16s ease;
+}
+
+.segment-btn:hover:not(.segment-btn--active) {
+  color: rgba(255, 255, 255, 0.88);
+}
+
+.segment-btn:focus-visible {
+  outline: 2px solid rgba(255, 255, 255, 0.55);
+  outline-offset: 2px;
+}
+
+.segment-btn--active {
+  background: #fff;
+  color: var(--brand);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.12);
 }
 
 .library-list {
-  flex: 1;
+  flex: 1 1 auto;
+  min-height: 0;
   overflow-y: auto;
-  padding: 0 0.5rem;
+  overflow-x: hidden;
+  padding: 0;
+  margin: 0;
+  -webkit-overflow-scrolling: touch;
 }
 
 .library-empty {
-  padding: 0.75rem 1rem;
-  font-size: 0.85rem;
-  color: rgba(255, 255, 255, 0.4);
+  flex-shrink: 0;
+  padding: 0.35rem 0;
+  font-size: 0.8125rem;
+  color: rgba(255, 255, 255, 0.42);
   margin: 0;
+  text-align: center;
 }
 
 /* Группы: локация → менеджер */
@@ -394,7 +672,7 @@ body {
   align-items: stretch;
   gap: 0;
   margin-bottom: 0.35rem;
-  border-radius: 10px;
+  border-radius: var(--radius-sm);
   overflow: hidden;
   transition: background 0.15s ease, box-shadow 0.15s ease;
 }
@@ -548,37 +826,71 @@ body {
   box-shadow: 0 0 12px rgba(0, 61, 255, 0.45);
 }
 
-/* Main */
+/* Main — колонка на высоту shell; скролл только внутри (на широком экране) */
 .main {
   flex: 1;
   min-width: 0;
-  background: var(--paper);
-  background-image:
-    radial-gradient(ellipse 120% 80% at 10% -20%, rgba(0, 61, 255, 0.06), transparent 50%),
-    radial-gradient(ellipse 80% 50% at 100% 0%, rgba(0, 61, 255, 0.04), transparent 45%);
-  padding: 1rem 1.25rem 1rem;
-  overflow-y: auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  background: transparent;
+  padding: 1.25rem var(--sidebar-inset) 1.5rem;
+  overflow: hidden;
+}
+
+@media (max-width: 1179px) {
+  .main {
+    overflow-y: auto;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+  }
 }
 
 .dropzone {
   border: 2px dashed var(--line);
-  border-radius: var(--radius);
+  border-radius: var(--radius-md);
   padding: 1rem 1.25rem;
   text-align: center;
   background: var(--card);
   transition: border-color 0.2s, background 0.2s;
 }
 .dropzone--sidebar {
-  margin: 0.875rem 1rem 0.75rem;
+  margin: 0;
+  flex-shrink: 0;
   padding: 0.65rem 0.75rem;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 0.05rem;
+  gap: 0.15rem;
   text-align: center;
   background: rgba(255, 255, 255, 0.04);
   border-color: rgba(255, 255, 255, 0.14);
+}
+
+/* Главная зона загрузки: пунктир как раньше — аккуратнее на бренде */
+.dropzone--cta.dropzone--sidebar {
+  margin: 0;
+  min-height: 48px;
+  padding: 0.55rem 1rem;
+  border-radius: var(--radius-sidebar-ui);
+  border: 2px dashed rgba(255, 255, 255, 0.32);
+  background: rgba(255, 255, 255, 0.06);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.07);
+  transition:
+    transform 0.12s ease,
+    border-color 0.15s ease,
+    background 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.dropzone--cta.dropzone--sidebar:hover {
+  border-color: rgba(255, 255, 255, 0.48);
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.dropzone--cta.dropzone--sidebar:active {
+  transform: scale(0.992);
 }
 .dropzone--sidebar label,
 .dropzone--sidebar .dropzone-or {
@@ -599,6 +911,15 @@ body {
   border-color: var(--accent-light);
   background: rgba(0, 61, 255, 0.12);
 }
+
+.dropzone--cta.dropzone--sidebar.dragover {
+  border-color: var(--accent-light);
+  border-style: dashed;
+  background: rgba(0, 61, 255, 0.14);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.12),
+    0 0 0 1px rgba(61, 107, 255, 0.35);
+}
 .dropzone input[type="file"] {
   display: none;
 }
@@ -607,12 +928,24 @@ body {
   font-weight: 600;
   color: var(--accent);
 }
-/* Не var(--accent): на фоне бренда тот же синий — текст «сливается» */
 .dropzone.dropzone--sidebar label {
   cursor: pointer;
   font-weight: 600;
+  font-size: 0.9375rem;
+  letter-spacing: -0.01em;
+  color: var(--brand);
+  text-shadow: none;
+}
+
+.dropzone--cta.dropzone--sidebar label {
   color: #f0f5ff;
-  text-shadow: 0 1px 3px rgba(0, 12, 48, 0.55);
+  text-shadow: 0 1px 2px rgba(0, 12, 48, 0.45);
+}
+
+.dropzone--cta.dropzone--sidebar .dropzone-or {
+  color: rgba(255, 255, 255, 0.48);
+  font-size: 0.75rem;
+  font-weight: 500;
 }
 .dropzone-or {
   margin-left: 0.35rem;
@@ -620,13 +953,45 @@ body {
   font-size: 0.9rem;
 }
 
-.workspace-placeholder {
-  padding: 3rem 1.5rem;
-  text-align: center;
+.workspace-empty-state {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem 1rem;
+}
+
+.workspace-hero-card {
+  width: 100%;
+  max-width: 32rem;
+}
+
+.workspace-hero__header {
+  text-align: left;
+  padding: 1.35rem 1.4rem;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow);
+}
+
+.workspace-hero__title {
+  font-family: var(--font-body);
+  font-size: clamp(1.25rem, 2.8vw, 1.5rem);
+  font-weight: 700;
+  letter-spacing: -0.035em;
+  line-height: 1.22;
+  margin: 0 0 0.45rem;
+  color: var(--ink);
+}
+
+.workspace-hero__lead {
+  margin: 0;
+  font-size: 0.9375rem;
+  line-height: 1.5;
   color: var(--muted);
-  font-size: 1.02rem;
-  max-width: 28rem;
-  margin: 2rem auto;
+  font-weight: 500;
 }
 
 .workspace {
@@ -634,37 +999,63 @@ body {
   max-width: none;
 }
 
+/* Открытая рабочая область: заполняет main, скролл только во внутренних панелях */
+#workspace.workspace {
+  flex: 1 1 auto;
+  min-height: 0;
+  flex-direction: column;
+  overflow: hidden;
+}
+
 .workspace-head {
-  margin-bottom: 1.25rem;
+  flex-shrink: 0;
+  margin-bottom: 1rem;
+}
+
+.workspace-head--card {
+  padding: 1rem 1.2rem;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow);
+}
+
+.workspace-head--card .workspace-title {
+  margin-bottom: 0.35rem;
 }
 
 .workspace-title {
-  font-family: var(--font-display);
-  font-size: clamp(1.2rem, 2.5vw, 1.5rem);
-  font-weight: 600;
+  font-family: var(--font-body);
+  font-size: clamp(1.15rem, 2.2vw, 1.35rem);
+  font-weight: 700;
   margin: 0 0 0.5rem;
-  letter-spacing: -0.02em;
+  letter-spacing: -0.03em;
 }
 
 .workspace-banner--job {
   margin: 0;
-  font-size: 0.9rem;
+  font-size: 0.875rem;
   color: var(--muted);
-  padding: 0.5rem 0.75rem;
+  padding: 0.5rem 0.7rem;
   background: var(--paper-deep);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   border-left: 3px solid var(--accent-light);
 }
 
-/* Плеер+транскрипт слева; оценка справа забирает всё оставшееся место; на узком экране — столбиком */
+/* Плеер+транскрипт слева; оценка справа; на узком — столбиком */
 .workspace-layout {
   --workspace-media-max-h: min(52vh, 480px);
   --workspace-col-w: min(100%, calc(var(--workspace-media-max-h) * 16 / 9));
+  /* Общий верхний отступ контента колонок (как у .workspace-block--eval) */
+  --workspace-col-pad-top: 0.85rem;
+  flex: 1 1 auto;
+  min-height: 0;
   display: flex;
   flex-direction: column;
-  gap: 1.25rem;
+  gap: 1rem;
   align-items: stretch;
   width: 100%;
+  overflow: hidden;
 }
 
 .workspace-main {
@@ -674,48 +1065,23 @@ body {
 }
 
 @media (min-width: 1180px) {
-  /*
-   * main — flex-колонка; без min-height у #workspace цепочка flex:1 1 0 + min-height:0
-   * даёт схлопывание ряда до ~56px (база 0 при «плавающей» высоте родителя с overflow).
-   */
   .main {
-    display: flex;
-    flex-direction: column;
-    min-height: 0;
     align-self: stretch;
-  }
-
-  #workspace {
-    flex: 1 1 auto;
-    /* Пол высоты окна минус padding main — нижняя граница рабочей области */
-    min-height: calc(100vh - 2rem);
-    min-height: calc(100dvh - 2rem);
-    display: flex;
-    flex-direction: column;
   }
 
   #workspace .workspace-head {
     flex-shrink: 0;
   }
 
-  /*
-   * Grid вместо flex-row: flex + min-height:0 на родителях давал схлопывание ряда до ~56px.
-   * Строка с minmax(vh) не зависит от «плавающей» высоты flex-предков.
-   */
   .workspace-layout {
     flex: 1 1 auto;
+    min-height: 0;
     display: grid;
     grid-template-columns: var(--workspace-col-w) minmax(0, 1fr);
-    gap: 1.25rem;
+    grid-template-rows: minmax(0, 1fr);
+    gap: 1rem;
     align-items: stretch;
     align-content: stretch;
-    /* Жёсткая высота по окну — иначе grid-ячейки без определённой высоты → схлопывание ~56px */
-    height: calc(100vh - 9rem);
-    height: calc(100dvh - 9rem);
-    min-height: calc(100vh - 9rem);
-    min-height: calc(100dvh - 9rem);
-    max-height: calc(100vh - 9rem);
-    max-height: calc(100dvh - 9rem);
     overflow: hidden;
   }
 
@@ -737,14 +1103,12 @@ body {
     flex-direction: column;
   }
 
-  /* Правая колонка: панель чеклиста над карточкой (как media-hint над видео) */
+  /* Правая колонка: панель чеклиста над карточкой */
   .workspace-eval-col {
     grid-column: 2;
     grid-row: 1;
     flex: none;
     min-width: min(340px, 100%);
-    position: sticky;
-    top: 0.75rem;
     align-self: stretch;
     height: 100%;
     max-height: 100%;
@@ -794,7 +1158,7 @@ body {
 .workspace-stack {
   display: flex;
   flex-direction: column;
-  gap: 1.25rem;
+  gap: 1rem;
   width: 100%;
   min-width: 0;
   max-width: 100%;
@@ -823,7 +1187,12 @@ body {
     overflow: hidden;
   }
 
-  .workspace-transcript-col .seg-list {
+  .workspace-transcript-col .transcript-head-plank.workspace-block {
+    flex: 1 1 0;
+    min-height: 0;
+  }
+
+  .workspace-transcript-col .transcript-head-plank .seg-list {
     flex: 1 1 0;
     min-height: 0;
     overflow-x: hidden;
@@ -841,10 +1210,12 @@ body {
     flex-direction: column;
   }
   .sidebar {
-    width: 100%;
+    width: auto;
     max-height: 38vh;
-    border-right: none;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    margin: var(--sidebar-inset);
+    border-radius: var(--radius-md);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    box-shadow: var(--shadow-brand);
   }
 
   .app-shell.sidebar-collapsed .main {
@@ -855,9 +1226,15 @@ body {
 
 .workspace-media-col {
   position: sticky;
-  top: 0.5rem;
+  top: 0;
   z-index: 1;
   width: 100%;
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
 }
 
 /* Колонка уже по формуле 16:9 — видео на всю её ширину */
@@ -867,23 +1244,31 @@ body {
   height: auto;
   max-height: var(--workspace-media-max-h);
   margin: 0;
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   border: 1px solid var(--line);
   background: #0d0c0a;
   object-fit: contain;
 }
 
 .workspace-media-col audio {
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   border: 1px solid var(--line);
   padding: 0.35rem 0;
   background: var(--paper-deep);
 }
 
 .media-hint {
-  margin: 0 0 0.5rem;
+  margin: 0;
   font-size: 0.82rem;
   color: var(--muted);
+}
+
+.media-hint--transcript-head {
+  flex: 1 1 8rem;
+  min-width: 0;
+  font-size: 0.78rem;
+  line-height: 1.35;
+  text-align: right;
 }
 
 .media-error {
@@ -893,9 +1278,10 @@ body {
 }
 
 .block-title {
-  font-family: var(--font-display);
-  font-size: 1.05rem;
-  font-weight: 600;
+  font-family: var(--font-body);
+  font-size: 0.9375rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
   margin: 0 0 0.65rem;
 }
 
@@ -905,24 +1291,52 @@ body {
   color: var(--muted);
   margin: -0.35rem 0 0.65rem;
   padding: 0.35rem 0.5rem;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   background: rgba(0, 61, 255, 0.06);
   border-left: 3px solid rgba(0, 61, 255, 0.35);
+}
+
+/* Карточка транскрипта: шапка + скролл списка сегментов (как workspace-block--eval) */
+.transcript-head-plank.workspace-block {
+  margin-bottom: 0;
+  margin-top: 0;
+  padding: var(--workspace-col-pad-top) 0.95rem;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.transcript-head-plank .transcript-head-row {
+  flex-shrink: 0;
+}
+
+.transcript-head-plank .block-missing {
+  flex-shrink: 0;
 }
 
 .transcript-head-row {
   display: flex;
   align-items: center;
-  justify-content: flex-start;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.4rem 0.75rem;
+  margin: 0;
+}
+
+.transcript-head-row__start {
+  display: flex;
+  align-items: center;
   flex-wrap: wrap;
   gap: 0.4rem;
-  margin-bottom: 0.65rem;
+  min-width: 0;
 }
 
 .transcript-head-row .block-title {
   margin: 0;
   flex: 0 1 auto;
   min-width: 0;
+  font-size: 0.88rem;
 }
 
 .transcript-hints-details {
@@ -986,10 +1400,10 @@ body {
 
 .workspace-block {
   margin-bottom: 2rem;
-  padding: 1.1rem 1.15rem;
+  padding: 1rem 1.1rem;
   background: var(--card);
   border: 1px solid var(--line);
-  border-radius: var(--radius);
+  border-radius: var(--radius-lg);
   box-shadow: var(--shadow);
 }
 
@@ -1003,7 +1417,7 @@ body {
 
 .workspace-block--eval {
   margin-bottom: 0;
-  padding: 0.5rem 0.65rem;
+  padding: var(--workspace-col-pad-top) 0.95rem;
 }
 
 .eval-block-head {
@@ -1021,40 +1435,43 @@ body {
   min-width: 0;
 }
 
-/* ИИ / Человек toggle */
-.eval-mode-toggle {
-  display: inline-flex;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  overflow: hidden;
-  flex-shrink: 0;
+/* ИИ / Человек — тот же паттерн сегментов, что у сортировки */
+.eval-mode-toggle.segment-group {
+  padding: 3px;
 }
 
 .eval-mode-btn {
+  flex: 1 1 auto;
   font: inherit;
-  font-size: 0.72rem;
+  font-size: 0.8125rem;
   font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  padding: 0.28rem 0.6rem;
+  letter-spacing: 0.02em;
+  padding: 0.3rem 0.75rem;
+  margin: 0;
   border: none;
+  border-radius: var(--radius-pill);
   background: transparent;
   color: var(--muted);
   cursor: pointer;
-  transition: background 0.15s, color 0.15s;
+  transition:
+    background 0.18s ease,
+    color 0.18s ease,
+    box-shadow 0.18s ease;
 }
 
-.eval-mode-btn:not(:last-child) {
-  border-right: 1px solid var(--line);
+.eval-mode-btn:focus-visible {
+  outline: 2px solid var(--accent-light);
+  outline-offset: 2px;
 }
 
 .eval-mode-btn--active {
-  background: rgba(0, 61, 255, 0.1);
+  background: #fff;
   color: var(--accent);
+  box-shadow: 0 2px 10px rgba(0, 61, 255, 0.12);
 }
 
 .eval-mode-btn:hover:not(.eval-mode-btn--active) {
-  background: rgba(0, 61, 255, 0.04);
+  color: var(--ink);
 }
 
 .eval-block-head-actions {
@@ -1067,10 +1484,10 @@ body {
 
 .eval-compare-btn {
   font: inherit;
-  font-size: 0.72rem;
+  font-size: 0.75rem;
   font-weight: 600;
-  padding: 0.3rem 0.65rem;
-  border-radius: 8px;
+  padding: 0.35rem 0.65rem;
+  border-radius: var(--radius-sm);
   border: 1px solid rgba(0, 61, 255, 0.3);
   background: rgba(0, 61, 255, 0.06);
   color: var(--accent);
@@ -1529,46 +1946,21 @@ body {
   background: rgba(0, 61, 255, 0.18);
 }
 
-/* Над карточкой «Оценка», в духе .media-hint над плеером */
-.eval-criteria-bar {
-  display: flex;
-  align-items: center;
-  gap: 0.45rem;
+/* Кнопки чеклиста — с отступом как у полей под подписью */
+.meta-row--criteria-actions {
+  align-items: stretch;
   flex-wrap: wrap;
-  margin: 0 0 0.5rem;
-  padding: 0;
-  font-size: 0.82rem;
-  color: var(--muted);
+  gap: 0.5rem;
+  padding-left: calc(5.5rem + 0.4rem);
+  margin-top: -0.15rem;
 }
 
-.eval-criteria-bar .eval-criteria-select {
-  flex: 1 1 10rem;
+.meta-row--criteria-actions .eval-criteria-btn {
+  flex: 1 1 40%;
   min-width: 0;
-  color: var(--ink);
 }
 
-.eval-criteria-label {
-  font-size: 0.68rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--muted);
-}
-
-.eval-criteria-select {
-  font: inherit;
-  font-size: 0.78rem;
-  max-width: 100%;
-  min-width: 0;
-  flex: 1;
-  padding: 0.25rem 0.45rem;
-  border-radius: 6px;
-  border: 1px solid var(--line);
-  background: var(--card);
-  color: var(--ink);
-}
-
-.eval-criteria-select:disabled {
+.meta-form #criteria-select:disabled {
   opacity: 0.55;
   cursor: not-allowed;
 }
@@ -1576,10 +1968,10 @@ body {
 .eval-criteria-btn {
   flex-shrink: 0;
   font: inherit;
-  font-size: 0.76rem;
+  font-size: 0.75rem;
   font-weight: 600;
-  padding: 0.32rem 0.65rem;
-  border-radius: 8px;
+  padding: 0.35rem 0.7rem;
+  border-radius: var(--radius-sm);
   border: 1px solid var(--line);
   background: var(--card);
   color: var(--ink);
@@ -1609,7 +2001,7 @@ body {
   max-width: min(92vw, 420px);
   padding: 0;
   border: 1px solid var(--line);
-  border-radius: var(--radius);
+  border-radius: var(--radius-lg);
   background: var(--card);
   color: var(--ink);
   box-shadow: var(--shadow);
