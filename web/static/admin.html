@@ -11,7 +11,7 @@
       rel="stylesheet"
     />
     <link rel="stylesheet" href="/static/app.css?v=60" />
-    <link rel="stylesheet" href="/static/admin.css?v=2" />
+    <link rel="stylesheet" href="/static/admin.css?v=3" />
   </head>
   <body>
     <div class="admin-shell">
@@ -47,6 +47,7 @@
           <button type="button" class="admin-nav-btn" data-section="users">Пользователи</button>
           <button type="button" class="admin-nav-btn" data-section="videos">Видео</button>
           <button type="button" class="admin-nav-btn" data-section="checklists">Чеклисты</button>
+          <button type="button" class="admin-nav-btn" data-section="glossary">Глоссарий</button>
           <button type="button" class="admin-nav-btn" data-section="settings">Настройки</button>
           <button type="button" class="admin-nav-btn" data-section="audit">Аудит</button>
         </nav>
@@ -684,6 +685,118 @@
             </div>
           </section>
 
+          <section class="admin-section" id="section-glossary" data-section="glossary">
+            <div class="admin-section-head">
+              <div>
+                <span class="admin-section-eyebrow">Термины Fresh</span>
+                <h2>Глоссарий для Whisper и LLM</h2>
+                <p>Единый справочник терминов: короткие подсказки улучшают распознавание речи, расширенные определения помогают ИИ корректно оценивать чеклисты.</p>
+              </div>
+            </div>
+
+            <div class="admin-card">
+              <div class="admin-toolbar">
+                <div class="admin-field" style="flex: 1 1 320px">
+                  <label for="glossary-query">Поиск</label>
+                  <input id="glossary-query" class="admin-search" type="search" placeholder="термин, вариант, подсказка, описание…" />
+                </div>
+                <div class="admin-field">
+                  <label for="glossary-category-filter">Категория</label>
+                  <select id="glossary-category-filter" class="admin-select">
+                    <option value="">Все категории</option>
+                  </select>
+                </div>
+                <div class="admin-field">
+                  <label for="glossary-active-filter">Статус</label>
+                  <select id="glossary-active-filter" class="admin-select">
+                    <option value="">Все</option>
+                    <option value="active">Активные</option>
+                    <option value="inactive">Отключённые</option>
+                  </select>
+                </div>
+                <button type="button" class="admin-btn-secondary" id="glossary-preview-btn">Предпросмотр prompt</button>
+                <button type="button" class="admin-btn" id="glossary-new-btn">Новый термин</button>
+              </div>
+            </div>
+
+            <div class="admin-grid-2 admin-grid-2--wide-left">
+              <div class="admin-card admin-card--scroll">
+                <h3>Термины</h3>
+                <div class="admin-table-wrap">
+                  <table class="admin-table">
+                    <thead>
+                      <tr>
+                        <th>Термин</th>
+                        <th>Категория</th>
+                        <th>Использование</th>
+                        <th>Статус</th>
+                      </tr>
+                    </thead>
+                    <tbody id="glossary-body"></tbody>
+                  </table>
+                </div>
+              </div>
+
+              <div class="admin-card">
+                <div class="admin-card-head">
+                  <div>
+                    <h3 id="glossary-editor-title">Новый термин</h3>
+                    <p class="admin-note" id="glossary-editor-meta">Заполните основное написание, варианты и отдельные подсказки для ASR/LLM.</p>
+                  </div>
+                </div>
+                <form class="admin-form-grid" id="glossary-form">
+                  <div class="admin-form-grid admin-form-grid--2">
+                    <div class="admin-field">
+                      <label for="glossary-id">ID</label>
+                      <input id="glossary-id" class="admin-input admin-code" type="text" placeholder="ptz" />
+                    </div>
+                    <div class="admin-field">
+                      <label for="glossary-sort-order">Sort order</label>
+                      <input id="glossary-sort-order" class="admin-input" type="number" step="1" />
+                    </div>
+                  </div>
+                  <div class="admin-form-grid admin-form-grid--2">
+                    <div class="admin-field">
+                      <label for="glossary-category">Категория</label>
+                      <input id="glossary-category" class="admin-input" type="text" placeholder="Сокращения" />
+                    </div>
+                    <div class="admin-field">
+                      <label for="glossary-term">Основной термин</label>
+                      <input id="glossary-term" class="admin-input" type="text" placeholder="ПТЗ" required />
+                    </div>
+                  </div>
+                  <div class="admin-field">
+                    <label for="glossary-variants">Варианты написания</label>
+                    <textarea id="glossary-variants" class="admin-textarea" placeholder="Каждый вариант с новой строки или через запятую"></textarea>
+                  </div>
+                  <div class="admin-field">
+                    <label for="glossary-definition">Описание для ИИ</label>
+                    <textarea id="glossary-definition" class="admin-textarea" placeholder="Краткое определение термина"></textarea>
+                  </div>
+                  <div class="admin-field">
+                    <label for="glossary-whisper-hint">Короткая подсказка для Whisper</label>
+                    <textarea id="glossary-whisper-hint" class="admin-textarea" placeholder="Только термины и варианты написания"></textarea>
+                  </div>
+                  <div class="admin-field">
+                    <label for="glossary-llm-hint">Правила трактовки для LLM</label>
+                    <textarea id="glossary-llm-hint" class="admin-textarea" placeholder="Например: ПТЗ не равно заводской гарантии…"></textarea>
+                  </div>
+                  <div class="admin-form-grid admin-form-grid--3">
+                    <label class="admin-check"><input id="glossary-use-whisper" type="checkbox" checked /> Whisper</label>
+                    <label class="admin-check"><input id="glossary-use-llm" type="checkbox" checked /> LLM</label>
+                    <label class="admin-check"><input id="glossary-is-active" type="checkbox" checked /> Активен</label>
+                  </div>
+                  <div class="admin-toolbar">
+                    <button type="submit" class="admin-btn" id="glossary-save-btn">Сохранить</button>
+                    <button type="button" class="admin-btn-danger" id="glossary-disable-btn">Отключить</button>
+                    <button type="button" class="admin-btn-secondary" id="glossary-reset-btn">Очистить</button>
+                  </div>
+                </form>
+                <div class="admin-preview" id="glossary-preview" hidden></div>
+              </div>
+            </div>
+          </section>
+
           <section class="admin-section" id="section-settings" data-section="settings">
             <div class="admin-section-head">
               <div>
@@ -774,6 +887,6 @@
       </main>
     </div>
 
-    <script src="/static/admin.js?v=3"></script>
+    <script src="/static/admin.js?v=4"></script>
   </body>
 </html>

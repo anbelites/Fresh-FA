@@ -11,6 +11,7 @@ const SECTION_LABELS = {
   users: "Пользователи",
   videos: "Видео",
   checklists: "Чеклисты",
+  glossary: "Глоссарий",
   settings: "Настройки",
   audit: "Аудит",
 };
@@ -22,6 +23,8 @@ const state = {
   jobs: [],
   users: [],
   videos: [],
+  glossary: [],
+  glossaryCategories: [],
   audit: [],
   settings: null,
   selectedJobId: null,
@@ -29,6 +32,7 @@ const state = {
   selectedVideo: null,
   selectedChecklist: null,
   selectedTrainingType: null,
+  selectedGlossaryId: null,
   checklistContent: null,
   activeSection: "overview",
   lastUpdatedAt: null,
@@ -241,6 +245,10 @@ function restartAutoRefresh() {
     }
     if (state.activeSection === "users") {
       void loadUsers().catch(() => {});
+      return;
+    }
+    if (state.activeSection === "glossary") {
+      void loadGlossary().catch(() => {});
     }
   }, currentRefreshSeconds() * 1000);
 }
@@ -653,6 +661,133 @@ function fillTrainingTypeForm(slug) {
   renderTrainingTypes();
 }
 
+function glossaryVariantsFromText(value) {
+  return String(value || "")
+    .split(/[\n,]+/)
+    .map((part) => part.trim())
+    .filter(Boolean);
+}
+
+function filteredGlossaryItems() {
+  const query = String(qs("glossary-query")?.value || "").trim().toLowerCase();
+  const category = String(qs("glossary-category-filter")?.value || "").trim();
+  const activeFilter = String(qs("glossary-active-filter")?.value || "").trim();
+  return (state.glossary || []).filter((item) => {
+    if (category && item.category !== category) return false;
+    if (activeFilter === "active" && !item.is_active) return false;
+    if (activeFilter === "inactive" && item.is_active) return false;
+    if (!query) return true;
+    const haystack = [
+      item.id,
+      item.category,
+      item.term,
+      ...(item.variants || []),
+      item.definition,
+      item.whisper_hint,
+      item.llm_hint,
+    ].join(" ").toLowerCase();
+    return haystack.includes(query);
+  });
+}
+
+function renderGlossaryCategoryFilter() {
+  const select = qs("glossary-category-filter");
+  if (!select) return;
+  const current = select.value;
+  select.innerHTML = '<option value="">Все категории</option>';
+  for (const category of state.glossaryCategories || []) {
+    const option = document.createElement("option");
+    option.value = category;
+    option.textContent = category;
+    select.appendChild(option);
+  }
+  if ([...select.options].some((option) => option.value === current)) select.value = current;
+}
+
+function renderGlossary() {
+  renderGlossaryCategoryFilter();
+  const tbody = qs("glossary-body");
+  if (!tbody) return;
+  tbody.innerHTML = "";
+  for (const item of filteredGlossaryItems()) {
+    const row = document.createElement("tr");
+    row.dataset.glossaryId = item.id;
+    row.classList.toggle("is-selected", item.id === state.selectedGlossaryId);
+    const usage = [
+      item.use_for_whisper ? "Whisper" : null,
+      item.use_for_llm ? "LLM" : null,
+    ].filter(Boolean).join(" + ") || "—";
+    row.innerHTML = `
+      <td><strong>${escapeHtml(item.term || "—")}</strong><div class="admin-note admin-code">${escapeHtml(item.id || "")}</div></td>
+      <td>${escapeHtml(item.category || "—")}</td>
+      <td>${escapeHtml(usage)}</td>
+      <td>${makePill(item.is_active ? "active" : "disabled", item.is_active ? "ok" : "danger")}</td>
+    `;
+    tbody.appendChild(row);
+  }
+  if (!tbody.children.length) tbody.innerHTML = '<tr><td colspan="4" class="admin-empty">Термины не найдены.</td></tr>';
+}
+
+function resetGlossaryForm() {
+  state.selectedGlossaryId = null;
+  qs("glossary-editor-title").textContent = "Новый термин";
+  qs("glossary-editor-meta").textContent = "Заполните основное написание, варианты и отдельные подсказки для ASR/LLM.";
+  qs("glossary-id").disabled = false;
+  qs("glossary-id").value = "";
+  qs("glossary-category").value = "";
+  qs("glossary-term").value = "";
+  qs("glossary-sort-order").value = "";
+  qs("glossary-variants").value = "";
+  qs("glossary-definition").value = "";
+  qs("glossary-whisper-hint").value = "";
+  qs("glossary-llm-hint").value = "";
+  qs("glossary-use-whisper").checked = true;
+  qs("glossary-use-llm").checked = true;
+  qs("glossary-is-active").checked = true;
+  qs("glossary-disable-btn").disabled = true;
+  const preview = qs("glossary-preview");
+  if (preview) preview.hidden = true;
+  renderGlossary();
+}
+
+function fillGlossaryForm(entryId) {
+  const item = (state.glossary || []).find((row) => row.id === entryId);
+  if (!item) return;
+  state.selectedGlossaryId = item.id;
+  qs("glossary-editor-title").textContent = `Термин: ${item.term || item.id}`;
+  qs("glossary-editor-meta").textContent = `Обновлено ${formatDateTime(item.updated_at)} · ${item.updated_by || "system"}`;
+  qs("glossary-id").disabled = true;
+  qs("glossary-id").value = item.id || "";
+  qs("glossary-category").value = item.category || "";
+  qs("glossary-term").value = item.term || "";
+  qs("glossary-sort-order").value = item.sort_order ?? "";
+  qs("glossary-variants").value = (item.variants || []).join("\n");
+  qs("glossary-definition").value = item.definition || "";
+  qs("glossary-whisper-hint").value = item.whisper_hint || "";
+  qs("glossary-llm-hint").value = item.llm_hint || "";
+  qs("glossary-use-whisper").checked = Boolean(item.use_for_whisper);
+  qs("glossary-use-llm").checked = Boolean(item.use_for_llm);
+  qs("glossary-is-active").checked = Boolean(item.is_active);
+  qs("glossary-disable-btn").disabled = !Boolean(item.is_active);
+  renderGlossary();
+}
+
+function glossaryPayloadFromForm() {
+  return {
+    id: qs("glossary-id").value.trim() || null,
+    category: qs("glossary-category").value.trim(),
+    term: qs("glossary-term").value.trim(),
+    variants: glossaryVariantsFromText(qs("glossary-variants").value),
+    definition: qs("glossary-definition").value.trim(),
+    whisper_hint: qs("glossary-whisper-hint").value.trim(),
+    llm_hint: qs("glossary-llm-hint").value.trim(),
+    use_for_whisper: qs("glossary-use-whisper").checked,
+    use_for_llm: qs("glossary-use-llm").checked,
+    is_active: qs("glossary-is-active").checked,
+    sort_order: numberInputValueOrNull("glossary-sort-order"),
+  };
+}
+
 function renderSettings() {
   const payload = state.settings || {};
   const runtime = payload.runtime || {};
@@ -795,6 +930,20 @@ async function loadSettings() {
   touchUpdatedAt();
 }
 
+async function loadGlossary() {
+  const data = await apiJson(`${API}/api/admin/glossary`);
+  state.glossary = data.items || [];
+  state.glossaryCategories = data.categories || [];
+  if (state.selectedGlossaryId && !state.glossary.some((item) => item.id === state.selectedGlossaryId)) {
+    resetGlossaryForm();
+  } else if (state.selectedGlossaryId) {
+    fillGlossaryForm(state.selectedGlossaryId);
+  } else {
+    renderGlossary();
+  }
+  touchUpdatedAt();
+}
+
 async function loadAudit() {
   const data = await apiJson(`${API}/api/admin/audit?limit=200`);
   state.audit = data.items || [];
@@ -804,7 +953,7 @@ async function loadAudit() {
 
 async function loadAll() {
   await loadBootstrap();
-  await Promise.all([loadOverview(), loadJobs(), loadUsers(), loadVideos(), loadChecklists(), loadAudit()]);
+  await Promise.all([loadOverview(), loadJobs(), loadUsers(), loadVideos(), loadChecklists(), loadGlossary(), loadAudit()]);
 }
 
 async function handleRefreshAll() {
@@ -1188,6 +1337,71 @@ async function handleSettingsSubmit(event) {
   }
 }
 
+async function handleGlossarySubmit(event) {
+  event.preventDefault();
+  const button = qs("glossary-save-btn");
+  setBusy(button, true);
+  try {
+    const payload = glossaryPayloadFromForm();
+    if (!payload.term) {
+      setFlash("Укажите основной термин.", "error", 0);
+      return;
+    }
+    const url = state.selectedGlossaryId
+      ? `${API}/api/admin/glossary/${encodeURIComponent(state.selectedGlossaryId)}`
+      : `${API}/api/admin/glossary`;
+    const data = await apiJson(url, {
+      method: state.selectedGlossaryId ? "PUT" : "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    setFlash("Термин глоссария сохранён.", "ok");
+    state.selectedGlossaryId = data.entry?.id || state.selectedGlossaryId;
+    await Promise.all([loadGlossary(), loadAudit()]);
+  } catch (error) {
+    setFlash(error.message || String(error), "error", 0);
+  } finally {
+    setBusy(button, false);
+  }
+}
+
+async function handleGlossaryDisable() {
+  if (!state.selectedGlossaryId) {
+    setFlash("Сначала выберите термин.", "error", 0);
+    return;
+  }
+  try {
+    await apiJson(`${API}/api/admin/glossary/${encodeURIComponent(state.selectedGlossaryId)}`, {
+      method: "DELETE",
+    });
+    setFlash("Термин отключён. Его можно снова включить через флаг «Активен».", "ok");
+    await Promise.all([loadGlossary(), loadAudit()]);
+  } catch (error) {
+    setFlash(error.message || String(error), "error", 0);
+  }
+}
+
+async function handleGlossaryPreview() {
+  const preview = qs("glossary-preview");
+  if (!preview) return;
+  const button = qs("glossary-preview-btn");
+  setBusy(button, true);
+  try {
+    const data = await apiJson(`${API}/api/admin/glossary/preview`);
+    preview.hidden = false;
+    preview.innerHTML = `
+      <h4>Whisper initial_prompt <span class="admin-note">${data.whisper_chars ?? 0} символов</span></h4>
+      <pre class="admin-code">${escapeHtml(data.whisper_prompt || "Пусто")}</pre>
+      <h4>LLM glossary block <span class="admin-note">${data.eval_chars ?? 0} символов</span></h4>
+      <pre class="admin-code">${escapeHtml(data.eval_prompt || "Пусто")}</pre>
+    `;
+  } catch (error) {
+    setFlash(error.message || String(error), "error", 0);
+  } finally {
+    setBusy(button, false);
+  }
+}
+
 async function handleJobAction(jobId, action) {
   if (!jobId) {
     setFlash("Не удалось определить задачу.", "error", 0);
@@ -1259,6 +1473,15 @@ function bindEvents() {
   qs("training-form-reset").addEventListener("click", resetTrainingTypeForm);
   qs("training-type-delete-btn").addEventListener("click", () => void handleTrainingTypeDelete());
 
+  qs("glossary-query").addEventListener("input", renderGlossary);
+  qs("glossary-category-filter").addEventListener("change", renderGlossary);
+  qs("glossary-active-filter").addEventListener("change", renderGlossary);
+  qs("glossary-new-btn").addEventListener("click", resetGlossaryForm);
+  qs("glossary-reset-btn").addEventListener("click", resetGlossaryForm);
+  qs("glossary-form").addEventListener("submit", handleGlossarySubmit);
+  qs("glossary-disable-btn").addEventListener("click", () => void handleGlossaryDisable());
+  qs("glossary-preview-btn").addEventListener("click", () => void handleGlossaryPreview());
+
   qs("settings-form").addEventListener("submit", handleSettingsSubmit);
 
   qs("admin-logout").addEventListener("click", async () => {
@@ -1307,6 +1530,12 @@ function bindEvents() {
       return;
     }
 
+    const glossaryRow = target.closest && target.closest("#glossary-body tr[data-glossary-id]");
+    if (glossaryRow) {
+      fillGlossaryForm(glossaryRow.dataset.glossaryId);
+      return;
+    }
+
     const managerDelete = target.closest && target.closest("[data-manager-delete]");
     if (managerDelete) {
       void apiJson(`${API}/api/managers/${encodeURIComponent(managerDelete.dataset.managerDelete)}`, { method: "DELETE" })
@@ -1345,6 +1574,7 @@ async function init() {
     resetVideoForm();
     clearChecklistEditor();
     resetTrainingTypeForm();
+    resetGlossaryForm();
   } catch (error) {
     if (String(error.message || "").includes("Требуется вход")) {
       window.location.href = "/login.html?next=/admin";

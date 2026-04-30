@@ -10,6 +10,7 @@ from typing import Any
 import yaml
 
 from src.paths import CONFIG_DIR, DEFAULT_CHECKLIST_SLUG, PROJECT_ROOT
+from src.glossary_seed import GLOSSARY_SEED
 from src.seed_data import build_seed_criteria
 
 DB_PATH = PROJECT_ROOT / "fresh_fa.db"
@@ -189,6 +190,23 @@ CREATE TABLE IF NOT EXISTS audit_log (
 CREATE TABLE IF NOT EXISTS app_settings (
     key TEXT PRIMARY KEY,
     value TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS glossary_entries (
+    id TEXT PRIMARY KEY,
+    category TEXT NOT NULL DEFAULT '',
+    term TEXT NOT NULL,
+    variants_json TEXT NOT NULL DEFAULT '[]',
+    definition TEXT NOT NULL DEFAULT '',
+    whisper_hint TEXT NOT NULL DEFAULT '',
+    llm_hint TEXT NOT NULL DEFAULT '',
+    use_for_whisper INTEGER NOT NULL DEFAULT 1,
+    use_for_llm INTEGER NOT NULL DEFAULT 1,
+    is_active INTEGER NOT NULL DEFAULT 1,
+    sort_order INTEGER NOT NULL DEFAULT 0,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL,
+    updated_by TEXT
 );
 """
 
@@ -452,6 +470,54 @@ def _ensure_post_migration_indexes(conn: sqlite3.Connection) -> None:
     )
     conn.execute("CREATE INDEX IF NOT EXISTS idx_audit_log_created_at ON audit_log(created_at DESC)")
     conn.execute("CREATE INDEX IF NOT EXISTS idx_audit_log_action ON audit_log(action)")
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_glossary_entries_category ON glossary_entries(category)")
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_glossary_entries_active ON glossary_entries(is_active)")
+
+
+def _ensure_glossary_seed(conn: sqlite3.Connection) -> None:
+    row = conn.execute("SELECT COUNT(*) FROM glossary_entries").fetchone()
+    if row and int(row[0] or 0) > 0:
+        return
+    now = _utc_now()
+    for idx, item in enumerate(GLOSSARY_SEED):
+        conn.execute(
+            """
+            INSERT OR IGNORE INTO glossary_entries (
+                id,
+                category,
+                term,
+                variants_json,
+                definition,
+                whisper_hint,
+                llm_hint,
+                use_for_whisper,
+                use_for_llm,
+                is_active,
+                sort_order,
+                created_at,
+                updated_at,
+                updated_by
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                str(item.get("id") or "").strip(),
+                str(item.get("category") or "").strip(),
+                str(item.get("term") or "").strip(),
+                json.dumps(list(item.get("variants") or []), ensure_ascii=False),
+                str(item.get("definition") or "").strip(),
+                str(item.get("whisper_hint") or "").strip(),
+                str(item.get("llm_hint") or "").strip(),
+                1 if item.get("use_for_whisper", True) else 0,
+                1 if item.get("use_for_llm", True) else 0,
+                1 if item.get("is_active", True) else 0,
+                int(item.get("sort_order", idx)),
+                now,
+                now,
+                "seed",
+            ),
+        )
+    conn.commit()
 
 
 def _run_schema_migrations(conn: sqlite3.Connection) -> None:
@@ -467,6 +533,7 @@ def _run_schema_migrations(conn: sqlite3.Connection) -> None:
     _migrate_checklist_display_names(conn)
     _migrate_user_display_names(conn)
     _ensure_seed_manager_sync(conn)
+    _ensure_glossary_seed(conn)
     _ensure_post_migration_indexes(conn)
     conn.commit()
 
@@ -1696,6 +1763,139 @@ class DB:
     def delete_jobs_for_stem(self, stem: str) -> None:
         self._conn.execute("DELETE FROM jobs WHERE stem = ?", (stem,))
         self._conn.commit()
+
+    # --- glossary ---
+    @staticmethod
+    def _glossary_row_to_dict(row: sqlite3.Row) -> dict[str, Any]:
+        item = dict(row)
+        try:
+            variants = json.loads(item.get("variants_json") or "[]")
+        except (TypeError, json.JSONDecodeError):
+            variants = []
+        item["variants"] = [str(v).strip() for v in variants if str(v or "").strip()] if isinstance(variants, list) else []
+        item.pop("variants_json", None)
+        item["use_for_whisper"] = bool(item.get("use_for_whisper"))
+        item["use_for_llm"] = bool(item.get("use_for_llm"))
+        item["is_active"] = bool(item.get("is_active"))
+        return item
+
+    def list_glossary_entries(self, *, include_inactive: bool = True) -> list[dict[str, Any]]:
+        sql = """
+            SELECT *
+            FROM glossary_entries
+        """
+        params: list[Any] = []
+        if not include_inactive:
+            sql += " WHERE is_active = 1"
+        sql += " ORDER BY sort_order, category COLLATE NOCASE, term COLLATE NOCASE, id COLLATE NOCASE"
+        rows = self._conn.execute(sql, params).fetchall()
+        return [self._glossary_row_to_dict(r) for r in rows]
+
+    def get_glossary_entry(self, entry_id: str) -> dict[str, Any] | None:
+        row = self._conn.execute(
+            "SELECT * FROM glossary_entries WHERE id = ?",
+            (entry_id,),
+        ).fetchone()
+        return self._glossary_row_to_dict(row) if row else None
+
+    def upsert_glossary_entry(
+        self,
+        entry_id: str,
+        *,
+        category: str,
+        term: str,
+        variants: list[str] | None = None,
+        definition: str = "",
+        whisper_hint: str = "",
+        llm_hint: str = "",
+        use_for_whisper: bool = True,
+        use_for_llm: bool = True,
+        is_active: bool = True,
+        sort_order: int | None = None,
+        updated_by: str | None = None,
+    ) -> dict[str, Any]:
+        now = _utc_now()
+        existing = self.get_glossary_entry(entry_id)
+        if sort_order is None:
+            if existing:
+                sort_order = int(existing.get("sort_order") or 0)
+            else:
+                row = self._conn.execute("SELECT COALESCE(MAX(sort_order), -1) FROM glossary_entries").fetchone()
+                sort_order = int(row[0] or -1) + 1 if row else 0
+        clean_variants = [str(v).strip() for v in (variants or []) if str(v or "").strip()]
+        self._conn.execute(
+            """
+            INSERT INTO glossary_entries (
+                id,
+                category,
+                term,
+                variants_json,
+                definition,
+                whisper_hint,
+                llm_hint,
+                use_for_whisper,
+                use_for_llm,
+                is_active,
+                sort_order,
+                created_at,
+                updated_at,
+                updated_by
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ON CONFLICT(id) DO UPDATE SET
+                category = excluded.category,
+                term = excluded.term,
+                variants_json = excluded.variants_json,
+                definition = excluded.definition,
+                whisper_hint = excluded.whisper_hint,
+                llm_hint = excluded.llm_hint,
+                use_for_whisper = excluded.use_for_whisper,
+                use_for_llm = excluded.use_for_llm,
+                is_active = excluded.is_active,
+                sort_order = excluded.sort_order,
+                updated_at = excluded.updated_at,
+                updated_by = excluded.updated_by
+            """,
+            (
+                entry_id,
+                category,
+                term,
+                json.dumps(clean_variants, ensure_ascii=False),
+                definition,
+                whisper_hint,
+                llm_hint,
+                1 if use_for_whisper else 0,
+                1 if use_for_llm else 0,
+                1 if is_active else 0,
+                int(sort_order),
+                existing.get("created_at", now) if existing else now,
+                now,
+                updated_by,
+            ),
+        )
+        self._conn.commit()
+        item = self.get_glossary_entry(entry_id)
+        if item is None:
+            raise RuntimeError(f"Не удалось сохранить термин глоссария: {entry_id}")
+        return item
+
+    def set_glossary_entry_active(
+        self,
+        entry_id: str,
+        is_active: bool,
+        *,
+        updated_by: str | None = None,
+    ) -> dict[str, Any] | None:
+        self._conn.execute(
+            """
+            UPDATE glossary_entries
+            SET is_active = ?, updated_at = ?, updated_by = ?
+            WHERE id = ?
+            """,
+            (1 if is_active else 0, _utc_now(), updated_by, entry_id),
+        )
+        self._conn.commit()
+        return self.get_glossary_entry(entry_id)
 
     # --- checklists ---
     def checklist_count(self) -> int:

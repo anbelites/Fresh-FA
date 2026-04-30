@@ -50,6 +50,7 @@ from src.ad_auth import (
     verify_user_password,
 )
 from src.eval_schema import compute_eval_totals, normalize_eval_criteria, normalize_loaded_evaluation
+from src.glossary import format_glossary_for_eval, format_glossary_for_whisper
 from src.local_auth import (
     hash_local_password,
     normalize_local_username,
@@ -3667,6 +3668,20 @@ class AdminSettingsBody(BaseModel):
     default_max_running_jobs: int | None = None
 
 
+class AdminGlossaryEntryBody(BaseModel):
+    id: str | None = None
+    category: str = ""
+    term: str = ""
+    variants: list[str] = []
+    definition: str = ""
+    whisper_hint: str = ""
+    llm_hint: str = ""
+    use_for_whisper: bool = True
+    use_for_llm: bool = True
+    is_active: bool = True
+    sort_order: int | None = None
+
+
 def _admin_user_payload(
     row: dict[str, Any],
     usage_map: dict[str, dict[str, int]] | None = None,
@@ -3799,6 +3814,56 @@ def _admin_settings_payload() -> dict[str, Any]:
         "runtime": runtime,
         "settings": settings,
     }
+
+
+def _normalize_glossary_entry_id(value: str | None, fallback_term: str) -> str:
+    raw = str(value or "").strip() or str(fallback_term or "").strip()
+    slug = re.sub(r"[^0-9a-zA-Zа-яА-ЯёЁ_-]+", "_", raw.lower(), flags=re.IGNORECASE)
+    slug = re.sub(r"_+", "_", slug).strip("_-")
+    if not slug:
+        raise HTTPException(400, "Укажите id или термин глоссария")
+    return slug[:96]
+
+
+def _normalize_glossary_body(body: AdminGlossaryEntryBody, *, path_id: str | None = None) -> dict[str, Any]:
+    term = str(body.term or "").strip()
+    if not term:
+        raise HTTPException(400, "Укажите основной термин")
+    entry_id = _normalize_glossary_entry_id(path_id or body.id, term)
+    variants = [str(v).strip() for v in (body.variants or []) if str(v or "").strip()]
+    seen: set[str] = set()
+    clean_variants: list[str] = []
+    for variant in variants:
+        key = variant.casefold()
+        if key == term.casefold() or key in seen:
+            continue
+        seen.add(key)
+        clean_variants.append(variant)
+    return {
+        "entry_id": entry_id,
+        "category": str(body.category or "").strip() or "Общее",
+        "term": term,
+        "variants": clean_variants,
+        "definition": str(body.definition or "").strip(),
+        "whisper_hint": str(body.whisper_hint or "").strip(),
+        "llm_hint": str(body.llm_hint or "").strip(),
+        "use_for_whisper": bool(body.use_for_whisper),
+        "use_for_llm": bool(body.use_for_llm),
+        "is_active": bool(body.is_active),
+        "sort_order": body.sort_order,
+    }
+
+
+def _glossary_payload() -> dict[str, Any]:
+    entries = _db.list_glossary_entries(include_inactive=True)
+    categories = sorted(
+        {
+            str(row.get("category") or "").strip()
+            for row in entries
+            if str(row.get("category") or "").strip()
+        }
+    )
+    return {"items": entries, "categories": categories}
 
 
 def _admin_reference_data() -> dict[str, Any]:
@@ -4304,6 +4369,86 @@ def api_admin_checklist_update(request: Request, name: str, body: CriteriaPayloa
 def api_admin_checklist_delete(request: Request, name: str) -> dict[str, Any]:
     _require_admin(request)
     return api_criteria_delete(name, request)
+
+
+@app.get("/api/admin/glossary")
+def api_admin_glossary(request: Request) -> dict[str, Any]:
+    _require_admin(request)
+    return _glossary_payload()
+
+
+@app.get("/api/admin/glossary/preview")
+def api_admin_glossary_preview(request: Request) -> dict[str, Any]:
+    _require_admin(request)
+    entries = _db.list_glossary_entries(include_inactive=False)
+    whisper_prompt = format_glossary_for_whisper(entries)
+    eval_prompt = format_glossary_for_eval(entries)
+    return {
+        "whisper_prompt": whisper_prompt,
+        "eval_prompt": eval_prompt,
+        "whisper_chars": len(whisper_prompt),
+        "eval_chars": len(eval_prompt),
+    }
+
+
+@app.post("/api/admin/glossary")
+def api_admin_glossary_create(request: Request, body: AdminGlossaryEntryBody) -> dict[str, Any]:
+    _require_admin(request)
+    payload = _normalize_glossary_body(body)
+    if _db.get_glossary_entry(payload["entry_id"]):
+        raise HTTPException(409, "Термин с таким id уже существует")
+    item = _db.upsert_glossary_entry(updated_by=request.session.get("user"), **payload)
+    _audit_log(
+        request,
+        action="admin.glossary.create",
+        target_type="glossary_entry",
+        target_id=item["id"],
+        details={"term": item["term"], "category": item["category"]},
+    )
+    return {"ok": True, "entry": item}
+
+
+@app.put("/api/admin/glossary/{entry_id}")
+def api_admin_glossary_update(request: Request, entry_id: str, body: AdminGlossaryEntryBody) -> dict[str, Any]:
+    _require_admin(request)
+    normalized_id = _normalize_glossary_entry_id(entry_id, body.term)
+    existing = _db.get_glossary_entry(normalized_id)
+    if not existing:
+        raise HTTPException(404, "Термин глоссария не найден")
+    payload = _normalize_glossary_body(body, path_id=normalized_id)
+    item = _db.upsert_glossary_entry(updated_by=request.session.get("user"), **payload)
+    _audit_log(
+        request,
+        action="admin.glossary.update",
+        target_type="glossary_entry",
+        target_id=item["id"],
+        details={
+            "term": item["term"],
+            "category": item["category"],
+            "use_for_whisper": item["use_for_whisper"],
+            "use_for_llm": item["use_for_llm"],
+            "is_active": item["is_active"],
+        },
+    )
+    return {"ok": True, "entry": item}
+
+
+@app.delete("/api/admin/glossary/{entry_id}")
+def api_admin_glossary_delete(request: Request, entry_id: str) -> dict[str, Any]:
+    _require_admin(request)
+    normalized_id = _normalize_glossary_entry_id(entry_id, entry_id)
+    existing = _db.get_glossary_entry(normalized_id)
+    if not existing:
+        raise HTTPException(404, "Термин глоссария не найден")
+    item = _db.set_glossary_entry_active(normalized_id, False, updated_by=request.session.get("user"))
+    _audit_log(
+        request,
+        action="admin.glossary.disable",
+        target_type="glossary_entry",
+        target_id=normalized_id,
+        details={"term": existing.get("term")},
+    )
+    return {"ok": True, "entry": item}
 
 
 @app.get("/api/admin/settings")

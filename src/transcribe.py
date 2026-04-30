@@ -19,6 +19,7 @@ ensure_nvidia_pip_libs()
 
 from src.audio_extract import extract_wav_16k_mono
 from src.errors import PipelineCancelled
+from src.glossary import format_glossary_for_whisper
 from src.audio_tone import (
     aggregate_tone_by_speaker,
     audio_tone_summary_note,
@@ -67,94 +68,26 @@ def _language() -> str | None:
     return v if v else None
 
 
-_DEFAULT_WHISPER_DOMAIN_TERMS = (
-    "Fresh",
-    "Фреш",
-    "КСО",
-    "ПТЗ",
-    "ТО-0",
-    "ТО0",
-    "ЛКП",
-    "ПТС",
-    "ДВС",
-    "КПП",
-    "КД",
-    "ППП",
-    "МК",
-    "РОС",
-    "СВК",
-    "CRM",
-    "trade-in",
-    "трейд-ин",
-    "trade-up",
-    "трейд-ап",
-    "small talk",
-    "тест-драйв",
-    "Автотека",
-    "АВТОСТАТ",
-    "комитент",
-    "комиссионная продажа",
-    "выкуп",
-    "интерактивные продажи",
-    "полис технической защиты",
-    "продлённая техническая защита",
-    "продленная техническая защита",
-    "продлённая гарантия",
-    "нулевое техническое обслуживание",
-    "диагностика по 258 пунктам",
-    "развёрнутая диагностика",
-    "развернутая диагностика",
-    "лист диагностики",
-    "толщиномер",
-    "лакокрасочное покрытие",
-    "заводской окрас",
-    "вторичный окрас",
-    "шпаклёвка",
-    "шпаклевка",
-    "микроны",
-    "подъёмник",
-    "подъемник",
-    "эндоскопия",
-    "компрессия",
-    "геометрия кузова",
-    "пассивная безопасность",
-    "криминалистическая проверка",
-    "дилерское обслуживание",
-    "регламентное обслуживание",
-    "классифайды",
-    "ПТС оригинал",
-    "один собственник",
-    "манишки",
-    "мультибрендовый сервис Fresh",
-)
-
-
-_DEFAULT_WHISPER_DOMAIN_PROMPT = (
-    "Это запись разговора в автосалоне Fresh про покупку, продажу, оценку, "
-    "диагностику и обслуживание автомобилей. В речи могут встречаться фирменные "
-    "и автомобильные термины. Правильно распознавай и сохраняй написание терминов: "
-    + ", ".join(_DEFAULT_WHISPER_DOMAIN_TERMS)
-    + "."
-)
-
-
 def _initial_prompt() -> str | None:
     """Domain vocabulary hint for Whisper (improves recognition of names, brands, terms)."""
     v = os.environ.get("WHISPER_INITIAL_PROMPT", "").strip()
     if v:
         return v
+    glossary_prompt = format_glossary_for_whisper()
     extra = os.environ.get("WHISPER_DOMAIN_PROMPT", "").strip()
+    if extra and glossary_prompt:
+        return f"{glossary_prompt}\nДополнительный глоссарий: {extra}"
     if extra:
-        return f"{_DEFAULT_WHISPER_DOMAIN_PROMPT}\nДополнительный глоссарий: {extra}"
-    return _DEFAULT_WHISPER_DOMAIN_PROMPT
+        return f"Дополнительный глоссарий для распознавания речи: {extra}"
+    return glossary_prompt or None
 
 
 def _initial_prompt_source() -> str:
     if os.environ.get("WHISPER_INITIAL_PROMPT", "").strip():
         return "WHISPER_INITIAL_PROMPT"
     if os.environ.get("WHISPER_DOMAIN_PROMPT", "").strip():
-        return "built_in+WHISPER_DOMAIN_PROMPT"
-    return "built_in"
+        return "database_glossary+WHISPER_DOMAIN_PROMPT"
+    return "database_glossary"
 
 
 def _hf_token() -> str | None:

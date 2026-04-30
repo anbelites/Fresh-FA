@@ -13,6 +13,7 @@ from openai import OpenAI
 from src.criteria_loader import Criterion, criteria_to_prompt_block, load_criteria, load_criteria_from_db
 from src.database import DB
 from src.eval_schema import awarded_weight, compute_eval_totals, normalize_passed, parse_legacy_score
+from src.glossary import format_glossary_for_eval
 from src.paths import DEFAULT_CHECKLIST_SLUG
 from src.speech_emotion import speech_emotion_context_for_eval
 
@@ -124,7 +125,11 @@ def _stream_completion_chunks(
     return raw, reasoning
 
 
-def build_eval_prompt(transcript_text: str, criteria: list[Criterion]) -> tuple[str, str]:
+def build_eval_prompt(
+    transcript_text: str,
+    criteria: list[Criterion],
+    glossary_block: str | None = None,
+) -> tuple[str, str]:
     system = (
         "Ты эксперт по оценке речи в деловом и сервисном общении. "
         "У каждой строки транскрипта могут быть пометки: «аудио:» (акустические признаки — F0σ, RMS, флаги тона), «SER:» (метка эмоции по аудиомодели). "
@@ -156,6 +161,10 @@ def build_eval_prompt(transcript_text: str, criteria: list[Criterion]) -> tuple[
     user = f"""Транскрипт диалога (с указанием говорящих по сегментам):
 
 {transcript_text}
+
+---
+
+{glossary_block or ""}
 
 ---
 
@@ -399,7 +408,8 @@ def evaluate_transcript(
     linear = transcript_to_linear_text(transcript_data, tone_segments=tone_segments)
     audio_ctx = audio_tone_context_for_eval(transcript_data)
     ser_ctx = speech_emotion_context_for_eval(tone_data) if tone_data else ""
-    system, user = build_eval_prompt(linear + audio_ctx + ser_ctx, criteria)
+    glossary_ctx = format_glossary_for_eval()
+    system, user = build_eval_prompt(linear + audio_ctx + ser_ctx, criteria, glossary_ctx)
 
     client = _client()
     model_name = _model()
