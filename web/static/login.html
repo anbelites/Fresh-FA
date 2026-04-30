@@ -10,7 +10,7 @@
       href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="/static/app.css" />
+    <link rel="stylesheet" href="/static/app.css?v=72" />
     <style>
       .login-page {
         min-height: 100vh;
@@ -18,16 +18,58 @@
         align-items: center;
         justify-content: center;
         padding: 1.5rem;
-        background: var(--paper);
+        position: relative;
+        overflow: hidden;
+        isolation: isolate;
+        background: #08111f;
+      }
+      .login-page::before {
+        content: "";
+        position: absolute;
+        inset: -2rem;
+        background:
+          linear-gradient(180deg, rgba(8, 17, 31, 0.18) 0%, rgba(8, 17, 31, 0.6) 100%),
+          url("/static/assets/img/login-bg-racing.png") center center / cover no-repeat;
+        filter: blur(16px) saturate(0.92);
+        transform: scale(1.06);
+        z-index: -2;
+      }
+      .login-page::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background:
+          radial-gradient(circle at top right, rgba(61, 107, 255, 0.24), transparent 38%),
+          linear-gradient(135deg, rgba(5, 10, 18, 0.58), rgba(5, 10, 18, 0.2));
+        z-index: -1;
       }
       .login-card {
         width: 100%;
         max-width: 400px;
-        background: var(--card);
+        background: rgba(255, 255, 255, 0.9);
         border-radius: var(--radius-lg);
-        box-shadow: var(--shadow);
+        box-shadow: 0 24px 60px rgba(7, 13, 24, 0.24);
         padding: 2rem 1.75rem;
-        border: 1px solid var(--line);
+        border: 1px solid rgba(255, 255, 255, 0.55);
+        backdrop-filter: blur(14px);
+      }
+      .login-brand {
+        display: flex;
+        align-items: center;
+        justify-content: flex-start;
+        gap: 0.6rem;
+        margin-bottom: 1.2rem;
+      }
+      .login-brand-fresh {
+        display: block;
+        height: 28px;
+        width: auto;
+      }
+      .login-brand-fa {
+        display: block;
+        height: 34px;
+        width: auto;
+        margin-left: auto;
       }
       .login-card h1 {
         font-family: var(--font-body);
@@ -62,12 +104,18 @@
         border: 1px solid var(--line);
         background: #fff;
       }
+      .login-hint {
+        margin-top: 0.4rem;
+        color: var(--muted);
+        font-size: 0.78rem;
+        line-height: 1.35;
+      }
       .login-field input:focus {
         outline: 2px solid rgba(0, 61, 255, 0.25);
         border-color: var(--brand);
       }
       .login-actions {
-        margin-top: 1.25rem;
+        margin-top: 0;
       }
       .login-btn {
         width: 100%;
@@ -100,17 +148,97 @@
         color: var(--muted);
         font-size: 0.9rem;
       }
+      .login-card-footer {
+        margin-top: 1.25rem;
+      }
+      .login-footer-actions-row {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+      }
+      .login-footer-actions-row:has(#login-mode-switch:not([hidden])) {
+        flex-direction: row;
+        align-items: stretch;
+        gap: 0.5rem;
+      }
+      .login-footer-actions-row:has(#login-mode-switch:not([hidden])) .login-mode-switch {
+        margin-bottom: 0;
+        flex: 1;
+        min-width: 0;
+      }
+      .login-footer-actions-row:has(#login-mode-switch:not([hidden])) .login-actions {
+        flex: 1;
+        min-width: 0;
+      }
+      /* UA задаёт [hidden] как display:none !important; на всякий случай не даём flex перебить скрытие */
+      #login-mode-switch[hidden] {
+        display: none !important;
+      }
+      .login-mode-switch {
+        display: flex;
+        gap: 0.5rem;
+        margin-bottom: 0;
+        position: relative;
+        z-index: 2;
+      }
+      .login-mode-secondary {
+        width: 100%;
+        font: inherit;
+        padding: 0.55rem 0.75rem;
+        border-radius: var(--radius-sm);
+        border: 1px solid var(--line);
+        background: #fff;
+        color: var(--ink);
+        cursor: pointer;
+      }
+      .login-mode-secondary:hover {
+        border-color: rgba(0, 61, 255, 0.35);
+        background: rgba(0, 61, 255, 0.04);
+      }
+      .login-secondary {
+        margin-top: 0.75rem;
+        text-align: center;
+        color: var(--muted);
+        font-size: 0.82rem;
+      }
+      .login-panel[hidden] {
+        display: none;
+      }
+      .login-field select {
+        width: 100%;
+        font: inherit;
+        padding: 0.55rem 0.75rem;
+        border-radius: var(--radius-sm);
+        border: 1px solid var(--line);
+        background: #fff;
+      }
     </style>
   </head>
   <body>
     <div class="login-page">
       <div class="login-card">
+        <div class="login-brand" aria-label="Fresh FA">
+          <img
+            src="/static/assets/img/fresh-logo-blue-transparent.png"
+            alt="Fresh"
+            width="182"
+            height="28"
+            class="login-brand-fresh"
+          />
+          <img
+            src="/static/assets/img/fa-logo-blue.png"
+            alt="FA"
+            width="34"
+            height="34"
+            class="login-brand-fa"
+          />
+        </div>
         <h1>Вход</h1>
-        <p class="sub">Учётная запись домена (Active Directory)</p>
+        <p class="sub" id="login-subtitle">Учётная запись домена (Active Directory)</p>
         <p id="login-disabled" class="login-disabled" style="display: none">
-          Вход через AD не включён на сервере. Задайте AD_AUTH_ENABLED и параметры LDAP в конфигурации.
+          Вход не включён на сервере. Настройте `AUTH_TYPE` в конфигурации.
         </p>
-        <form id="login-form" autocomplete="on">
+        <form id="login-form" autocomplete="on" class="login-panel">
           <div class="login-field">
             <label for="username">Имя пользователя</label>
             <input
@@ -128,17 +256,66 @@
             <label for="password">Пароль</label>
             <input id="password" name="password" type="password" autocomplete="current-password" required />
           </div>
-          <div class="login-actions">
-            <button type="submit" class="login-btn" id="login-submit">Войти</button>
-          </div>
           <p id="login-error" class="login-error" role="alert"></p>
         </form>
+        <form id="register-form" autocomplete="on" class="login-panel" hidden>
+          <div class="login-field">
+            <label for="register-username">Логин</label>
+            <input id="register-username" type="text" autocomplete="username" maxlength="256" />
+          </div>
+          <div class="login-field">
+            <label for="register-password">Пароль</label>
+            <input id="register-password" type="password" autocomplete="new-password" minlength="10" />
+            <div class="login-hint">
+              Не короче 10 символов, со строчной и прописной буквой, цифрой и спецсимволом, без пробелов.
+            </div>
+          </div>
+          <div class="login-field">
+            <label for="register-full-name">ФИО</label>
+            <input id="register-full-name" type="text" autocomplete="name" />
+          </div>
+          <div class="login-field">
+            <label for="register-location">Локация</label>
+            <select id="register-location"></select>
+          </div>
+          <div class="login-field">
+            <label for="register-department">Отдел</label>
+            <select id="register-department">
+              <option value="">Выберите отдел</option>
+              <option value="ОО">Отдел оценки</option>
+              <option value="ОП">Отдел продаж</option>
+            </select>
+          </div>
+          <p id="register-error" class="login-error" role="alert"></p>
+          <div class="login-secondary">После регистрации профиль будет сразу заполнен.</div>
+        </form>
+        <div class="login-card-footer" id="login-card-footer">
+          <div class="login-footer-actions-row">
+            <div class="login-actions">
+              <button type="submit" form="login-form" class="login-btn" id="login-submit">Войти</button>
+              <button type="submit" form="register-form" class="login-btn" id="register-submit" hidden>
+                Зарегистрироваться
+              </button>
+            </div>
+            <div class="login-mode-switch" id="login-mode-switch" hidden>
+              <button type="button" class="login-mode-secondary" id="login-mode-to-register">
+                Регистрация
+              </button>
+              <button type="button" class="login-mode-secondary" id="login-mode-to-login" hidden>
+                Ко входу
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
     <script>
       const API = "";
+      const PASSWORD_POLICY_TEXT =
+        "Пароль должен быть не короче 10 символов, содержать строчную и прописную букву, цифру и спецсимвол, без пробелов.";
       const params = new URLSearchParams(location.search);
       const nextUrl = params.get("next") || "/";
+      let authConfig = { auth_type: "none", local_auth_enabled: false, registration_allowed: false };
 
       function humanizeLoginError(raw) {
         const s = String(raw || "").trim();
@@ -149,15 +326,119 @@
         return s;
       }
 
+      function setActivePanel(panel) {
+        const loginForm = document.getElementById("login-form");
+        const registerForm = document.getElementById("register-form");
+        const toRegister = document.getElementById("login-mode-to-register");
+        const toLogin = document.getElementById("login-mode-to-login");
+        const loginSubmit = document.getElementById("login-submit");
+        const registerSubmit = document.getElementById("register-submit");
+        const registerOpen = panel === "register";
+        loginForm.hidden = registerOpen;
+        registerForm.hidden = !registerOpen;
+        if (toRegister && toLogin) {
+          toRegister.hidden = registerOpen;
+          toLogin.hidden = !registerOpen;
+        }
+        if (loginSubmit && registerSubmit) {
+          loginSubmit.hidden = registerOpen;
+          registerSubmit.hidden = !registerOpen;
+        }
+        queueMicrotask(() => {
+          if (registerOpen) {
+            document.getElementById("register-username")?.focus();
+          } else {
+            document.getElementById("username")?.focus();
+          }
+        });
+      }
+
+      /** Сразу при парсе страницы — не ждём await в init() (иначе клики по вкладкам «молчат» до ответа API). */
+      (function bindLoginModeFooter() {
+        const footer = document.getElementById("login-card-footer");
+        if (!footer) return;
+        footer.addEventListener("click", (e) => {
+          const raw = e.target;
+          const el = raw instanceof Element ? raw : raw?.parentElement;
+          if (!el) return;
+          if (el.closest("#login-submit") || el.closest("#register-submit")) return;
+          if (el.closest("#login-mode-to-register")) {
+            e.preventDefault();
+            setActivePanel("register");
+          } else if (el.closest("#login-mode-to-login")) {
+            e.preventDefault();
+            setActivePanel("login");
+          }
+        });
+      })();
+
+      function fillLocationOptions(items) {
+        const select = document.getElementById("register-location");
+        select.innerHTML = "";
+        const empty = document.createElement("option");
+        empty.value = "";
+        empty.textContent = "Выберите локацию";
+        select.appendChild(empty);
+        for (const row of items || []) {
+          const opt = document.createElement("option");
+          opt.value = row.id;
+          opt.textContent = row.crm_name || row.name || row.id;
+          select.appendChild(opt);
+        }
+      }
+
+      function validatePasswordStrength(password) {
+        const value = String(password || "");
+        if (value.length < 10) return PASSWORD_POLICY_TEXT;
+        if (/\s/u.test(value)) return PASSWORD_POLICY_TEXT;
+        if (!/\p{Ll}/u.test(value)) return PASSWORD_POLICY_TEXT;
+        if (!/\p{Lu}/u.test(value)) return PASSWORD_POLICY_TEXT;
+        if (!/\d/u.test(value)) return PASSWORD_POLICY_TEXT;
+        if (!/[^\p{L}\p{N}]/u.test(value)) return PASSWORD_POLICY_TEXT;
+        return "";
+      }
+
       async function init() {
         const r = await fetch(API + "/api/auth/status", { credentials: "same-origin" });
         const s = await r.json();
-        if (!s.ad_auth_enabled) {
+        authConfig = s || authConfig;
+        const subtitle = document.getElementById("login-subtitle");
+        const username = document.getElementById("username");
+        const modeSwitch = document.getElementById("login-mode-switch");
+        const registerPassword = document.getElementById("register-password");
+        if (registerPassword) {
+          registerPassword.minLength = 10;
+          registerPassword.title = PASSWORD_POLICY_TEXT;
+        }
+        if (!s.auth_enabled) {
           document.getElementById("login-form").style.display = "none";
+          document.getElementById("register-form").style.display = "none";
+          document.getElementById("login-card-footer").style.display = "none";
           document.getElementById("login-disabled").style.display = "block";
           return;
         }
         document.getElementById("login-form").addEventListener("submit", onSubmit);
+        document.getElementById("register-form").addEventListener("submit", onRegister);
+        if (s.auth_type === "local") {
+          if (subtitle) subtitle.textContent = "Локальная учётная запись";
+          if (username) {
+            username.placeholder = "";
+            username.title = "Логин локального пользователя";
+          }
+          if (modeSwitch && s.registration_allowed) {
+            modeSwitch.hidden = false;
+            setActivePanel("login");
+          }
+          const locRes = await fetch(API + "/api/auth/locations", { credentials: "same-origin" });
+          const locations = await locRes.json().catch(() => []);
+          fillLocationOptions(locations);
+        } else {
+          if (subtitle) subtitle.textContent = "Учётная запись домена (Active Directory)";
+          if (username) {
+            username.placeholder = "CRM\\пользователь";
+            username.title = "Формат: ИМЯ_ДОМЕНА\\логин (например CRM\\ivanov)";
+          }
+        }
       }
 
       async function onSubmit(e) {
@@ -178,6 +459,55 @@
           });
           if (!r.ok) {
             let msg = "Ошибка входа";
+            try {
+              const j = await r.json();
+              if (j.detail) msg = typeof j.detail === "string" ? j.detail : JSON.stringify(j.detail);
+            } catch (_) {}
+            errEl.textContent = humanizeLoginError(msg);
+            errEl.classList.add("visible");
+            return;
+          }
+          location.href = nextUrl.startsWith("/") ? nextUrl : "/";
+        } catch (x) {
+          errEl.textContent = String(x);
+          errEl.classList.add("visible");
+        } finally {
+          btn.disabled = false;
+        }
+      }
+
+      async function onRegister(e) {
+        e.preventDefault();
+        const errEl = document.getElementById("register-error");
+        const btn = document.getElementById("register-submit");
+        errEl.classList.remove("visible");
+        errEl.textContent = "";
+        if (!authConfig.local_auth_enabled) {
+          errEl.textContent = "Регистрация доступна только при локальной аутентификации.";
+          errEl.classList.add("visible");
+          return;
+        }
+        const username = document.getElementById("register-username").value.trim();
+        const password = document.getElementById("register-password").value;
+        const full_name = document.getElementById("register-full-name").value.trim();
+        const location_id = document.getElementById("register-location").value;
+        const department = document.getElementById("register-department").value;
+        const passwordError = validatePasswordStrength(password);
+        if (passwordError) {
+          errEl.textContent = passwordError;
+          errEl.classList.add("visible");
+          return;
+        }
+        btn.disabled = true;
+        try {
+          const r = await fetch(API + "/api/auth/register", {
+            method: "POST",
+            credentials: "same-origin",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ username, password, full_name, location_id, department }),
+          });
+          if (!r.ok) {
+            let msg = "Ошибка регистрации";
             try {
               const j = await r.json();
               if (j.detail) msg = typeof j.detail === "string" ? j.detail : JSON.stringify(j.detail);

@@ -75,6 +75,17 @@ def _get_device_arg() -> int | str:
         return 0
     if v == "mps":
         return "mps"
+    if v == "cpu":
+        return -1
+    if v in ("", "auto"):
+        try:
+            import torch
+
+            if torch.cuda.is_available():
+                return 0
+        except Exception:
+            pass
+        return -1
     return -1
 
 

@@ -1,4 +1,4 @@
-"""Извлечение WAV из видео через ffmpeg."""
+"""Извлечение WAV из видео или аудио через ffmpeg."""
 from __future__ import annotations
 
 import shutil

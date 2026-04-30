@@ -1,0 +1,464 @@
+{
+  "schema_version": 3,
+  "source": "human",
+  "criteria_file": "op_visit_salon",
+  "criteria_version": "1",
+  "criteria_snapshot": [
+    {
+      "id": "greeting",
+      "name": "Приветствие",
+      "description": "Поприветствовал клиента и представился",
+      "weight": 1
+    },
+    {
+      "id": "name_usage",
+      "name": "Имя клиента",
+      "description": "В начале разговора уточнил имя клиента, обращается к клиенту на Вы",
+      "weight": 1
+    },
+    {
+      "id": "small_talk",
+      "name": "Small talk",
+      "description": "Проводит small talk (впервые у нас?, погода, дорога, автомобиль, комплимент выбору т/с)",
+      "weight": 1
+    },
+    {
+      "id": "company_experience",
+      "name": "Опыт клиента",
+      "description": "Уточняет опыт взаимодействия с нами",
+      "weight": 1
+    },
+    {
+      "id": "expertise",
+      "name": "Экспертность",
+      "description": "Озвучивает информацию по критерию Экспертность",
+      "weight": 1
+    },
+    {
+      "id": "company_scale",
+      "name": "Масштаб",
+      "description": "Озвучивает информацию по критерию Масштаб",
+      "weight": 1
+    },
+    {
+      "id": "warranty_info",
+      "name": "Гарантии",
+      "description": "Озвучивает информацию по критерию гарантии",
+      "weight": 1
+    },
+    {
+      "id": "alternative_service",
+      "name": "Альтернатива",
+      "description": "Выявляет потребности через открытые, альтернативные и закрытые вопросы",
+      "weight": 1
+    },
+    {
+      "id": "needs_assessment",
+      "name": "Потребности",
+      "description": "Подводит резюме выявленных потребностей",
+      "weight": 1
+    },
+    {
+      "id": "acquisition_method",
+      "name": "Способ покупки",
+      "description": "Уточняет способ приобретения автомобиля",
+      "weight": 1
+    },
+    {
+      "id": "trade_in_info",
+      "name": "Trade-in",
+      "description": "Раскрывает информацию по услуге trade-in",
+      "weight": 1
+    },
+    {
+      "id": "to0_info",
+      "name": "ТО-0",
+      "description": "Раскрывает информацию по ТО0",
+      "weight": 1
+    },
+    {
+      "id": "kso_info",
+      "name": "КСО",
+      "description": "Раскрывает информацию по услугам КСО",
+      "weight": 1
+    },
+    {
+      "id": "ptz_info",
+      "name": "ПТЗ",
+      "description": "Раскрывает информацию по ПТЗ",
+      "weight": 1
+    },
+    {
+      "id": "service_maintenance",
+      "name": "Сервис",
+      "description": "Раскрывает информацию по сервисному обслуживанию",
+      "weight": 1
+    },
+    {
+      "id": "intake_regulations",
+      "name": "Регламент приёма",
+      "description": "Рассказывает о регламенте приема автомобилей",
+      "weight": 1
+    },
+    {
+      "id": "visual_inspection",
+      "name": "Визуальный осмотр",
+      "description": "Проводит визуальный осмотр автомобиля",
+      "weight": 1
+    },
+    {
+      "id": "detailed_diagnostics",
+      "name": "Развёрнутая диагностика",
+      "description": "Рассказывает про развернутую диагностику",
+      "weight": 1
+    },
+    {
+      "id": "vehicle_advantages",
+      "name": "Преимущества авто",
+      "description": "Делает акцент на уникальных отличиях и преимуществах авто (комплектация, дилерское обслуживание, 1 собственник, ПТС оригинал и т.д.)",
+      "weight": 1
+    },
+    {
+      "id": "lift_offer",
+      "name": "Подъёмник",
+      "description": "Говорит о возможности поднять авто на подъемник",
+      "weight": 1
+    },
+    {
+      "id": "test_drive_offer",
+      "name": "Тест-драйв",
+      "description": "Предлагает пройти тест-драйв",
+      "weight": 1
+    },
+    {
+      "id": "no_hidden_flaws",
+      "name": "Недостатки",
+      "description": "Не умалчивает про недостатки автомобиля",
+      "weight": 1
+    },
+    {
+      "id": "technical_flaws",
+      "name": "Тех. недостатки",
+      "description": "Комментирует все недостатки по тех части",
+      "weight": 1
+    },
+    {
+      "id": "paint_gauge",
+      "name": "Толщиномер",
+      "description": "Предлагает проверить ЛКП толщиномером",
+      "weight": 1
+    },
+    {
+      "id": "autoteka_report",
+      "name": "Отчёт Автотеки",
+      "description": "Показывает отчет автотеки",
+      "weight": 1
+    },
+    {
+      "id": "positive_attitude",
+      "name": "Позитив",
+      "description": "Улыбка, доброжелательность, позитивный настрой",
+      "weight": 1
+    },
+    {
+      "id": "speech_quality",
+      "name": "Речь",
+      "description": "Речь грамотная, не использует сленг и жаргон",
+      "weight": 1
+    },
+    {
+      "id": "clear_argument",
+      "name": "Аргументация",
+      "description": "Дает четкие аргументированные ответы на вопросы",
+      "weight": 1
+    }
+  ],
+  "evaluated_at": "2026-04-23T13:28:20.755126+00:00",
+  "criteria": [
+    {
+      "id": "greeting",
+      "name": "Приветствие",
+      "description": "Поприветствовал клиента и представился",
+      "weight": 1,
+      "passed": true,
+      "comment": "",
+      "evidence_segments": [],
+      "awarded_weight": 1
+    },
+    {
+      "id": "name_usage",
+      "name": "Имя клиента",
+      "description": "В начале разговора уточнил имя клиента, обращается к клиенту на Вы",
+      "weight": 1,
+      "passed": true,
+      "comment": "",
+      "evidence_segments": [],
+      "awarded_weight": 1
+    },
+    {
+      "id": "small_talk",
+      "name": "Small talk",
+      "description": "Проводит small talk (впервые у нас?, погода, дорога, автомобиль, комплимент выбору т/с)",
+      "weight": 1,
+      "passed": false,
+      "comment": "",
+      "evidence_segments": [],
+      "awarded_weight": 0
+    },
+    {
+      "id": "company_experience",
+      "name": "Опыт клиента",
+      "description": "Уточняет опыт взаимодействия с нами",
+      "weight": 1,
+      "passed": true,
+      "comment": "",
+      "evidence_segments": [],
+      "awarded_weight": 1
+    },
+    {
+      "id": "expertise",
+      "name": "Экспертность",
+      "description": "Озвучивает информацию по критерию Экспертность",
+      "weight": 1,
+      "passed": false,
+      "comment": "",
+      "evidence_segments": [],
+      "awarded_weight": 0
+    },
+    {
+      "id": "company_scale",
+      "name": "Масштаб",
+      "description": "Озвучивает информацию по критерию Масштаб",
+      "weight": 1,
+      "passed": true,
+      "comment": "",
+      "evidence_segments": [],
+      "awarded_weight": 1
+    },
+    {
+      "id": "warranty_info",
+      "name": "Гарантии",
+      "description": "Озвучивает информацию по критерию гарантии",
+      "weight": 1,
+      "passed": false,
+      "comment": "",
+      "evidence_segments": [],
+      "awarded_weight": 0
+    },
+    {
+      "id": "alternative_service",
+      "name": "Альтернатива",
+      "description": "Выявляет потребности через открытые, альтернативные и закрытые вопросы",
+      "weight": 1,
+      "passed": true,
+      "comment": "",
+      "evidence_segments": [],
+      "awarded_weight": 1
+    },
+    {
+      "id": "needs_assessment",
+      "name": "Потребности",
+      "description": "Подводит резюме выявленных потребностей",
+      "weight": 1,
+      "passed": true,
+      "comment": "",
+      "evidence_segments": [],
+      "awarded_weight": 1
+    },
+    {
+      "id": "acquisition_method",
+      "name": "Способ покупки",
+      "description": "Уточняет способ приобретения автомобиля",
+      "weight": 1,
+      "passed": true,
+      "comment": "",
+      "evidence_segments": [],
+      "awarded_weight": 1
+    },
+    {
+      "id": "trade_in_info",
+      "name": "Trade-in",
+      "description": "Раскрывает информацию по услуге trade-in",
+      "weight": 1,
+      "passed": true,
+      "comment": "",
+      "evidence_segments": [],
+      "awarded_weight": 1
+    },
+    {
+      "id": "to0_info",
+      "name": "ТО-0",
+      "description": "Раскрывает информацию по ТО0",
+      "weight": 1,
+      "passed": true,
+      "comment": "",
+      "evidence_segments": [],
+      "awarded_weight": 1
+    },
+    {
+      "id": "kso_info",
+      "name": "КСО",
+      "description": "Раскрывает информацию по услугам КСО",
+      "weight": 1,
+      "passed": true,
+      "comment": "",
+      "evidence_segments": [],
+      "awarded_weight": 1
+    },
+    {
+      "id": "ptz_info",
+      "name": "ПТЗ",
+      "description": "Раскрывает информацию по ПТЗ",
+      "weight": 1,
+      "passed": true,
+      "comment": "",
+      "evidence_segments": [],
+      "awarded_weight": 1
+    },
+    {
+      "id": "service_maintenance",
+      "name": "Сервис",
+      "description": "Раскрывает информацию по сервисному обслуживанию",
+      "weight": 1,
+      "passed": true,
+      "comment": "",
+      "evidence_segments": [],
+      "awarded_weight": 1
+    },
+    {
+      "id": "intake_regulations",
+      "name": "Регламент приёма",
+      "description": "Рассказывает о регламенте приема автомобилей",
+      "weight": 1,
+      "passed": true,
+      "comment": "",
+      "evidence_segments": [],
+      "awarded_weight": 1
+    },
+    {
+      "id": "visual_inspection",
+      "name": "Визуальный осмотр",
+      "description": "Проводит визуальный осмотр автомобиля",
+      "weight": 1,
+      "passed": true,
+      "comment": "",
+      "evidence_segments": [],
+      "awarded_weight": 1
+    },
+    {
+      "id": "detailed_diagnostics",
+      "name": "Развёрнутая диагностика",
+      "description": "Рассказывает про развернутую диагностику",
+      "weight": 1,
+      "passed": true,
+      "comment": "",
+      "evidence_segments": [],
+      "awarded_weight": 1
+    },
+    {
+      "id": "vehicle_advantages",
+      "name": "Преимущества авто",
+      "description": "Делает акцент на уникальных отличиях и преимуществах авто (комплектация, дилерское обслуживание, 1 собственник, ПТС оригинал и т.д.)",
+      "weight": 1,
+      "passed": true,
+      "comment": "",
+      "evidence_segments": [],
+      "awarded_weight": 1
+    },
+    {
+      "id": "lift_offer",
+      "name": "Подъёмник",
+      "description": "Говорит о возможности поднять авто на подъемник",
+      "weight": 1,
+      "passed": false,
+      "comment": "",
+      "evidence_segments": [],
+      "awarded_weight": 0
+    },
+    {
+      "id": "test_drive_offer",
+      "name": "Тест-драйв",
+      "description": "Предлагает пройти тест-драйв",
+      "weight": 1,
+      "passed": true,
+      "comment": "",
+      "evidence_segments": [],
+      "awarded_weight": 1
+    },
+    {
+      "id": "no_hidden_flaws",
+      "name": "Недостатки",
+      "description": "Не умалчивает про недостатки автомобиля",
+      "weight": 1,
+      "passed": true,
+      "comment": "",
+      "evidence_segments": [],
+      "awarded_weight": 1
+    },
+    {
+      "id": "technical_flaws",
+      "name": "Тех. недостатки",
+      "description": "Комментирует все недостатки по тех части",
+      "weight": 1,
+      "passed": true,
+      "comment": "",
+      "evidence_segments": [],
+      "awarded_weight": 1
+    },
+    {
+      "id": "paint_gauge",
+      "name": "Толщиномер",
+      "description": "Предлагает проверить ЛКП толщиномером",
+      "weight": 1,
+      "passed": true,
+      "comment": "",
+      "evidence_segments": [],
+      "awarded_weight": 1
+    },
+    {
+      "id": "autoteka_report",
+      "name": "Отчёт Автотеки",
+      "description": "Показывает отчет автотеки",
+      "weight": 1,
+      "passed": true,
+      "comment": "",
+      "evidence_segments": [],
+      "awarded_weight": 1
+    },
+    {
+      "id": "positive_attitude",
+      "name": "Позитив",
+      "description": "Улыбка, доброжелательность, позитивный настрой",
+      "weight": 1,
+      "passed": false,
+      "comment": "",
+      "evidence_segments": [],
+      "awarded_weight": 0
+    },
+    {
+      "id": "speech_quality",
+      "name": "Речь",
+      "description": "Речь грамотная, не использует сленг и жаргон",
+      "weight": 1,
+      "passed": true,
+      "comment": "",
+      "evidence_segments": [],
+      "awarded_weight": 1
+    },
+    {
+      "id": "clear_argument",
+      "name": "Аргументация",
+      "description": "Дает четкие аргументированные ответы на вопросы",
+      "weight": 1,
+      "passed": false,
+      "comment": "",
+      "evidence_segments": [],
+      "awarded_weight": 0
+    }
+  ],
+  "earned_score": 22,
+  "max_score": 28,
+  "overall_average": 78.6,
+  "published_at": "2026-04-23T13:28:20.803486+00:00",
+  "published_by": "a.holod"
+}

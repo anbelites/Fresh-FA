@@ -12,6 +12,7 @@ from openai import OpenAI
 
 from src.criteria_loader import Criterion, criteria_to_prompt_block, load_criteria, load_criteria_from_db
 from src.database import DB
+from src.eval_schema import awarded_weight, compute_eval_totals, normalize_passed, parse_legacy_score
 from src.paths import DEFAULT_CHECKLIST_SLUG
 from src.speech_emotion import speech_emotion_context_for_eval
 
@@ -37,11 +38,16 @@ def _client() -> OpenAI:
 
 
 def _model() -> str:
-    return os.environ.get("OPENAI_EVAL_MODEL", "gpt-4o-mini")
+    return os.environ.get("OPENAI_EVAL_MODEL", "deepseek-v4-pro")
+
+
+def _is_deepseek_v4_model(name: str) -> bool:
+    return str(name or "").strip().lower().startswith("deepseek-v4-")
 
 
 def _is_reasoner_model(name: str) -> bool:
-    return "reasoner" in name.lower()
+    low = str(name or "").strip().lower()
+    return "reasoner" in low or _is_deepseek_v4_model(low)
 
 
 def _delta_reasoning_and_content(delta: Any) -> tuple[str | None, str | None]:
@@ -130,15 +136,19 @@ def build_eval_prompt(transcript_text: str, criteria: list[Criterion]) -> tuple[
         "(3) SER-метку как вспомогательный сигнал (не единственный). "
         "Все критерии относятся только к **сотруднику** (менеджеру, консультанту), не к клиенту. "
         "Метки SPEAKER_01, SPEAKER_02 и т.д. — технические; порядок не гарантирует роль. "
-        "Перед оценкой мысленно определи: какой говорящий — сотрудник (приветствие от компании, вопросы по товару/сделке, презентация), а какой — клиент (ответы, запросы «для себя»). "
+        "Перед оценкой явно определи: какой говорящий — сотрудник (приветствие от компании, вопросы по товару/сделке, презентация), а какой — клиент (ответы, запросы «для себя»). "
         "Не приписывай репликам клиента оценку по критериям сотрудника; в evidence_segments для таких критериев указывай только интервалы [t0–t1], где в строке указан **сотрудник** (тот, кого ты определил как оцениваемого). "
         "Отвечай только валидным JSON по схеме из запроса. Комментарии на русском, кратко и по делу. "
-        "Оценки — целые числа от 0 до 100 (чем выше, тем лучше соответствие критерию). "
-        "Если по фрагменту нельзя судить (обрезано, нет реплик сотрудника), ставь null в score и объясни в comment. "
+        "Для каждого критерия верни только passed=true/false/null и краткий comment. "
+        "Вес критерия указан в описании, но ты не вычисляешь итоговые баллы. "
+        "Если по фрагменту нельзя уверенно судить (обрезано, нет реплик сотрудника, нет подтверждения действия), ставь false в passed и прямо пиши в comment, что информации недостаточно. "
+        "Если критерий включает визуальную составляющую видео (например улыбка, визуальный осмотр, показ отчёта, демонстрация состояния автомобиля, жесты, контакт глаз или другой визуально наблюдаемый элемент), "
+        "сначала попробуй восстановить её по речевым маркерам в разговоре: словам сотрудника и клиента, явным упоминаниям показа, осмотра, демонстрации, реакции собеседника и другим текстовым индикаторам. "
+        "Если по разговору визуальную часть надёжно подтвердить нельзя, не придумывай её: ставь false в passed и явно пиши в comment, что визуальную составляющую по разговору подтвердить не удалось. "
         "Для каждого критерия обязательно укажи evidence_segments: массив объектов "
         '{"start": <сек>, "end": <сек>} — отрезки из транскрипта, на которых основана оценка '
         "(можно несколько, если признак проявляется в разных местах; границы возьми из строк [t0–t1] транскрипта, не выдумывай таймкоды). "
-        "Если score null или нечего привязать — []."
+        "Если passed null или нечего привязать — []."
     )
     crit_block = criteria_to_prompt_block(criteria)
     ex_a = criteria[0].id if criteria else "criterion_a"
@@ -154,13 +164,18 @@ def build_eval_prompt(transcript_text: str, criteria: list[Criterion]) -> tuple[
 Критерии для оценки:
 {crit_block}
 
-Верни JSON-объект: ровно по одному ключу на каждый id из списка выше. Значение — объект:
-{{ "score": <число 0-100 или null>, "comment": "<строка>", "evidence_segments": [ {{"start": 12.5, "end": 18.4}}, ... ] }}
+Верни JSON-объект с полями:
+- "speaker_roles": объект вида {{"SPEAKER_01": "EMPLOYEE", "SPEAKER_02": "CLIENT"}}
+- "employee_speaker": строка с id сотрудника, например "SPEAKER_02"
+- "speaker_roles_confidence": объект уверенности по каждому спикеру в диапазоне 0..1
+- "speaker_roles_reasoning": краткое объяснение, почему именно этот спикер выбран как сотрудник
+- "criteria": объект: ровно по одному ключу на каждый id из списка выше. Значение — объект:
+  {{ "passed": <true|false|null>, "comment": "<строка>", "evidence_segments": [ {{"start": 12.5, "end": 18.4}}, ... ] }}
 
 evidence_segments — только реальные интервалы из транскрипта (секунды); пустой массив если нечего привязать.
 
 Пример структуры для двух первых критериев (повтори для всех id из списка):
-{{ "{ex_a}": {{ "score": 85, "comment": "...", "evidence_segments": [{{"start": 1.2, "end": 6.0}}] }}, "{ex_b}": {{ "score": 70, "comment": "...", "evidence_segments": [] }} }}"""
+{{ "speaker_roles": {{"SPEAKER_01": "CLIENT", "SPEAKER_02": "EMPLOYEE"}}, "employee_speaker": "SPEAKER_02", "speaker_roles_confidence": {{"SPEAKER_01": 0.91, "SPEAKER_02": 0.94}}, "speaker_roles_reasoning": "SPEAKER_02 приветствует от имени компании, уточняет потребности и ведет сделку.", "criteria": {{ "{ex_a}": {{ "passed": true, "comment": "...", "evidence_segments": [{{"start": 1.2, "end": 6.0}}] }}, "{ex_b}": {{ "passed": false, "comment": "...", "evidence_segments": [] }} }} }}"""
     return system, user
 
 
@@ -208,6 +223,59 @@ def _normalize_evidence_segments(raw: Any) -> list[dict[str, float]]:
     return out
 
 
+def _normalize_role_value(raw: Any) -> str | None:
+    v = str(raw or "").strip().upper()
+    if v in ("EMPLOYEE", "CLIENT"):
+        return v
+    return None
+
+
+def _normalize_speaker_roles(
+    raw: Any, allowed_speakers: set[str]
+) -> dict[str, str] | None:
+    if not isinstance(raw, dict):
+        return None
+    out: dict[str, str] = {}
+    for spk, role in raw.items():
+        spk_s = str(spk or "").strip()
+        if not spk_s or (allowed_speakers and spk_s not in allowed_speakers):
+            continue
+        role_s = _normalize_role_value(role)
+        if role_s:
+            out[spk_s] = role_s
+    return out or None
+
+
+def _normalize_employee_speaker(
+    raw: Any, speaker_roles: dict[str, str] | None, allowed_speakers: set[str]
+) -> str | None:
+    v = str(raw or "").strip()
+    if v and (not allowed_speakers or v in allowed_speakers):
+        return v
+    if speaker_roles:
+        for spk, role in speaker_roles.items():
+            if role == "EMPLOYEE":
+                return spk
+    return None
+
+
+def _normalize_role_confidence(
+    raw: Any, allowed_speakers: set[str]
+) -> dict[str, float] | None:
+    if not isinstance(raw, dict):
+        return None
+    out: dict[str, float] = {}
+    for spk, score in raw.items():
+        spk_s = str(spk or "").strip()
+        if not spk_s or (allowed_speakers and spk_s not in allowed_speakers):
+            continue
+        try:
+            out[spk_s] = round(max(0.0, min(1.0, float(score))), 4)
+        except (TypeError, ValueError):
+            continue
+    return out or None
+
+
 def transcript_to_linear_text(
     transcript_json: dict[str, Any],
     tone_segments: list[dict[str, Any]] | None = None,
@@ -218,9 +286,6 @@ def transcript_to_linear_text(
     _tone_segs = tone_segments or []
     for seg in transcript_json.get("segments", []):
         sp = seg.get("speaker", "?")
-        role = seg.get("speaker_role")
-        if role:
-            sp = f"{sp}({role})"
         t0 = seg.get("start", 0)
         t1 = seg.get("end", 0)
         text = seg.get("text", "").strip()
@@ -283,25 +348,39 @@ def evaluate_transcript(
         cancel_check()
     if not os.environ.get("OPENAI_API_KEY"):
         version, criteria = _load_crit()
+        criteria_out = [
+            {
+                "id": c.id,
+                "name": c.name,
+                "weight": c.weight,
+                "passed": False,
+                "comment": "Оценка недоступна без API.",
+                "evidence_segments": [],
+                "awarded_weight": 0,
+            }
+            for c in criteria
+        ]
         return {
-            "schema_version": 2,
+            "schema_version": 3,
             "criteria_version": version,
             "criteria_file": cp.name,
             "evaluated_at": datetime.now(timezone.utc).isoformat(),
             "model": None,
             "video_file": transcript_data.get("video_file"),
-            "overall_average": None,
+            "speaker_roles": None,
+            "employee_speaker": None,
             "error": "OPENAI_API_KEY не задан — оценка пропущена. Задайте ключ в окружении.",
-            "criteria": [
+            "criteria": criteria_out,
+            "criteria_snapshot": [
                 {
                     "id": c.id,
                     "name": c.name,
-                    "score": None,
-                    "comment": "Оценка недоступна без API.",
-                    "evidence_segments": [],
+                    "description": c.description,
+                    "weight": c.weight,
                 }
                 for c in criteria
             ],
+            **compute_eval_totals(criteria_out),
         }
 
     version, criteria = _load_crit()
@@ -335,9 +414,15 @@ def evaluate_transcript(
         "response_format": {"type": "json_object"},
     }
     if reasoner:
-        # deepseek-reasoner: длинный CoT + JSON; DeepSeek API ограничивает max_tokens (часто max 65536).
+        # DeepSeek thinking models: длинный CoT + JSON; держим совместимый лимит выхода.
         _raw = int(os.environ.get("OPENAI_EVAL_MAX_TOKENS", "65536"))
         create_kw["max_tokens"] = max(1, min(_raw, 65536))
+        if _is_deepseek_v4_model(model_name):
+            effort = str(os.environ.get("OPENAI_EVAL_REASONING_EFFORT", "high") or "high").strip().lower()
+            if effort not in {"high", "max"}:
+                effort = "high"
+            create_kw["reasoning_effort"] = effort
+            create_kw["extra_body"] = {"thinking": {"type": "enabled"}}
     else:
         create_kw["temperature"] = float(os.environ.get("OPENAI_EVAL_TEMPERATURE", "0.2"))
 
@@ -380,48 +465,85 @@ def evaluate_transcript(
         parsed = {}
         parse_err = str(e)
 
+    allowed_speakers = {
+        str(x).strip()
+        for x in (
+            transcript_data.get("speakers")
+            or [seg.get("speaker") for seg in transcript_data.get("segments", [])]
+        )
+        if str(x or "").strip()
+    }
+    speaker_roles = _normalize_speaker_roles(parsed.get("speaker_roles"), allowed_speakers)
+    employee_speaker = _normalize_employee_speaker(
+        parsed.get("employee_speaker"), speaker_roles, allowed_speakers
+    )
+    speaker_roles_confidence = _normalize_role_confidence(
+        parsed.get("speaker_roles_confidence"), allowed_speakers
+    )
+    speaker_roles_reasoning = str(parsed.get("speaker_roles_reasoning", "")).strip() or None
+
+    criteria_root = parsed.get("criteria")
+    if not isinstance(criteria_root, dict):
+        criteria_root = parsed
+
     criteria_out: list[dict[str, Any]] = []
     for c in criteria:
-        block = parsed.get(c.id)
-        score: int | None = None
+        block = criteria_root.get(c.id)
         comment = ""
         evidence_segments: list[dict[str, float]] = []
+        passed: bool | None = None
         if isinstance(block, dict):
-            s = block.get("score")
-            if s is None:
-                score = None
-            else:
-                try:
-                    score = max(0, min(100, int(s)))
-                except (TypeError, ValueError):
-                    score = None
+            passed = normalize_passed(block.get("passed"))
+            if passed is None:
+                legacy_score = parse_legacy_score(block.get("score"))
+                if legacy_score is not None:
+                    passed = legacy_score >= 50
+            if passed is None:
+                passed = False
             comment = str(block.get("comment", "")).strip()
+            if passed is False and not comment:
+                comment = "Недостаточно информации для подтверждения критерия."
             evidence_segments = _normalize_evidence_segments(block.get("evidence_segments"))
         criteria_out.append(
             {
                 "id": c.id,
                 "name": c.name,
-                "score": score,
+                "description": c.description,
+                "weight": c.weight,
+                "passed": passed,
                 "comment": comment,
                 "evidence_segments": evidence_segments,
+                "awarded_weight": awarded_weight(c.weight, passed),
             }
         )
 
-    numeric_scores = [x["score"] for x in criteria_out if x["score"] is not None]
-    overall = (
-        round(sum(numeric_scores) / len(numeric_scores), 1) if numeric_scores else None
-    )
+    totals = compute_eval_totals(criteria_out)
 
     out: dict[str, Any] = {
-        "schema_version": 2,
+        "schema_version": 3,
         "criteria_version": version,
         "criteria_file": cp.name,
         "evaluated_at": datetime.now(timezone.utc).isoformat(),
         "model": model_name,
         "video_file": transcript_data.get("video_file"),
+        "speaker_roles": speaker_roles,
+        "employee_speaker": employee_speaker,
         "criteria": criteria_out,
-        "overall_average": overall,
+        "criteria_snapshot": [
+            {
+                "id": c.id,
+                "name": c.name,
+                "description": c.description,
+                "weight": c.weight,
+            }
+            for c in criteria
+        ],
+        **totals,
     }
+    if speaker_roles_confidence:
+        out["speaker_roles_confidence"] = speaker_roles_confidence
+    if speaker_roles_reasoning:
+        out["speaker_roles_reasoning"] = speaker_roles_reasoning
     if reasoning_trace:
         out["reasoning_trace"] = reasoning_trace
     if parse_err:

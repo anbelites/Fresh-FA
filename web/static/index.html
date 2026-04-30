@@ -10,7 +10,7 @@
       href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="/static/app.css?v=46" />
+    <link rel="stylesheet" href="/static/app.css?v=72" />
   </head>
   <body>
     <div class="app-shell" id="app-shell">
@@ -63,35 +63,61 @@
           </button>
         </div>
         <div class="dropzone dropzone--sidebar dropzone--cta" id="dropzone">
-          <input type="file" id="file-input" accept=".mp4,.mov,.mkv,.avi,.webm,.m4v,.m4a" multiple />
-          <label for="file-input">Загрузить видео</label>
-          <span class="dropzone-or">или перетащите</span>
+          <input type="file" id="file-input" accept=".mp4,.mov,.mkv,.avi,.webm,.m4v,.m4a,.mp3,.wav,.aac,.flac,.ogg,.oga,.opus,.wma,.amr,audio/*,video/*" multiple />
+          <div class="dropzone-sidebar-inner">
+            <span class="dropzone-icon" aria-hidden="true">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 16V4" />
+                <path d="m7 9 5-5 5 5" />
+                <path d="M20 16.5v1.2A2.3 2.3 0 0 1 17.7 20H6.3A2.3 2.3 0 0 1 4 17.7v-1.2" />
+              </svg>
+            </span>
+            <div class="dropzone-sidebar-copy">
+              <label for="file-input">Загрузить видео или аудио</label>
+              <span class="dropzone-or">или перетащите</span>
+            </div>
+          </div>
         </div>
         <div class="sidebar-label-row" id="library-toolbar-label-row">
-          <div class="sidebar-label">Видео</div>
+          <div class="sidebar-label">Записи</div>
           <div class="library-sort" id="library-sort">
             <button
               type="button"
               class="library-sort-trigger"
               id="library-sort-trigger"
-              aria-haspopup="listbox"
+              aria-haspopup="menu"
               aria-expanded="false"
               aria-controls="library-sort-listbox"
-              aria-label="Сортировка списка"
-              title="Порядок записей в списке"
+              aria-label="Настройки списка"
+              title="Порядок и отображение записей"
             >
-              <span class="library-sort-trigger-label" id="library-sort-trigger-label">Сначала новые</span>
+              <span class="library-sort-trigger-label" id="library-sort-trigger-label">Вид списка</span>
               <span class="library-sort-trigger-chevron" aria-hidden="true">
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                   <path d="M6 9l6 6 6-6" />
                 </svg>
               </span>
             </button>
-            <ul class="library-sort-menu" id="library-sort-listbox" role="listbox" aria-labelledby="library-sort-trigger" hidden>
-              <li role="option" class="library-sort-option" tabindex="-1" data-value="date_desc">Сначала новые</li>
-              <li role="option" class="library-sort-option" tabindex="-1" data-value="date_asc">Сначала старые</li>
-              <li role="option" class="library-sort-option" tabindex="-1" data-value="name_asc">По имени A→Z</li>
-              <li role="option" class="library-sort-option" tabindex="-1" data-value="name_desc">По имени Z→A</li>
+            <ul class="library-sort-menu" id="library-sort-listbox" role="menu" aria-labelledby="library-sort-trigger" hidden>
+              <li class="library-sort-section" aria-hidden="true">Порядок</li>
+              <li role="menuitemradio" aria-checked="true" class="library-sort-option" tabindex="-1" data-value="date_desc">Сначала новые</li>
+              <li role="menuitemradio" aria-checked="false" class="library-sort-option" tabindex="-1" data-value="date_asc">Сначала старые</li>
+              <li role="menuitemradio" aria-checked="false" class="library-sort-option" tabindex="-1" data-value="name_asc">По имени A→Z</li>
+              <li role="menuitemradio" aria-checked="false" class="library-sort-option" tabindex="-1" data-value="name_desc">По имени Z→A</li>
+              <li class="library-sort-divider" aria-hidden="true"></li>
+              <li class="library-sort-section" aria-hidden="true">Показать</li>
+              <li class="library-sort-check-row">
+                <label class="library-sort-check">
+                  <input type="checkbox" id="library-show-deleted" />
+                  <span>Помеченные на удаление</span>
+                </label>
+              </li>
+              <li class="library-sort-check-row">
+                <label class="library-sort-check">
+                  <input type="checkbox" id="library-show-foreign" />
+                  <span>Чужие из моей локации и отдела</span>
+                </label>
+              </li>
             </ul>
             <select id="library-sort-select" class="library-sort-select-native visually-hidden" tabindex="-1" aria-hidden="true">
               <option value="date_desc">Сначала новые</option>
@@ -156,7 +182,28 @@
               <span class="auth-user-sub" hidden></span>
             </div>
           </div>
-          <button type="button" class="auth-logout">Выйти</button>
+          <div class="auth-user-actions">
+            <button type="button" class="auth-tour" id="auth-tour-button" aria-label="Показать инструкцию" title="Показать инструкцию">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <circle cx="12" cy="12" r="9" />
+                <path d="M9.6 9.3a2.6 2.6 0 1 1 4.7 1.6c-.5.6-1.2 1-1.7 1.5-.6.5-1 1.1-1 2" />
+                <circle cx="12" cy="17.2" r=".6" fill="currentColor" stroke="none" />
+              </svg>
+            </button>
+            <button type="button" class="auth-settings" aria-label="Настройки аккаунта" title="Настройки аккаунта">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <circle cx="12" cy="12" r="3" />
+                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33h.01a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h.01a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v.01a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z" />
+              </svg>
+            </button>
+            <button type="button" class="auth-logout" aria-label="Выйти" title="Выйти">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                <path d="M16 17l5-5-5-5" />
+                <path d="M21 12H9" />
+              </svg>
+            </button>
+          </div>
         </div>
       </aside>
 
@@ -179,11 +226,104 @@
         <div id="workspace-empty" class="workspace-empty-state">
           <div class="workspace-hero-card">
             <header class="workspace-hero__header">
-              <h2 class="workspace-hero__title">Выберите запись</h2>
+              <span class="workspace-hero__eyebrow">Как это работает</span>
+              <h2 class="workspace-hero__title">Загрузите или выберите запись</h2>
               <p class="workspace-hero__lead">
-                Плеер, транскрипт с эмоциями по аудио и оценка по чеклисту — на одном экране.
+                Сначала загрузите видео или откройте уже загруженную запись слева. Дальше система
+                проведет аналитику, поможет заполнить ручной чеклист и покажет сравнение ИИ и человека.
               </p>
             </header>
+            <div class="workspace-hero__flow" aria-label="Этапы работы с записью">
+              <article class="workspace-hero-step workspace-hero-step--upload">
+                <div class="workspace-hero-step__icon" aria-hidden="true">
+                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 16V4" />
+                    <path d="m7 9 5-5 5 5" />
+                    <path d="M20 16.5v1.2A2.3 2.3 0 0 1 17.7 20H6.3A2.3 2.3 0 0 1 4 17.7v-1.2" />
+                  </svg>
+                </div>
+                <div class="workspace-hero-step__body">
+                  <div class="workspace-hero-step__topline">
+                    <span class="workspace-hero-step__num">1</span>
+                    <h3 class="workspace-hero-step__title">Загрузка записи</h3>
+                  </div>
+                  <p class="workspace-hero-step__text">
+                    Добавьте видео в систему и привяжите тип тренировки.
+                  </p>
+                </div>
+              </article>
+              <article class="workspace-hero-step workspace-hero-step--analysis">
+                <div class="workspace-hero-step__icon" aria-hidden="true">
+                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="3" y="4" width="18" height="14" rx="3" />
+                    <path d="M7 14v-3" />
+                    <path d="M12 14V8" />
+                    <path d="M17 14v-5" />
+                    <path d="M8 20h8" />
+                  </svg>
+                </div>
+                <div class="workspace-hero-step__body">
+                  <div class="workspace-hero-step__topline">
+                    <span class="workspace-hero-step__num">2</span>
+                    <h3 class="workspace-hero-step__title">Аналитика ИИ</h3>
+                  </div>
+                  <p class="workspace-hero-step__text">
+                    Будут построены транскрипт, эмоции по аудио и оценка по чеклисту.
+                  </p>
+                </div>
+              </article>
+              <article class="workspace-hero-step workspace-hero-step--checklist">
+                <div class="workspace-hero-step__icon" aria-hidden="true">
+                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M9 11.5 11 13.5 15.5 9" />
+                    <path d="M7 4.5h10A2.5 2.5 0 0 1 19.5 7v10A2.5 2.5 0 0 1 17 19.5H7A2.5 2.5 0 0 1 4.5 17V7A2.5 2.5 0 0 1 7 4.5Z" />
+                  </svg>
+                </div>
+                <div class="workspace-hero-step__body">
+                  <div class="workspace-hero-step__topline">
+                    <span class="workspace-hero-step__num">3</span>
+                    <h3 class="workspace-hero-step__title">Ручной чеклист</h3>
+                  </div>
+                  <p class="workspace-hero-step__text">
+                    Проверяющий заполняет чеклист, сохраняет и публикует результат.
+                  </p>
+                </div>
+              </article>
+              <article class="workspace-hero-step workspace-hero-step--compare">
+                <div class="workspace-hero-step__icon" aria-hidden="true">
+                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M7 7h10" />
+                    <path d="M7 12h6" />
+                    <path d="M7 17h10" />
+                    <circle cx="17.5" cy="12" r="3.5" />
+                  </svg>
+                </div>
+                <div class="workspace-hero-step__body">
+                  <div class="workspace-hero-step__topline">
+                    <span class="workspace-hero-step__num">4</span>
+                    <h3 class="workspace-hero-step__title">Сравнение результатов</h3>
+                  </div>
+                  <p class="workspace-hero-step__text">
+                    После публикации система сравнит ИИ и человека по одному чеклисту и выдаст результат по расхождениям.
+                  </p>
+                </div>
+              </article>
+            </div>
+            <div class="workspace-hero__footer">
+              <div class="workspace-hero-tip">
+                <span class="workspace-hero-tip__icon" aria-hidden="true">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M9 18h6" />
+                    <path d="M10 22h4" />
+                    <path d="M12 2a7 7 0 0 0-4 12.8c.6.4 1 1.1 1 1.8V17h6v-.4c0-.7.4-1.4 1-1.8A7 7 0 0 0 12 2Z" />
+                  </svg>
+                </span>
+                <span>Откройте запись слева или загрузите новую, чтобы запустить весь сценарий.</span>
+              </div>
+              <button type="button" class="workspace-hero-replay-btn" id="workspace-tour-replay">
+                Показать инструкцию
+              </button>
+            </div>
           </div>
         </div>
 
@@ -199,49 +339,9 @@
               </span>
               <div class="workspace-title-text">
                 <h2 class="workspace-title" id="workspace-title">—</h2>
-                <p class="workspace-title-meta" id="workspace-title-meta"></p>
-              </div>
-            </div>
-            <div
-              class="workspace-banner workspace-banner--job workspace-job-banner"
-              id="workspace-job-banner"
-              style="display: none"
-              role="status"
-            >
-              <div class="workspace-job-banner-main">
-                <span class="workspace-job-text" id="workspace-job-text"></span>
-                <div class="workspace-job-actions">
-                  <button
-                    type="button"
-                    class="btn-job-details"
-                    id="workspace-job-details"
-                    hidden
-                    aria-expanded="false"
-                    aria-controls="workspace-job-stream-wrap"
-                  >
-                    Подробности
-                  </button>
-                  <button type="button" class="btn-job-cancel" id="workspace-job-cancel" hidden>
-                    Остановить
-                  </button>
-                  <div class="workspace-job-after-stop" id="workspace-job-after-stop" hidden>
-                    <button type="button" class="btn-job-resume" id="workspace-job-resume">
-                      Возобновить
-                    </button>
-                    <button type="button" class="btn-job-restart" id="workspace-job-restart-full">
-                      С начала
-                    </button>
-                  </div>
+                <div class="workspace-title-meta-row">
+                  <p class="workspace-title-meta" id="workspace-title-meta"></p>
                 </div>
-              </div>
-              <div
-                class="workspace-job-stream-wrap"
-                id="workspace-job-stream-wrap"
-                hidden
-                role="region"
-                aria-label="Ход рассуждений модели"
-              >
-                <pre class="workspace-job-stream-text" id="workspace-job-stream-text"></pre>
               </div>
             </div>
           </header>
@@ -270,7 +370,23 @@
                           </div>
                         </details>
                       </div>
-                      <p class="media-hint media-hint--transcript-head">Клик по строке транскрипта — переход к таймкоду</p>
+                      <div class="transcript-head-actions">
+                        <p class="media-hint media-hint--transcript-head">Клик по строке транскрипта — переход к таймкоду</p>
+                        <button
+                          type="button"
+                          class="eval-action-btn transcript-download-btn"
+                          id="transcript-download"
+                          title="Скачать транскрипт"
+                          aria-label="Скачать транскрипт"
+                          hidden
+                        >
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <path d="M12 3v12" />
+                            <path d="m7 10 5 5 5-5" />
+                            <path d="M5 21h14" />
+                          </svg>
+                        </button>
+                      </div>
                     </div>
                     <p id="transcript-missing" class="block-missing" style="display: none"></p>
                     <div class="seg-list" id="transcript-segments"></div>
@@ -282,19 +398,25 @@
             <div class="workspace-eval-col">
               <section class="workspace-block workspace-block--eval">
               <div class="eval-block-head">
-                <h3 class="block-title">Оценка по чеклисту</h3>
-                <div class="eval-mode-toggle segment-group segment-group--panel" id="eval-mode-toggle">
-                  <button type="button" class="eval-mode-btn eval-mode-btn--active" data-mode="ai">ИИ</button>
-                  <button type="button" class="eval-mode-btn" data-mode="human">Человек</button>
-                </div>
+                <h3 class="block-title" id="eval-panel-title">Оценка по чеклисту</h3>
                 <div class="eval-block-head-actions">
                   <button
                     type="button"
-                    class="eval-compare-btn"
-                    id="eval-compare"
-                    title="Сравнить ИИ и ручную оценку"
-                    disabled
-                  >Сравнить</button>
+                    class="eval-action-btn eval-pipeline-toggle-btn"
+                    id="ai-pipeline-toggle"
+                    title="Показать этапы пайплайна"
+                    aria-label="Показать этапы пайплайна"
+                    style="display: none"
+                  >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                      <path d="M8 6h13" />
+                      <path d="M8 12h13" />
+                      <path d="M8 18h13" />
+                      <circle cx="4" cy="6" r="1" fill="currentColor" stroke="none" />
+                      <circle cx="4" cy="12" r="1" fill="currentColor" stroke="none" />
+                      <circle cx="4" cy="18" r="1" fill="currentColor" stroke="none" />
+                    </svg>
+                  </button>
                   <button
                     type="button"
                     class="eval-action-btn eval-save-human-btn"
@@ -311,10 +433,27 @@
                   </button>
                   <button
                     type="button"
+                    class="eval-action-btn eval-action-btn--publish"
+                    id="human-eval-publish"
+                    title="Опубликовать ручной чеклист"
+                    aria-label="Опубликовать ручной чеклист"
+                    style="display: none"
+                    disabled
+                  >
+                    <span class="eval-action-btn__icon" aria-hidden="true">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M22 2 11 13" />
+                        <path d="M22 2 15 22 11 13 2 9 22 2Z" />
+                      </svg>
+                    </span>
+                  </button>
+                  <button
+                    type="button"
                     class="eval-refresh-btn"
                     id="eval-refresh"
                     title="Сгенерировать или пересчитать оценку по выбранному чеклисту"
                     aria-label="Сгенерировать или пересчитать оценку по выбранному чеклисту"
+                    style="display: none"
                     disabled
                   >
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -323,10 +462,107 @@
                     </svg>
                   </button>
                 </div>
+                <div class="eval-mode-toggle segment-group segment-group--panel" id="eval-mode-toggle">
+                  <button type="button" class="eval-mode-btn" id="eval-mode-human" data-mode="human">
+                    <span class="eval-mode-btn__label">Человек</span>
+                    <span class="eval-mode-btn__state" aria-hidden="true"></span>
+                  </button>
+                  <button type="button" class="eval-mode-btn eval-mode-btn--active" id="eval-mode-ai" data-mode="ai">
+                    <span class="eval-mode-btn__label">ИИ</span>
+                    <span class="eval-mode-btn__state" aria-hidden="true"></span>
+                  </button>
+                  <button type="button" class="eval-mode-btn" id="eval-compare" data-mode="compare" title="Сравнение ИИ и человека" disabled>
+                    <span class="eval-mode-btn__label">Сравнение</span>
+                    <span class="eval-mode-btn__state" aria-hidden="true"></span>
+                  </button>
+                </div>
               </div>
 
               <!-- ИИ view -->
               <div id="eval-ai-view">
+                <section class="ai-pipeline-card" id="ai-pipeline-card" aria-label="Статус пайплайна ИИ">
+                  <div class="ai-pipeline-card__head">
+                    <div class="ai-pipeline-card__title-wrap">
+                      <p class="ai-pipeline-card__eyebrow">Пайплайн ИИ</p>
+                      <div class="ai-pipeline-card__summary" id="ai-pipeline-summary"></div>
+                    </div>
+                    <div class="workspace-job-actions ai-pipeline-card__actions" id="workspace-job-actions" hidden>
+                      <button
+                        type="button"
+                        class="btn-job-icon btn-job-details"
+                        id="workspace-job-details"
+                        hidden
+                        aria-expanded="false"
+                        aria-controls="workspace-job-stream-wrap"
+                        aria-label="Показать лог задачи"
+                        title="Лог задачи"
+                      >
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                          <path d="M4 6h16" />
+                          <path d="M4 12h10" />
+                          <path d="M4 18h16" />
+                        </svg>
+                      </button>
+                      <button
+                        type="button"
+                        class="btn-job-icon btn-job-cancel"
+                        id="workspace-job-cancel"
+                        hidden
+                        aria-label="Остановить задачу"
+                        title="Остановить"
+                      >
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                          <rect x="7" y="7" width="10" height="10" rx="1.5" />
+                        </svg>
+                      </button>
+                      <div class="workspace-job-after-stop" id="workspace-job-after-stop" hidden>
+                        <button
+                          type="button"
+                          class="btn-job-icon btn-job-resume"
+                          id="workspace-job-resume"
+                          aria-label="Возобновить обработку"
+                          title="Возобновить"
+                        >
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                            <path d="M8 6.5v11l9-5.5-9-5.5Z" />
+                          </svg>
+                        </button>
+                      </div>
+                      <button
+                        type="button"
+                        class="btn-job-icon btn-job-restart"
+                        id="workspace-job-restart-full"
+                        hidden
+                        aria-label="Запустить с начала"
+                        title="С начала"
+                      >
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                          <path d="M3 12a9 9 0 1 0 3-6.7" />
+                          <path d="M3 3v6h6" />
+                        </svg>
+                      </button>
+                      <button
+                        type="button"
+                        class="btn-job-icon btn-job-restart"
+                        id="workspace-compare-restart"
+                        hidden
+                        aria-label="Пересчитать сравнение"
+                        title="Пересчитать сравнение"
+                      >
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                          <path d="M3 12a9 9 0 0 1 15.5-6.2" />
+                          <path d="M21 4v6h-6" />
+                          <path d="M21 12a9 9 0 0 1-15.5 6.2" />
+                          <path d="M3 20v-6h6" />
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
+                  <ol class="ai-pipeline-steps" id="ai-pipeline-steps"></ol>
+                  <p class="ai-pipeline-card__note" id="ai-pipeline-note" hidden></p>
+                  <div id="eval-reasoning-host"></div>
+                </section>
+                <div id="checklist-stale-banner" class="workspace-banner workspace-banner--warn" style="display: none"></div>
                 <div id="eval-summary" class="eval-summary"></div>
                 <p id="eval-missing" class="block-missing" style="display: none">Оценка ИИ появится после завершения пайплайна.</p>
                 <div class="eval-table-wrap">
@@ -349,6 +585,30 @@
                 <div id="compare-analysis" class="compare-analysis"></div>
               </div>
 
+              <div
+                class="workspace-job-stream-wrap workspace-job-stream-wrap--eval"
+                id="workspace-job-stream-wrap"
+                hidden
+                role="region"
+                aria-label="Лог выполнения задачи"
+              >
+                <div class="workspace-job-stream-head">
+                  <span class="workspace-job-stream-title">Лог выполнения</span>
+                  <button
+                    type="button"
+                    class="btn-job-icon workspace-job-log-close"
+                    id="workspace-job-log-close"
+                    aria-label="Скрыть лог задачи"
+                    title="Скрыть лог"
+                  >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                      <path d="m15 18-6-6 6-6" />
+                    </svg>
+                  </button>
+                </div>
+                <pre class="workspace-job-stream-text" id="workspace-job-stream-text"></pre>
+              </div>
+
               </section>
             </div>
           </div>
@@ -359,8 +619,8 @@
       <form class="criteria-dlg-form" id="criteria-new-form">
         <h3 class="criteria-dlg-title" id="criteria-new-title">Новый чеклист</h3>
         <p class="criteria-dlg-hint">
-          Чеклист хранится в базе данных. Имя — латиница, цифры, дефис, например
-          <code>sales_checklist</code>.
+          Чеклист хранится в базе данных. Можно ввести обычное название: пробелы будут заменены на `_`,
+          например <code>sales checklist</code> станет <code>sales_checklist</code>.
         </p>
         <label class="criteria-dlg-label" for="criteria-new-name">Имя чеклиста</label>
         <input
@@ -426,6 +686,14 @@
             <code id="meta-dialog-stem-code"></code>
           </p>
           <div class="meta-row">
+            <label class="meta-label" for="meta-training-type">Тип тренировки</label>
+            <div class="meta-combo">
+              <select id="meta-training-type" class="meta-select"><option value="">—</option></select>
+              <button type="button" class="meta-add-btn" id="meta-training-type-edit" title="Изменить тип тренировки">✎</button>
+              <button type="button" class="meta-add-btn" id="meta-training-type-add" title="Добавить тип тренировки">+</button>
+            </div>
+          </div>
+          <div class="meta-row">
             <label class="meta-label" for="criteria-select">Чеклист</label>
             <select id="criteria-select" class="meta-select" aria-label="Чеклист для просмотра и генерации оценки"></select>
           </div>
@@ -476,8 +744,216 @@
       </div>
     </dialog>
 
+    <dialog class="meta-name-dialog" id="training-type-dialog" aria-labelledby="training-type-title">
+      <div class="meta-name-dialog-inner">
+        <h4 class="meta-name-title" id="training-type-title">Тип тренировки</h4>
+        <p class="meta-dialog-stem" id="training-type-slug-hint"></p>
+        <label class="meta-name-field-label" for="training-type-name">Название</label>
+        <input type="text" id="training-type-name" class="meta-input meta-name-input" autocomplete="off" />
+        <label class="meta-name-field-label" for="training-type-department">Отдел</label>
+        <select id="training-type-department" class="meta-select">
+          <option value="">—</option>
+          <option value="ОО">ОО</option>
+          <option value="ОП">ОП</option>
+        </select>
+        <label class="meta-name-field-label" for="training-type-checklist">Чеклист</label>
+        <select id="training-type-checklist" class="meta-select">
+          <option value="">—</option>
+        </select>
+        <div class="meta-name-actions">
+          <button type="button" class="meta-name-btn" id="training-type-cancel">Отмена</button>
+          <button type="button" class="meta-name-btn" id="training-type-delete" hidden>Удалить</button>
+          <button type="button" class="meta-name-btn meta-name-btn--primary" id="training-type-save">Сохранить</button>
+        </div>
+      </div>
+    </dialog>
+
+    <dialog class="meta-dialog" id="profile-dialog" aria-labelledby="profile-dialog-title">
+      <div class="meta-dialog-inner">
+        <div class="meta-dialog-head">
+          <h3 class="meta-dialog-title" id="profile-dialog-title">Настройки аккаунта</h3>
+          <button type="button" class="meta-dialog-close" id="profile-dialog-close" aria-label="Закрыть">×</button>
+        </div>
+        <div class="meta-form">
+          <p class="criteria-dlg-hint" id="profile-dialog-hint">
+            Здесь можно изменить ФИО, локацию и отдел.
+          </p>
+          <div class="meta-row">
+            <label class="meta-label" for="profile-full-name">ФИО</label>
+            <input type="text" id="profile-full-name" class="meta-input" autocomplete="name" />
+          </div>
+          <div class="meta-row">
+            <label class="meta-label" for="profile-location">Локация</label>
+            <select id="profile-location" class="meta-select"></select>
+          </div>
+          <div class="meta-row">
+            <label class="meta-label" for="profile-department">Отдел</label>
+            <select id="profile-department" class="meta-select">
+              <option value="">Выберите отдел</option>
+              <option value="ОО">Отдел оценки</option>
+              <option value="ОП">Отдел продаж</option>
+            </select>
+          </div>
+          <p id="profile-error" class="block-missing" style="display: none"></p>
+          <button type="button" class="meta-save-btn" id="profile-save">Сохранить профиль</button>
+          <div class="profile-password-section" id="profile-password-section" hidden>
+            <div class="profile-password-divider" aria-hidden="true"></div>
+            <p class="criteria-dlg-hint profile-password-hint" id="profile-password-hint">
+              Смена пароля доступна для локальной учётной записи.
+            </p>
+            <div class="meta-row">
+              <label class="meta-label" for="profile-current-password">Текущий</label>
+              <input
+                type="password"
+                id="profile-current-password"
+                class="meta-input"
+                autocomplete="current-password"
+              />
+            </div>
+            <div class="meta-row">
+              <label class="meta-label" for="profile-new-password">Новый</label>
+              <input
+                type="password"
+                id="profile-new-password"
+                class="meta-input"
+                autocomplete="new-password"
+              />
+            </div>
+            <div class="meta-row">
+              <label class="meta-label" for="profile-new-password-repeat">Повтор</label>
+              <input
+                type="password"
+                id="profile-new-password-repeat"
+                class="meta-input"
+                autocomplete="new-password"
+              />
+            </div>
+            <p id="profile-password-error" class="block-missing" style="display: none"></p>
+            <p id="profile-password-success" class="profile-password-success" style="display: none"></p>
+            <button type="button" class="meta-save-btn profile-password-save-btn" id="profile-password-save">
+              Сменить пароль
+            </button>
+          </div>
+        </div>
+      </div>
+    </dialog>
+
+    <dialog class="meta-dialog" id="upload-wizard-dialog" aria-labelledby="upload-wizard-title">
+      <div class="meta-dialog-inner">
+        <div class="meta-dialog-head">
+          <h3 class="meta-dialog-title" id="upload-wizard-title">Загрузка записи</h3>
+          <button type="button" class="meta-dialog-close" id="upload-wizard-close" aria-label="Закрыть">×</button>
+        </div>
+        <div class="meta-form">
+          <div class="meta-row">
+            <label class="meta-label">Файлы</label>
+            <div class="meta-static-value" id="upload-wizard-files">—</div>
+          </div>
+          <div class="meta-row">
+            <label class="meta-label">Менеджер</label>
+            <div class="meta-static-value" id="upload-wizard-manager">—</div>
+          </div>
+          <div class="meta-row">
+            <label class="meta-label">Локация</label>
+            <div class="meta-static-value" id="upload-wizard-location">—</div>
+          </div>
+          <div class="meta-row">
+            <label class="meta-label">Квота на сегодня</label>
+            <div class="meta-static-value" id="upload-wizard-quota">—</div>
+          </div>
+          <div class="meta-row">
+            <label class="meta-label" for="upload-wizard-department">Отдел</label>
+            <select id="upload-wizard-department" class="meta-select">
+              <option value="">Выберите отдел</option>
+              <option value="ОО">Отдел оценки</option>
+              <option value="ОП">Отдел продаж</option>
+            </select>
+          </div>
+          <div class="meta-row">
+            <label class="meta-label" for="upload-wizard-training-type">Тип тренировки</label>
+            <select id="upload-wizard-training-type" class="meta-select"></select>
+          </div>
+          <div class="meta-row">
+            <label class="meta-label" for="upload-wizard-speaker-count">Количество спикеров</label>
+            <input
+              type="number"
+              id="upload-wizard-speaker-count"
+              class="meta-input"
+              min="1"
+              max="8"
+              step="1"
+              value="2"
+              inputmode="numeric"
+            />
+          </div>
+          <div class="meta-row">
+            <label class="meta-label">Критерии для справки</label>
+            <div class="upload-wizard-checklist-preview" id="upload-wizard-checklist-preview"></div>
+          </div>
+          <p class="criteria-dlg-hint upload-wizard-preview-note" id="upload-wizard-preview-note" hidden>
+            В режиме инструкции окно показано как пример. Реальная загрузка начнётся после выбора файла.
+          </p>
+          <p class="criteria-dlg-hint">Перед загрузкой выполняется дедупликация. Если файл уже есть в системе, загрузка будет отклонена.</p>
+          <p id="upload-wizard-error" class="block-missing" style="display: none"></p>
+          <div class="meta-name-actions">
+            <button type="button" class="meta-name-btn" id="upload-wizard-cancel">Отмена</button>
+            <button type="button" class="meta-name-btn meta-name-btn--primary" id="upload-wizard-submit">Загрузить</button>
+          </div>
+        </div>
+      </div>
+    </dialog>
+
+    <dialog class="meta-dialog app-message-dialog" id="app-message-dialog" aria-labelledby="app-message-title">
+      <div class="meta-dialog-inner">
+        <div class="meta-dialog-head">
+          <h3 class="meta-dialog-title" id="app-message-title">Сообщение</h3>
+          <button type="button" class="meta-dialog-close" id="app-message-close" aria-label="Закрыть">×</button>
+        </div>
+        <p class="app-message-dialog__text" id="app-message-text"></p>
+        <div class="app-message-dialog__actions">
+          <button type="button" class="app-message-dialog__btn app-message-dialog__btn--ghost" id="app-message-cancel">Отмена</button>
+          <button type="button" class="app-message-dialog__btn app-message-dialog__btn--primary" id="app-message-ok">Понятно</button>
+        </div>
+      </div>
+    </dialog>
+
+    <dialog class="onboarding-tour" id="onboarding-tour" aria-live="polite">
+      <div class="onboarding-tour__shade onboarding-tour__shade--top" id="onboarding-tour-shade-top"></div>
+      <div class="onboarding-tour__shade onboarding-tour__shade--right" id="onboarding-tour-shade-right"></div>
+      <div class="onboarding-tour__shade onboarding-tour__shade--bottom" id="onboarding-tour-shade-bottom"></div>
+      <div class="onboarding-tour__shade onboarding-tour__shade--left" id="onboarding-tour-shade-left"></div>
+      <div class="onboarding-tour__shade onboarding-tour__shade--corner-tl" id="onboarding-tour-shade-corner-tl"></div>
+      <div class="onboarding-tour__shade onboarding-tour__shade--corner-tr" id="onboarding-tour-shade-corner-tr"></div>
+      <div class="onboarding-tour__shade onboarding-tour__shade--corner-br" id="onboarding-tour-shade-corner-br"></div>
+      <div class="onboarding-tour__shade onboarding-tour__shade--corner-bl" id="onboarding-tour-shade-corner-bl"></div>
+      <div class="onboarding-tour__spotlight" id="onboarding-tour-spotlight" hidden></div>
+      <section class="onboarding-tour__card" id="onboarding-tour-card" role="dialog" aria-modal="true" aria-labelledby="onboarding-tour-title">
+        <div class="onboarding-tour__eyebrow-row">
+          <span class="onboarding-tour__eyebrow">Инструкция</span>
+          <span class="onboarding-tour__step" id="onboarding-tour-step"></span>
+        </div>
+        <h3 class="onboarding-tour__title" id="onboarding-tour-title">Инструкция</h3>
+        <p class="onboarding-tour__text" id="onboarding-tour-text"></p>
+        <p class="onboarding-tour__detail" id="onboarding-tour-detail" hidden></p>
+        <div class="onboarding-tour__legend" id="onboarding-tour-legend" hidden></div>
+        <div class="onboarding-tour__actions">
+          <button type="button" class="onboarding-tour__btn onboarding-tour__btn--ghost" id="onboarding-tour-skip">
+            Пропустить
+          </button>
+          <div class="onboarding-tour__actions-main">
+            <button type="button" class="onboarding-tour__btn onboarding-tour__btn--ghost" id="onboarding-tour-prev">
+              Назад
+            </button>
+            <button type="button" class="onboarding-tour__btn onboarding-tour__btn--primary" id="onboarding-tour-next">
+              Далее
+            </button>
+          </div>
+        </div>
+      </section>
+    </dialog>
+
     <script src="https://cdn.jsdelivr.net/npm/marked@15.0.6/marked.min.js" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/dompurify@3.2.4/dist/purify.min.js" crossorigin="anonymous"></script>
-    <script src="/static/app.js?v=45"></script>
+    <script src="/static/app.js?v=73"></script>
   </body>
 </html>

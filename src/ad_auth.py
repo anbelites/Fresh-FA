@@ -63,23 +63,36 @@ def _refresh_disc_cache() -> None:
     )
 
 
+def auth_mode() -> str:
+    raw = os.environ.get("AUTH_TYPE", "").strip().lower()
+    if raw in {"none", "ad", "local"}:
+        return raw
+    if os.environ.get("AD_AUTH_ENABLED", "").strip().lower() in ("1", "true", "yes"):
+        return "ad"
+    return "none"
+
+
+def auth_enabled() -> bool:
+    return auth_mode() != "none"
+
+
 def ad_auth_enabled() -> bool:
-    return os.environ.get("AD_AUTH_ENABLED", "").strip().lower() in (
-        "1",
-        "true",
-        "yes",
-    )
+    return auth_mode() == "ad"
+
+
+def local_auth_enabled() -> bool:
+    return auth_mode() == "local"
 
 
 def require_session_secret() -> str:
-    """Секрет подписи cookie-сессии; при AD_AUTH_ENABLED обязателен SESSION_SECRET в .env."""
+    """Секрет подписи cookie-сессии; при включённой auth обязателен SESSION_SECRET в .env."""
     import secrets
 
     raw = os.environ.get("SESSION_SECRET", "").strip()
-    if ad_auth_enabled():
+    if auth_enabled():
         if len(raw) < 16:
             raise RuntimeError(
-                "AD_AUTH_ENABLED=1: задайте в .env SESSION_SECRET (не короче 16 символов)."
+                "AUTH_TYPE!=none: задайте в .env SESSION_SECRET (не короче 16 символов)."
             )
         return raw
     return raw or secrets.token_hex(32)

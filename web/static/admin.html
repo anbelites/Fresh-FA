@@ -1,0 +1,779 @@
+<!DOCTYPE html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Fresh FA Admin</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/static/app.css?v=60" />
+    <link rel="stylesheet" href="/static/admin.css?v=2" />
+  </head>
+  <body>
+    <div class="admin-shell">
+      <aside class="admin-sidebar">
+        <div class="sidebar-brand">
+          <a href="/" class="sidebar-brand-logo" aria-label="Fresh — к основному приложению">
+            <img
+              src="/static/assets/img/fresh-logo-white.png"
+              alt="Fresh"
+              width="120"
+              height="18"
+              class="sidebar-brand-img-fresh"
+            />
+            <img
+              src="/static/assets/img/fa-logo-blue.png"
+              alt="FA"
+              width="28"
+              height="28"
+              class="sidebar-brand-img-fa"
+            />
+          </a>
+        </div>
+
+        <div class="admin-sidebar-meta">
+          <span class="admin-sidebar-meta__label">Текущий администратор</span>
+          <span class="admin-sidebar-meta__value" id="admin-user-name">—</span>
+          <span class="admin-note" id="admin-user-meta">—</span>
+        </div>
+
+        <nav class="admin-nav" aria-label="Навигация по админке">
+          <button type="button" class="admin-nav-btn admin-nav-btn--active" data-section="overview">Обзор</button>
+          <button type="button" class="admin-nav-btn" data-section="jobs">Задачи</button>
+          <button type="button" class="admin-nav-btn" data-section="users">Пользователи</button>
+          <button type="button" class="admin-nav-btn" data-section="videos">Видео</button>
+          <button type="button" class="admin-nav-btn" data-section="checklists">Чеклисты</button>
+          <button type="button" class="admin-nav-btn" data-section="settings">Настройки</button>
+          <button type="button" class="admin-nav-btn" data-section="audit">Аудит</button>
+        </nav>
+
+        <div class="admin-sidebar-links">
+          <a href="/" class="admin-sidebar-link">К основному приложению</a>
+          <a href="/dashboard" class="admin-sidebar-link">Старый дашборд</a>
+        </div>
+      </aside>
+
+      <main class="admin-main">
+        <header class="admin-topbar">
+          <div class="admin-topbar-copy">
+            <span class="admin-kicker" id="admin-active-section-label">Обзор</span>
+            <h1 class="admin-title">Управление Fresh FA</h1>
+            <p class="admin-subtitle">
+              Рабочая админка без лишнего шума: пользователи, очередь, видео, чеклисты, настройки и аудит.
+            </p>
+          </div>
+          <div class="admin-topbar-actions">
+            <div class="admin-sync-status">
+              <span class="admin-sync-label">Последнее обновление</span>
+              <strong class="admin-sync-value" id="admin-last-updated">Ещё не выполнялось</strong>
+            </div>
+            <button type="button" class="admin-btn-secondary" id="admin-refresh-all">Синхронизировать</button>
+            <button type="button" class="admin-btn" id="admin-logout">Выйти</button>
+          </div>
+        </header>
+
+        <div class="admin-flash" id="admin-flash" data-visible="false"></div>
+
+        <div class="admin-sections">
+          <section class="admin-section admin-section--active" id="section-overview" data-section="overview">
+            <div class="admin-section-head">
+              <div>
+                <span class="admin-section-eyebrow">Главное</span>
+                <h2>Обзор системы</h2>
+                <p>Текущее состояние системы, очередей, пользователей и качества обработки.</p>
+              </div>
+            </div>
+
+            <div class="admin-kpi-grid" id="overview-kpis"></div>
+
+            <div class="admin-grid-2">
+              <div class="admin-card">
+                <h3>Runtime</h3>
+                <div class="admin-meta" id="overview-runtime"></div>
+              </div>
+              <div class="admin-card">
+                <h3>Аналитика качества</h3>
+                <div class="admin-meta" id="overview-analytics"></div>
+              </div>
+            </div>
+
+            <div class="admin-grid-2">
+              <div class="admin-card admin-card--scroll">
+                <h3>Последние задачи</h3>
+                <div class="admin-table-wrap">
+                  <table class="admin-table">
+                    <thead>
+                      <tr>
+                        <th>ID</th>
+                        <th>Stem</th>
+                        <th>Тип</th>
+                        <th>Статус</th>
+                        <th>Stage</th>
+                        <th>Обновлено</th>
+                      </tr>
+                    </thead>
+                    <tbody id="overview-jobs-body"></tbody>
+                  </table>
+                </div>
+              </div>
+              <div class="admin-card admin-card--scroll">
+                <h3>Последние события аудита</h3>
+                <div class="admin-table-wrap">
+                  <table class="admin-table">
+                    <thead>
+                      <tr>
+                        <th>Когда</th>
+                        <th>Actor</th>
+                        <th>Action</th>
+                        <th>Target</th>
+                      </tr>
+                    </thead>
+                    <tbody id="overview-audit-body"></tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section class="admin-section" id="section-jobs" data-section="jobs">
+            <div class="admin-section-head">
+              <div>
+                <span class="admin-section-eyebrow">Операции</span>
+                <h2>Очередь и история задач</h2>
+                <p>Очередь задач, ошибки, отмена, ретраи и мониторинг пайплайна.</p>
+              </div>
+            </div>
+
+            <div class="admin-card">
+              <div class="admin-toolbar">
+                <div class="admin-field">
+                  <label for="jobs-status-filter">Статус</label>
+                  <select id="jobs-status-filter" class="admin-select">
+                    <option value="">Все</option>
+                    <option value="queued">queued</option>
+                    <option value="running">running</option>
+                    <option value="done">done</option>
+                    <option value="error">error</option>
+                    <option value="cancelled">cancelled</option>
+                  </select>
+                </div>
+                <div class="admin-field">
+                  <label for="jobs-kind-filter">Тип</label>
+                  <select id="jobs-kind-filter" class="admin-select">
+                    <option value="">Все</option>
+                    <option value="pipeline">pipeline</option>
+                    <option value="eval_only">eval_only</option>
+                  </select>
+                </div>
+                <div class="admin-field" style="flex: 1 1 300px">
+                  <label for="jobs-query">Поиск</label>
+                  <input id="jobs-query" class="admin-search" type="search" placeholder="job id, stem, title, manager…" />
+                </div>
+              </div>
+            </div>
+
+            <div class="admin-grid-2">
+              <div class="admin-card admin-card--scroll">
+                <div class="admin-table-wrap">
+                  <table class="admin-table">
+                    <thead>
+                      <tr>
+                        <th>ID</th>
+                        <th>Stem</th>
+                        <th>Тип</th>
+                        <th>Статус</th>
+                        <th>Stage</th>
+                        <th>Обновлено</th>
+                      </tr>
+                    </thead>
+                    <tbody id="jobs-body"></tbody>
+                  </table>
+                </div>
+              </div>
+              <div class="admin-card admin-detail-card">
+                <div class="admin-card-head">
+                  <div>
+                    <h3>Детали задачи</h3>
+                    <p class="admin-note" id="job-detail-summary">Выберите задачу слева, чтобы увидеть контекст и доступные действия.</p>
+                  </div>
+                  <div class="admin-table-actions">
+                    <button type="button" class="admin-inline-btn" id="job-cancel-btn">Остановить</button>
+                    <button type="button" class="admin-inline-btn admin-inline-btn--brand" id="job-retry-btn">Повторить</button>
+                  </div>
+                </div>
+                <div class="admin-meta" id="job-detail"></div>
+              </div>
+            </div>
+          </section>
+
+          <section class="admin-section" id="section-users" data-section="users">
+            <div class="admin-section-head">
+              <div>
+                <span class="admin-section-eyebrow">Доступ</span>
+                <h2>Пользователи и роли</h2>
+                <p>Создание, роли, деактивация, профиль и сброс пароля локальных пользователей.</p>
+              </div>
+            </div>
+
+            <div class="admin-grid-2">
+              <div class="admin-card admin-card--scroll">
+                <div class="admin-table-wrap">
+                  <table class="admin-table">
+                    <thead>
+                      <tr>
+                        <th>Логин</th>
+                        <th>ФИО</th>
+                        <th>Источник</th>
+                        <th>Локация</th>
+                        <th>Отдел</th>
+                        <th>Роль</th>
+                        <th>Статус</th>
+                      </tr>
+                    </thead>
+                    <tbody id="users-body"></tbody>
+                  </table>
+                </div>
+              </div>
+
+              <div class="admin-card admin-detail-card">
+                <div class="admin-card-head">
+                  <div>
+                    <h3 id="user-form-title">Новый пользователь</h3>
+                    <p class="admin-note" id="user-form-meta">Создание локальной или AD-учётной записи и управление доступом.</p>
+                  </div>
+                </div>
+                <form class="admin-form-grid" id="user-form">
+                  <div class="admin-form-grid admin-form-grid--2">
+                    <div class="admin-field">
+                      <label for="user-username">Логин</label>
+                      <input id="user-username" class="admin-input" type="text" autocomplete="off" />
+                    </div>
+                    <div class="admin-field">
+                      <label for="user-auth-source">Источник</label>
+                      <select id="user-auth-source" class="admin-select">
+                        <option value="local">local</option>
+                        <option value="ad">ad</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div class="admin-field">
+                    <label for="user-password">Пароль</label>
+                    <input id="user-password" class="admin-input" type="password" autocomplete="new-password" />
+                    <small>Для создания local-user обязателен; для AD остаётся пустым.</small>
+                  </div>
+                  <div class="admin-form-grid admin-form-grid--2">
+                    <div class="admin-field">
+                      <label for="user-full-name">ФИО</label>
+                      <input id="user-full-name" class="admin-input" type="text" />
+                    </div>
+                    <div class="admin-field">
+                      <label for="user-role">Роль</label>
+                      <select id="user-role" class="admin-select">
+                        <option value="user">user</option>
+                        <option value="admin">admin</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div class="admin-form-grid admin-form-grid--2">
+                    <div class="admin-field">
+                      <label for="user-location">Локация</label>
+                      <select id="user-location" class="admin-select"></select>
+                    </div>
+                    <div class="admin-field">
+                      <label for="user-department">Отдел</label>
+                      <select id="user-department" class="admin-select">
+                        <option value="">—</option>
+                        <option value="ОО">Отдел оценки</option>
+                        <option value="ОП">Отдел продаж</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div class="admin-field">
+                    <label for="user-is-active">Статус</label>
+                    <select id="user-is-active" class="admin-select">
+                      <option value="true">Активен</option>
+                      <option value="false">Отключён</option>
+                    </select>
+                  </div>
+                  <div class="admin-action-group admin-action-group--soft">
+                    <span class="admin-action-group-title">Квоты и очередь</span>
+                    <div class="admin-form-grid admin-form-grid--2">
+                      <div class="admin-field">
+                        <label for="user-daily-upload-limit">Дневная квота, видео</label>
+                        <input id="user-daily-upload-limit" class="admin-input" type="number" min="0" step="1" placeholder="по умолчанию" />
+                        <small>Пусто = использовать глобальную настройку из раздела Settings.</small>
+                      </div>
+                      <div class="admin-field">
+                        <label for="user-max-queued-jobs">Queued jobs</label>
+                        <input id="user-max-queued-jobs" class="admin-input" type="number" min="0" step="1" placeholder="по умолчанию" />
+                      </div>
+                    </div>
+                    <div class="admin-field">
+                      <label for="user-max-running-jobs">Running jobs</label>
+                      <input id="user-max-running-jobs" class="admin-input" type="number" min="0" step="1" placeholder="по умолчанию" />
+                    </div>
+                    <div class="admin-meta" id="user-quota-summary">
+                      <div class="admin-meta__row"><span class="admin-meta__key">Квоты</span><strong>Выберите пользователя, чтобы увидеть usage и effective limits.</strong></div>
+                    </div>
+                  </div>
+                  <div class="admin-action-stack">
+                    <div class="admin-action-group">
+                      <span class="admin-action-group-title">Профиль</span>
+                      <div class="admin-toolbar">
+                        <button type="submit" class="admin-btn" id="user-save-btn">Создать пользователя</button>
+                        <button type="button" class="admin-btn-secondary" id="user-form-reset">Сбросить форму</button>
+                      </div>
+                    </div>
+                    <div class="admin-action-group admin-action-group--soft">
+                      <span class="admin-action-group-title">Доступ и пароль</span>
+                      <div class="admin-toolbar">
+                        <button type="button" class="admin-btn-secondary" id="user-activate-btn">Активировать</button>
+                        <button type="button" class="admin-btn-secondary" id="user-deactivate-btn">Отключить</button>
+                        <button type="button" class="admin-btn-danger" id="user-reset-password-btn">Сбросить пароль</button>
+                      </div>
+                    </div>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </section>
+
+          <section class="admin-section" id="section-videos" data-section="videos">
+            <div class="admin-section-head">
+              <div>
+                <span class="admin-section-eyebrow">Контент</span>
+                <h2>Глобальное управление видео</h2>
+                <p>Глобальный список загруженных видео, метаданные, удаление и переобработка.</p>
+              </div>
+            </div>
+
+            <div class="admin-card">
+              <div class="admin-toolbar">
+                <div class="admin-field" style="flex: 1 1 280px">
+                  <label for="videos-query">Поиск</label>
+                  <input id="videos-query" class="admin-search" type="search" placeholder="stem, title, manager, checklist…" />
+                </div>
+                <div class="admin-field">
+                  <label for="videos-status-filter">Статус</label>
+                  <select id="videos-status-filter" class="admin-select">
+                    <option value="">Все</option>
+                    <option value="queued">queued</option>
+                    <option value="running">running</option>
+                    <option value="error">error</option>
+                    <option value="ready">ready</option>
+                    <option value="pending">pending</option>
+                    <option value="deleted">deleted</option>
+                    <option value="orphan">orphan</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <div class="admin-grid-2">
+              <div class="admin-card admin-card--scroll">
+                <div class="admin-table-wrap">
+                  <table class="admin-table">
+                    <thead>
+                      <tr>
+                        <th>Stem</th>
+                        <th>Название</th>
+                        <th>Менеджер</th>
+                        <th>Локация</th>
+                        <th>Pipeline</th>
+                        <th>Чеклист</th>
+                      </tr>
+                    </thead>
+                    <tbody id="videos-body"></tbody>
+                  </table>
+                </div>
+              </div>
+
+              <div class="admin-card admin-detail-card">
+                <div class="admin-card-head">
+                  <div>
+                    <h3 id="video-form-title">Карточка записи</h3>
+                    <p class="admin-note" id="video-form-meta">Выберите запись в таблице слева, чтобы отредактировать метаданные и действия обработки.</p>
+                  </div>
+                  <div class="admin-detail-meta">
+                    <span class="admin-note admin-code" id="video-form-stem">—</span>
+                    <span class="admin-pill" data-tone="muted" id="video-form-status">Не выбрано</span>
+                  </div>
+                </div>
+                <form class="admin-form-grid" id="video-form">
+                  <div class="admin-field">
+                    <label for="video-display-title">Название</label>
+                    <input id="video-display-title" class="admin-input" type="text" />
+                  </div>
+                  <div class="admin-form-grid admin-form-grid--2">
+                    <div class="admin-field">
+                      <label for="video-manager">Менеджер</label>
+                      <select id="video-manager" class="admin-select"></select>
+                    </div>
+                    <div class="admin-field">
+                      <label for="video-location">Локация</label>
+                      <select id="video-location" class="admin-select"></select>
+                    </div>
+                  </div>
+                  <div class="admin-form-grid admin-form-grid--2">
+                    <div class="admin-field">
+                      <label for="video-training-type">Тип тренировки</label>
+                      <select id="video-training-type" class="admin-select"></select>
+                    </div>
+                    <div class="admin-field">
+                      <label for="video-date">Дата взаимодействия</label>
+                      <input id="video-date" class="admin-input" type="date" />
+                    </div>
+                  </div>
+                  <div class="admin-field">
+                    <label for="video-tags">Теги</label>
+                    <input id="video-tags" class="admin-input" type="text" placeholder="через запятую" />
+                  </div>
+                  <div class="admin-action-stack">
+                    <div class="admin-action-group">
+                      <span class="admin-action-group-title">Метаданные</span>
+                      <div class="admin-toolbar">
+                        <button type="submit" class="admin-btn" id="video-save-btn">Сохранить изменения</button>
+                      </div>
+                    </div>
+                    <div class="admin-action-group admin-action-group--soft">
+                      <span class="admin-action-group-title">Обработка</span>
+                      <div class="admin-toolbar">
+                        <button type="button" class="admin-btn-secondary" id="video-resume-btn">Возобновить</button>
+                        <button type="button" class="admin-btn-secondary" id="video-restart-btn">С начала</button>
+                        <button type="button" class="admin-btn-secondary" id="video-re-eval-btn">Пересчитать оценку</button>
+                      </div>
+                    </div>
+                    <div class="admin-action-group admin-action-group--danger">
+                      <span class="admin-action-group-title">Архив и удаление</span>
+                      <div class="admin-toolbar">
+                        <button type="button" class="admin-btn-secondary" id="video-restore-btn">Восстановить</button>
+                        <button type="button" class="admin-btn-danger" id="video-delete-btn">Удалить</button>
+                      </div>
+                    </div>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </section>
+
+          <section class="admin-section" id="section-checklists" data-section="checklists">
+            <div class="admin-section-head">
+              <div>
+                <span class="admin-section-eyebrow">Стандарты</span>
+                <h2>Чеклисты и справочники</h2>
+                <p>Чеклисты, training types, managers и locations в одном разделе администрирования.</p>
+              </div>
+            </div>
+
+            <div class="admin-zone">
+              <div class="admin-zone-head">
+                <div>
+                  <h3 class="admin-zone-title">Активный и новый чеклист</h3>
+                  <p class="admin-zone-subtitle">Частые действия по настройке рабочего набора без перехода в редактор.</p>
+                </div>
+              </div>
+              <div class="admin-grid-2">
+                <div class="admin-card">
+                <h3>Активный чеклист</h3>
+                <div class="admin-toolbar">
+                  <select id="active-checklist-select" class="admin-select"></select>
+                  <button type="button" class="admin-btn" id="active-checklist-save">Сделать активным</button>
+                </div>
+              </div>
+                <div class="admin-card">
+                <h3>Новый чеклист</h3>
+                <div class="admin-form-grid admin-form-grid--2">
+                  <div class="admin-field">
+                    <label for="new-checklist-name">Slug</label>
+                    <input id="new-checklist-name" class="admin-input admin-code" type="text" placeholder="sales_script" />
+                  </div>
+                  <div class="admin-field">
+                    <label for="new-checklist-copy">Копировать из</label>
+                    <select id="new-checklist-copy" class="admin-select"></select>
+                  </div>
+                </div>
+                <div class="admin-toolbar">
+                  <button type="button" class="admin-btn" id="create-checklist-btn">Создать</button>
+                </div>
+              </div>
+            </div>
+            </div>
+
+            <div class="admin-zone">
+              <div class="admin-zone-head">
+                <div>
+                  <h3 class="admin-zone-title">Список и редактор чеклистов</h3>
+                  <p class="admin-zone-subtitle">Выберите чеклист слева и редактируйте его состав в правой панели.</p>
+                </div>
+              </div>
+              <div class="admin-grid-2">
+                <div class="admin-card admin-card--scroll">
+                <h3>Список чеклистов</h3>
+                <div class="admin-table-wrap">
+                  <table class="admin-table">
+                    <thead>
+                      <tr>
+                        <th>Slug</th>
+                        <th>Название</th>
+                        <th>Отдел</th>
+                        <th>Версия</th>
+                      </tr>
+                    </thead>
+                    <tbody id="checklists-body"></tbody>
+                  </table>
+                </div>
+              </div>
+
+              <div class="admin-card">
+                <div class="admin-toolbar admin-toolbar--split">
+                  <h3 id="checklist-editor-title">Редактор чеклиста</h3>
+                  <button type="button" class="admin-btn-secondary" id="checklist-add-row">+ Критерий</button>
+                </div>
+                <form class="admin-form-grid" id="checklist-editor-form">
+                  <div class="admin-form-grid admin-form-grid--2">
+                    <div class="admin-field">
+                      <label for="checklist-editor-display-name">Название</label>
+                      <input id="checklist-editor-display-name" class="admin-input" type="text" />
+                    </div>
+                    <div class="admin-field">
+                      <label for="checklist-editor-version">Версия</label>
+                      <input id="checklist-editor-version" class="admin-input" type="text" />
+                    </div>
+                  </div>
+                  <div class="admin-field">
+                    <label for="checklist-editor-department">Отдел</label>
+                    <select id="checklist-editor-department" class="admin-select">
+                      <option value="">—</option>
+                      <option value="ОО">Отдел оценки</option>
+                      <option value="ОП">Отдел продаж</option>
+                    </select>
+                  </div>
+                  <div class="admin-criteria-list" id="checklist-criteria-list"></div>
+                  <div class="admin-toolbar">
+                    <button type="submit" class="admin-btn" id="checklist-save-btn">Сохранить</button>
+                    <button type="button" class="admin-btn-danger" id="checklist-delete-btn">Удалить</button>
+                  </div>
+                </form>
+              </div>
+            </div>
+            </div>
+
+            <div class="admin-zone admin-zone--muted">
+              <div class="admin-zone-head">
+                <div>
+                  <h3 class="admin-zone-title">Справочники и связки</h3>
+                  <p class="admin-zone-subtitle">Managers, locations и training types вынесены в отдельный визуальный блок, чтобы не смешиваться с редактором чеклистов.</p>
+                </div>
+              </div>
+              <div class="admin-grid-3">
+                <div class="admin-card">
+                <h3>Managers</h3>
+                <form class="admin-form-grid" id="manager-form">
+                  <div class="admin-field">
+                    <label for="manager-id">ID</label>
+                    <input id="manager-id" class="admin-input" type="text" />
+                  </div>
+                  <div class="admin-field">
+                    <label for="manager-name">Название</label>
+                    <input id="manager-name" class="admin-input" type="text" />
+                  </div>
+                  <div class="admin-toolbar">
+                    <button type="submit" class="admin-btn">Добавить</button>
+                  </div>
+                </form>
+                <div class="admin-table-wrap">
+                  <table class="admin-table">
+                    <thead>
+                      <tr>
+                        <th>ID</th>
+                        <th>Название</th>
+                        <th></th>
+                      </tr>
+                    </thead>
+                    <tbody id="managers-body"></tbody>
+                  </table>
+                </div>
+              </div>
+
+              <div class="admin-card">
+                <h3>Locations</h3>
+                <form class="admin-form-grid" id="location-form">
+                  <div class="admin-field">
+                    <label for="location-id">ID</label>
+                    <input id="location-id" class="admin-input" type="text" />
+                  </div>
+                  <div class="admin-field">
+                    <label for="location-name">Название</label>
+                    <input id="location-name" class="admin-input" type="text" />
+                  </div>
+                  <div class="admin-field">
+                    <label for="location-crm-id">CRM ID</label>
+                    <input id="location-crm-id" class="admin-input" type="text" />
+                  </div>
+                  <div class="admin-toolbar">
+                    <button type="submit" class="admin-btn">Добавить</button>
+                  </div>
+                </form>
+                <div class="admin-table-wrap">
+                  <table class="admin-table">
+                    <thead>
+                      <tr>
+                        <th>ID</th>
+                        <th>Название</th>
+                        <th></th>
+                      </tr>
+                    </thead>
+                    <tbody id="locations-body"></tbody>
+                  </table>
+                </div>
+              </div>
+
+              <div class="admin-card">
+                <div class="admin-toolbar admin-toolbar--split">
+                  <h3>Training Types</h3>
+                  <button type="button" class="admin-btn-secondary" id="training-form-reset">Новый</button>
+                </div>
+                <form class="admin-form-grid" id="training-type-form">
+                  <div class="admin-field">
+                    <label for="training-type-slug">Slug</label>
+                    <input id="training-type-slug" class="admin-input admin-code" type="text" />
+                  </div>
+                  <div class="admin-field">
+                    <label for="training-type-name-admin">Название</label>
+                    <input id="training-type-name-admin" class="admin-input" type="text" />
+                  </div>
+                  <div class="admin-field">
+                    <label for="training-type-department-admin">Отдел</label>
+                    <select id="training-type-department-admin" class="admin-select">
+                      <option value="">—</option>
+                      <option value="ОО">Отдел оценки</option>
+                      <option value="ОП">Отдел продаж</option>
+                    </select>
+                  </div>
+                  <div class="admin-field">
+                    <label for="training-type-checklist-admin">Чеклист</label>
+                    <select id="training-type-checklist-admin" class="admin-select"></select>
+                  </div>
+                  <div class="admin-field">
+                    <label for="training-type-sort-order-admin">Sort order</label>
+                    <input id="training-type-sort-order-admin" class="admin-input" type="number" step="1" />
+                  </div>
+                  <div class="admin-toolbar">
+                    <button type="submit" class="admin-btn" id="training-type-save-btn">Сохранить</button>
+                    <button type="button" class="admin-btn-danger" id="training-type-delete-btn">Удалить</button>
+                  </div>
+                </form>
+                <div class="admin-table-wrap">
+                  <table class="admin-table">
+                    <thead>
+                      <tr>
+                        <th>Slug</th>
+                        <th>Название</th>
+                        <th>Чеклист</th>
+                      </tr>
+                    </thead>
+                    <tbody id="training-types-body"></tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+            </div>
+          </section>
+
+          <section class="admin-section" id="section-settings" data-section="settings">
+            <div class="admin-section-head">
+              <div>
+                <span class="admin-section-eyebrow">Конфигурация</span>
+                <h2>Настройки без секретов</h2>
+                <p>Безопасные системные настройки без секретов и правки `.env`.</p>
+              </div>
+            </div>
+
+            <div class="admin-grid-2">
+              <div class="admin-card">
+                <form class="admin-form-grid" id="settings-form">
+                  <div class="admin-field">
+                    <label for="settings-max-workers">Worker-ы обработки</label>
+                    <input id="settings-max-workers" class="admin-input" type="number" min="1" max="16" />
+                    <small id="settings-max-workers-help"></small>
+                  </div>
+                  <div class="admin-field">
+                    <label for="settings-admin-refresh">Автообновление админки, сек</label>
+                    <input id="settings-admin-refresh" class="admin-input" type="number" min="3" max="120" />
+                  </div>
+                  <div class="admin-field">
+                    <label for="settings-local-registration">Саморегистрация local users</label>
+                    <select id="settings-local-registration" class="admin-select">
+                      <option value="true">Включена</option>
+                      <option value="false">Выключена</option>
+                    </select>
+                  </div>
+                  <div class="admin-field">
+                    <label for="settings-max-queue-depth">Максимум задач в очереди</label>
+                    <input id="settings-max-queue-depth" class="admin-input" type="number" min="1" max="10000" />
+                  </div>
+                  <div class="admin-field">
+                    <label for="settings-default-daily-upload-limit">Дневная квота по умолчанию</label>
+                    <input id="settings-default-daily-upload-limit" class="admin-input" type="number" min="0" max="1000" />
+                  </div>
+                  <div class="admin-form-grid admin-form-grid--2">
+                    <div class="admin-field">
+                      <label for="settings-default-max-queued-jobs">Queued jobs по умолчанию</label>
+                      <input id="settings-default-max-queued-jobs" class="admin-input" type="number" min="0" max="1000" />
+                    </div>
+                    <div class="admin-field">
+                      <label for="settings-default-max-running-jobs">Running jobs по умолчанию</label>
+                      <input id="settings-default-max-running-jobs" class="admin-input" type="number" min="0" max="16" />
+                    </div>
+                  </div>
+                  <div class="admin-toolbar">
+                    <button type="submit" class="admin-btn">Сохранить настройки</button>
+                  </div>
+                </form>
+              </div>
+
+              <div class="admin-card">
+                <h3>Текущее runtime-состояние</h3>
+                <div class="admin-meta" id="settings-runtime"></div>
+              </div>
+            </div>
+          </section>
+
+          <section class="admin-section" id="section-audit" data-section="audit">
+            <div class="admin-section-head">
+              <div>
+                <span class="admin-section-eyebrow">Контроль</span>
+                <h2>Журнал действий</h2>
+                <p>Журнал административных и системных действий.</p>
+              </div>
+            </div>
+
+            <div class="admin-card admin-card--scroll">
+              <div class="admin-table-wrap">
+                <table class="admin-table">
+                  <thead>
+                    <tr>
+                      <th>Когда</th>
+                      <th>Actor</th>
+                      <th>Action</th>
+                      <th>Target</th>
+                      <th>Status</th>
+                      <th>Details</th>
+                    </tr>
+                  </thead>
+                  <tbody id="audit-body"></tbody>
+                </table>
+              </div>
+            </div>
+          </section>
+        </div>
+      </main>
+    </div>
+
+    <script src="/static/admin.js?v=3"></script>
+  </body>
+</html>

@@ -13,6 +13,10 @@ from pathlib import Path
 from queue import Empty
 from typing import Any
 
+from src.cuda_runtime_path import ensure_nvidia_pip_libs
+
+ensure_nvidia_pip_libs()
+
 from src.audio_extract import extract_wav_16k_mono
 from src.errors import PipelineCancelled
 from src.audio_tone import (
@@ -20,15 +24,38 @@ from src.audio_tone import (
     audio_tone_summary_note,
     segment_audio_tone,
 )
+from src.nemo_diarize import (
+    load_diarization_rows_nemo,
+    nemo_device_name,
+    nemo_diarization_backend_enabled,
+    nemo_is_installed,
+    nemo_model_name,
+)
 from src.speech_delivery import analyze_segment, delivery_summary_note
 
 
+def _ct2_cuda_available() -> bool:
+    """CTranslate2 (faster-whisper) видит CUDA без загрузки PyTorch."""
+    try:
+        import ctranslate2 as ct2
+
+        return ct2.get_cuda_device_count() > 0
+    except Exception:
+        return False
+
+
 def _device() -> str:
-    return os.environ.get("WHISPER_DEVICE", "cpu")
+    v = os.environ.get("WHISPER_DEVICE", "").strip()
+    if v:
+        return v
+    return "cuda" if _ct2_cuda_available() else "cpu"
 
 
 def _compute_type() -> str:
-    return os.environ.get("WHISPER_COMPUTE_TYPE", "int8")
+    v = os.environ.get("WHISPER_COMPUTE_TYPE", "").strip()
+    if v:
+        return v
+    return "float16" if _device() == "cuda" else "int8"
 
 
 def _model_name() -> str:
@@ -40,23 +67,129 @@ def _language() -> str | None:
     return v if v else None
 
 
+_DEFAULT_WHISPER_DOMAIN_TERMS = (
+    "Fresh",
+    "Фреш",
+    "КСО",
+    "ПТЗ",
+    "ТО-0",
+    "ТО0",
+    "ЛКП",
+    "ПТС",
+    "ДВС",
+    "КПП",
+    "КД",
+    "ППП",
+    "МК",
+    "РОС",
+    "СВК",
+    "CRM",
+    "trade-in",
+    "трейд-ин",
+    "trade-up",
+    "трейд-ап",
+    "small talk",
+    "тест-драйв",
+    "Автотека",
+    "АВТОСТАТ",
+    "комитент",
+    "комиссионная продажа",
+    "выкуп",
+    "интерактивные продажи",
+    "полис технической защиты",
+    "продлённая техническая защита",
+    "продленная техническая защита",
+    "продлённая гарантия",
+    "нулевое техническое обслуживание",
+    "диагностика по 258 пунктам",
+    "развёрнутая диагностика",
+    "развернутая диагностика",
+    "лист диагностики",
+    "толщиномер",
+    "лакокрасочное покрытие",
+    "заводской окрас",
+    "вторичный окрас",
+    "шпаклёвка",
+    "шпаклевка",
+    "микроны",
+    "подъёмник",
+    "подъемник",
+    "эндоскопия",
+    "компрессия",
+    "геометрия кузова",
+    "пассивная безопасность",
+    "криминалистическая проверка",
+    "дилерское обслуживание",
+    "регламентное обслуживание",
+    "классифайды",
+    "ПТС оригинал",
+    "один собственник",
+    "манишки",
+    "мультибрендовый сервис Fresh",
+)
+
+
+_DEFAULT_WHISPER_DOMAIN_PROMPT = (
+    "Это запись разговора в автосалоне Fresh про покупку, продажу, оценку, "
+    "диагностику и обслуживание автомобилей. В речи могут встречаться фирменные "
+    "и автомобильные термины. Правильно распознавай и сохраняй написание терминов: "
+    + ", ".join(_DEFAULT_WHISPER_DOMAIN_TERMS)
+    + "."
+)
+
+
 def _initial_prompt() -> str | None:
     """Domain vocabulary hint for Whisper (improves recognition of names, brands, terms)."""
     v = os.environ.get("WHISPER_INITIAL_PROMPT", "").strip()
     if v:
         return v
-    default = os.environ.get("WHISPER_DOMAIN_PROMPT", "").strip()
-    if default:
-        return default
-    return None
+    extra = os.environ.get("WHISPER_DOMAIN_PROMPT", "").strip()
+    if extra:
+        return f"{_DEFAULT_WHISPER_DOMAIN_PROMPT}\nДополнительный глоссарий: {extra}"
+    return _DEFAULT_WHISPER_DOMAIN_PROMPT
+
+
+def _initial_prompt_source() -> str:
+    if os.environ.get("WHISPER_INITIAL_PROMPT", "").strip():
+        return "WHISPER_INITIAL_PROMPT"
+    if os.environ.get("WHISPER_DOMAIN_PROMPT", "").strip():
+        return "built_in+WHISPER_DOMAIN_PROMPT"
+    return "built_in"
 
 
 def _hf_token() -> str | None:
     return os.environ.get("HF_TOKEN") or os.environ.get("HUGGING_FACE_HUB_TOKEN")
 
 
+def _diarization_backend_preference() -> str:
+    raw = os.environ.get("DIARIZATION_BACKEND", "auto").strip().lower()
+    if raw in ("nemo", "nemo_sortformer"):
+        return "nemo"
+    if raw == "pyannote":
+        return "pyannote"
+    if raw == "mfcc":
+        return "mfcc"
+    return "auto"
+
+
+def _diarization_backend_candidates(hf: str | None) -> list[str]:
+    pref = _diarization_backend_preference()
+    if pref == "nemo":
+        return ["nemo", "pyannote", "mfcc"]
+    if pref == "pyannote":
+        return ["pyannote", "mfcc"]
+    if pref == "mfcc":
+        return ["mfcc"]
+    candidates: list[str] = []
+    if nemo_diarization_backend_enabled():
+        candidates.append("nemo")
+    candidates.append("pyannote")
+    candidates.append("mfcc")
+    return candidates
+
+
 def _diarization_pipeline_path_or_id() -> Path | str:
-    """Hub id или локальный config.yaml (см. config/pyannote/speaker-diarization-3.1.yaml)."""
+    """Hub id или локальный config.yaml для pyannote; по умолчанию community-1."""
     root = Path(__file__).resolve().parent.parent
     override = os.environ.get("PYANNOTE_PIPELINE", "").strip()
     if override:
@@ -66,14 +199,30 @@ def _diarization_pipeline_path_or_id() -> Path | str:
         if p.suffix in (".yaml", ".yml") and p.is_file():
             return p
         return override
-    local = root / "config" / "pyannote" / "speaker-diarization-3.1.yaml"
+    local = root / "config" / "pyannote" / "speaker-diarization-community-1.yaml"
     if local.is_file():
         return local
-    return "pyannote/speaker-diarization-3.1"
+    return "pyannote/speaker-diarization-community-1"
 
 
-def _pyannote_pipeline_kwargs() -> dict[str, int]:
+def _pyannote_pipeline_name() -> str:
+    return str(_diarization_pipeline_path_or_id()).strip().lower()
+
+
+def _is_pyannote_community_one() -> bool:
+    name = _pyannote_pipeline_name()
+    return "community-1" in name or "community_1" in name
+
+
+def _pyannote_pipeline_kwargs(expected_speaker_count: int | None = None) -> dict[str, int]:
     """Подсказки по числу говорящих (если известно) — уменьшает путаницу кластеров."""
+    if expected_speaker_count is not None:
+        try:
+            count = int(expected_speaker_count)
+        except (TypeError, ValueError):
+            count = 0
+        if count > 0:
+            return {"num_speakers": max(1, min(count, 8))}
     out: dict[str, int] = {}
     for key, env_name in (
         ("num_speakers", "PYANNOTE_NUM_SPEAKERS"),
@@ -150,22 +299,109 @@ def _should_run_pyannote(hf: str | None) -> bool:
     return True
 
 
+def _should_run_nemo(hf: str | None) -> bool:
+    if not nemo_diarization_backend_enabled():
+        return False
+    model_ref = nemo_model_name()
+    model_path = Path(model_ref)
+    if model_path.is_file():
+        return True
+    return bool(hf)
+
+
+def _pyannote_inference_device():
+    """CPU/CUDA для pyannote: авто — CUDA при доступности, иначе CPU."""
+    import torch
+
+    v = os.environ.get("PYANNOTE_DEVICE", "").strip().lower()
+    if v in ("cpu",):
+        return torch.device("cpu")
+    if v in ("cuda", "gpu"):
+        return torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    return torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+
+def _pyannote_device_type() -> str:
+    return str(_pyannote_inference_device().type)
+
+
+def _use_pyannote_exclusive() -> bool:
+    """
+    Exclusive diarization обычно устойчивее стыкуется с ASR и уменьшает ложные
+    короткие переключения. На CUDA включаем по умолчанию; env может переопределить.
+    """
+    v = os.environ.get("PYANNOTE_EXCLUSIVE", "").strip().lower()
+    if v in ("1", "true", "yes"):
+        return True
+    if v in ("0", "false", "no"):
+        return False
+    return _pyannote_device_type() == "cuda"
+
+
+def _pyannote_segment_smooth_radius() -> int:
+    """
+    На GPU по умолчанию слегка сглаживаем одиночные ложные скачки спикера между
+    соседними строками; на CPU оставляем старое поведение без сглаживания.
+    """
+    raw = os.environ.get("PYANNOTE_SEGMENT_SMOOTH_RADIUS", "").strip()
+    if raw:
+        try:
+            return max(0, int(raw))
+        except ValueError:
+            return 0
+    if _is_pyannote_community_one():
+        return 0
+    return 1 if _pyannote_device_type() == "cuda" else 0
+
+
+def _pyannote_label_smooth_radius() -> int:
+    raw = os.environ.get("PYANNOTE_LABEL_SMOOTH_RADIUS", "").strip()
+    if raw:
+        try:
+            return max(0, int(raw))
+        except ValueError:
+            return 0
+    return 0 if _is_pyannote_community_one() else 3
+
+
+def _pyannote_bridge_short_run_sec() -> float:
+    raw = os.environ.get("PYANNOTE_BRIDGE_SHORT_RUN_SEC", "").strip()
+    if raw:
+        try:
+            return max(0.0, float(raw))
+        except ValueError:
+            return 0.0
+    return 0.25 if _is_pyannote_community_one() else 2.8
+
+
+def _pyannote_bridge_min_distinct_speakers() -> int:
+    raw = os.environ.get("PYANNOTE_BRIDGE_MIN_DISTINCT_SPEAKERS", "").strip()
+    if raw:
+        try:
+            return max(2, int(raw))
+        except ValueError:
+            return 4
+    return 4
+
+
 def _load_diarization_rows(
-    wav_path: Path, hf_token: str
+    wav_path: Path,
+    hf_token: str,
+    *,
+    expected_speaker_count: int | None = None,
 ) -> list[tuple[float, float, str]]:
     from pyannote.audio import Pipeline
+    import torch
 
     pipeline = Pipeline.from_pretrained(
         _diarization_pipeline_path_or_id(), token=hf_token
     )
-    kwargs = _pyannote_pipeline_kwargs()
-    raw_out = pipeline({"audio": str(wav_path)}, **kwargs)
+    pipeline = pipeline.to(_pyannote_inference_device())
+    kwargs = _pyannote_pipeline_kwargs(expected_speaker_count)
+    with torch.inference_mode():
+        raw_out = pipeline({"audio": str(wav_path)}, **kwargs)
     if hasattr(raw_out, "speaker_diarization"):
-        use_exclusive = os.environ.get("PYANNOTE_EXCLUSIVE", "").lower() in (
-            "1",
-            "true",
-            "yes",
-        )
+        use_exclusive = _use_pyannote_exclusive()
         if use_exclusive and getattr(raw_out, "exclusive_speaker_diarization", None):
             diarization = raw_out.exclusive_speaker_diarization
         else:
@@ -176,6 +412,22 @@ def _load_diarization_rows(
     for turn, _, speaker in diarization.itertracks(yield_label=True):
         rows.append((float(turn.start), float(turn.end), str(speaker)))
     return rows
+
+
+def _friendly_pyannote_error(exc: Exception) -> str:
+    msg = str(exc).strip()
+    low = msg.lower()
+    pipeline_ref = str(_diarization_pipeline_path_or_id())
+    if (
+        "speaker-diarization-community-1" in pipeline_ref
+        and ("gated" in low or "private" in low or "accept user conditions" in low)
+    ):
+        return (
+            "Pyannote community-1 недоступен для текущего HF_TOKEN: нужно один раз принять условия "
+            "на https://hf.co/pyannote/speaker-diarization-community-1. "
+            "Временный откат: PYANNOTE_PIPELINE=pyannote/speaker-diarization-3.1."
+        )
+    return msg
 
 
 def _remap_speakers_sequential(raw_labels: list[str]) -> list[str]:
@@ -262,11 +514,18 @@ def _speaker_for_word_voted(
     w: Any,
     diar_rows: list[tuple[float, float, str]],
 ) -> str:
-    """Голосование по 3 точкам внутри слова — стабильнее на границах реплик."""
+    """Выбор спикера для слова: сначала по overlap, затем по 3 точкам внутри слова."""
     w0 = float(w.start)
     w1 = float(w.end)
     if w1 <= w0:
         return _speaker_for_interval(w0, w1, diar_rows)
+    overlap_votes: Counter[str] = Counter()
+    for d0, d1, spk in diar_rows:
+        ov = max(0.0, min(w1, d1) - max(w0, d0))
+        if ov > 0:
+            overlap_votes[spk] += ov
+    if overlap_votes:
+        return overlap_votes.most_common(1)[0][0]
     samples = [
         w0 + 0.15 * (w1 - w0),
         w0 + 0.5 * (w1 - w0),
@@ -279,6 +538,244 @@ def _speaker_for_word_voted(
 def _join_whisper_words(wlist: list[Any]) -> str:
     """Склеивает токены faster-whisper (пробелы уже внутри токенов)."""
     return ("".join(str(getattr(w, "word", "") or "") for w in wlist)).strip()
+
+
+def _pyannote_within_segment_aba_flank_max_sec() -> float:
+    raw = os.environ.get("PYANNOTE_ABA_FLANK_MAX_SEC", "").strip()
+    if raw:
+        try:
+            return max(0.0, float(raw))
+        except ValueError:
+            return 0.0
+    return 2.6 if _is_pyannote_community_one() else 0.0
+
+
+def _pyannote_within_segment_aba_center_min_sec() -> float:
+    raw = os.environ.get("PYANNOTE_ABA_CENTER_MIN_SEC", "").strip()
+    if raw:
+        try:
+            return max(0.0, float(raw))
+        except ValueError:
+            return 0.0
+    return 2.0 if _is_pyannote_community_one() else 0.0
+
+
+def _pyannote_soft_takeover_prefix_max_sec() -> float:
+    raw = os.environ.get("PYANNOTE_TAKEOVER_PREFIX_MAX_SEC", "").strip()
+    if raw:
+        try:
+            return max(0.0, float(raw))
+        except ValueError:
+            return 0.0
+    return 2.2 if _is_pyannote_community_one() else 0.0
+
+
+def _pyannote_soft_takeover_min_target_sec() -> float:
+    raw = os.environ.get("PYANNOTE_TAKEOVER_MIN_TARGET_SEC", "").strip()
+    if raw:
+        try:
+            return max(0.0, float(raw))
+        except ValueError:
+            return 0.0
+    return 1.0 if _is_pyannote_community_one() else 0.0
+
+
+def _pyannote_soft_takeover_prefix_max_mean_word_prob() -> float:
+    raw = os.environ.get("PYANNOTE_TAKEOVER_PREFIX_MAX_MEAN_WORD_PROB", "").strip()
+    if raw:
+        try:
+            return min(1.0, max(0.0, float(raw)))
+        except ValueError:
+            return 0.0
+    return 0.6 if _is_pyannote_community_one() else 0.0
+
+
+def _pyannote_soft_takeover_min_conf_gain() -> float:
+    raw = os.environ.get("PYANNOTE_TAKEOVER_MIN_CONF_GAIN", "").strip()
+    if raw:
+        try:
+            return max(0.0, float(raw))
+        except ValueError:
+            return 0.0
+    return 0.08 if _is_pyannote_community_one() else 0.0
+
+
+def _soft_text_continuation(left_text: str, right_text: str) -> bool:
+    left = (left_text or "").strip()
+    right = (right_text or "").strip()
+    if not left or not right:
+        return False
+    if left.endswith((",", ":", ";", "-", "—", "(")):
+        return True
+    first = right[0]
+    if first.islower() or first.isdigit():
+        return True
+    return left[-1] not in ".!?"
+
+
+def _strict_text_continuation(left_text: str, right_text: str) -> bool:
+    left = (left_text or "").strip()
+    right = (right_text or "").strip()
+    if not left or not right:
+        return False
+    if left.endswith((",", ":", ";", "-", "—", "(")):
+        return True
+    first = right[0]
+    if first.islower() or first.isdigit():
+        return left[-1] not in ".!?"
+    return False
+
+
+def _segment_mean_word_probability(seg: dict[str, Any]) -> float:
+    delivery = seg.get("delivery")
+    if isinstance(delivery, dict):
+        raw = delivery.get("mean_word_probability")
+        try:
+            if raw is not None:
+                return float(raw)
+        except (TypeError, ValueError):
+            pass
+    words = seg.get("words")
+    if isinstance(words, list) and words:
+        vals: list[float] = []
+        for w in words:
+            if not isinstance(w, dict):
+                continue
+            raw = w.get("probability")
+            try:
+                vals.append(float(raw))
+            except (TypeError, ValueError):
+                continue
+        if vals:
+            return sum(vals) / len(vals)
+    return 0.0
+
+
+def _set_segment_speaker(seg: dict[str, Any], speaker: str) -> None:
+    seg["speaker"] = speaker
+    for w in seg.get("words") or []:
+        if isinstance(w, dict):
+            w["speaker"] = speaker
+
+
+def _reassign_soft_continuation_prefix_to_next_speaker(
+    segments_out: list[dict[str, Any]],
+) -> None:
+    prefix_max = _pyannote_soft_takeover_prefix_max_sec()
+    min_target_sec = _pyannote_soft_takeover_min_target_sec()
+    prefix_max_prob = _pyannote_soft_takeover_prefix_max_mean_word_prob()
+    min_conf_gain = _pyannote_soft_takeover_min_conf_gain()
+    if (
+        prefix_max <= 0
+        or min_target_sec <= 0
+        or prefix_max_prob <= 0
+        or len(segments_out) < 2
+    ):
+        return
+
+    for idx in range(1, len(segments_out)):
+        curr = segments_out[idx]
+        curr_spk = str(curr.get("speaker", "") or "")
+        prev_spk = str(segments_out[idx - 1].get("speaker", "") or "")
+        if not curr_spk or not prev_spk or curr_spk == prev_spk:
+            continue
+
+        curr_start = float(curr.get("start", 0.0) or 0.0)
+        curr_end = float(curr.get("end", 0.0) or 0.0)
+        curr_dur = max(0.0, curr_end - curr_start)
+        if curr_dur < min_target_sec:
+            continue
+
+        start_idx = idx - 1
+        while start_idx > 0:
+            prev = segments_out[start_idx]
+            prev_prev = segments_out[start_idx - 1]
+            if str(prev_prev.get("speaker", "") or "") != prev_spk:
+                break
+            gap = max(
+                0.0,
+                float(prev.get("start", 0.0) or 0.0)
+                - float(prev_prev.get("end", 0.0) or 0.0),
+            )
+            prefix_start = float(prev_prev.get("start", 0.0) or 0.0)
+            if gap > 0.15 or curr_end - prefix_start > prefix_max + curr_dur:
+                break
+            start_idx -= 1
+
+        prefix = segments_out[start_idx:idx]
+        prefix_start = float(prefix[0].get("start", 0.0) or 0.0)
+        prefix_end = float(prefix[-1].get("end", 0.0) or 0.0)
+        prefix_dur = max(0.0, prefix_end - prefix_start)
+        if prefix_dur <= 0 or prefix_dur > prefix_max:
+            continue
+
+        gap = max(0.0, curr_start - prefix_end)
+        if gap > 0.15:
+            continue
+
+        prefix_text = " ".join(str(seg.get("text", "") or "").strip() for seg in prefix).strip()
+        curr_text = str(curr.get("text", "") or "").strip()
+        if not _strict_text_continuation(prefix_text, curr_text):
+            continue
+
+        prefix_probs = [_segment_mean_word_probability(seg) for seg in prefix]
+        prefix_prob = sum(prefix_probs) / len(prefix_probs) if prefix_probs else 0.0
+        curr_prob = _segment_mean_word_probability(curr)
+        if prefix_prob > prefix_max_prob or curr_prob < prefix_prob + min_conf_gain:
+            continue
+
+        for seg in prefix:
+            _set_segment_speaker(seg, curr_spk)
+
+
+def _merge_same_utterance_aba_within_segment(
+    local_specs: list[tuple[Any, float, float, str, list[Any]]],
+) -> list[tuple[Any, float, float, str, list[Any]]]:
+    flank_max = _pyannote_within_segment_aba_flank_max_sec()
+    center_min = _pyannote_within_segment_aba_center_min_sec()
+    if flank_max <= 0 or center_min <= 0 or len(local_specs) < 3:
+        return local_specs
+
+    merged = list(local_specs)
+    changed = True
+    while changed and len(merged) >= 3:
+        changed = False
+        out: list[tuple[Any, float, float, str, list[Any]]] = []
+        i = 0
+        while i < len(merged):
+            if i + 2 >= len(merged):
+                out.extend(merged[i:])
+                break
+            a = merged[i]
+            b = merged[i + 1]
+            c = merged[i + 2]
+            seg_a, a0, a1, spk_a, wa = a
+            seg_b, b0, b1, spk_b, wb = b
+            seg_c, c0, c1, spk_c, wc = c
+            a_dur = max(0.0, a1 - a0)
+            b_dur = max(0.0, b1 - b0)
+            c_dur = max(0.0, c1 - c0)
+            left_text = _join_whisper_words(wa)
+            mid_text = _join_whisper_words(wb)
+            right_text = _join_whisper_words(wc)
+            if (
+                seg_a is seg_b is seg_c
+                and spk_a == spk_c
+                and spk_a != spk_b
+                and a_dur <= flank_max
+                and c_dur <= flank_max
+                and b_dur >= center_min
+                and _soft_text_continuation(left_text, mid_text)
+                and _soft_text_continuation(mid_text, right_text)
+            ):
+                out.append((seg_a, a0, c1, spk_b, wa + wb + wc))
+                i += 3
+                changed = True
+                continue
+            out.append(a)
+            i += 1
+        merged = out
+    return merged
 
 
 def _expand_segments_from_words(
@@ -303,6 +800,7 @@ def _expand_segments_from_words(
         current_spk: str | None = None
         bucket: list[Any] = []
         prev_end: float | None = None
+        local_specs: list[tuple[Any, float, float, str, list[Any]]] = []
 
         def flush() -> None:
             nonlocal bucket, current_spk
@@ -310,7 +808,7 @@ def _expand_segments_from_words(
                 return
             wt0 = float(bucket[0].start)
             wt1 = float(bucket[-1].end)
-            specs.append((seg, wt0, wt1, current_spk, bucket[:]))
+            local_specs.append((seg, wt0, wt1, current_spk, bucket[:]))
 
         for w in words:
             w0 = float(w.start)
@@ -334,6 +832,7 @@ def _expand_segments_from_words(
                 bucket = [w]
             prev_end = w1
         flush()
+        specs.extend(_merge_same_utterance_aba_within_segment(local_specs))
     return specs
 
 
@@ -365,6 +864,151 @@ def _apply_segment_speaker_smoothing(
         for w in row.get("words") or []:
             if isinstance(w, dict):
                 w["speaker"] = spk
+
+
+def _merge_fragmented_pyannote_speakers(segments_out: list[dict[str, Any]]) -> None:
+    """
+    Склеивает короткие «фантомные» SPEAKER_* у pyannote в соседний стабильный спикер.
+    Это снижает дробление одного реального голоса на множество кластеров.
+    """
+    raw = os.environ.get("PYANNOTE_MERGE_SHORT_SPEAKERS", "").strip().lower()
+    if raw in ("0", "false", "no"):
+        return
+    if raw not in ("", "1", "true", "yes"):
+        return
+    if len(segments_out) < 3:
+        return
+
+    speakers = [str(s.get("speaker", "") or "") for s in segments_out]
+    uniq = sorted({sp for sp in speakers if sp})
+    try:
+        min_distinct = max(
+            3, int(os.environ.get("PYANNOTE_MERGE_MIN_DISTINCT_SPEAKERS", "4"))
+        )
+    except ValueError:
+        min_distinct = 4
+    if len(uniq) < min_distinct:
+        return
+
+    try:
+        max_total_sec = float(
+            os.environ.get("PYANNOTE_MERGE_SHORT_SPEAKER_MAX_SEC", "12")
+        )
+    except ValueError:
+        max_total_sec = 12.0
+    try:
+        max_runs = max(1, int(os.environ.get("PYANNOTE_MERGE_SHORT_SPEAKER_MAX_RUNS", "3")))
+    except ValueError:
+        max_runs = 3
+
+    durations: dict[str, float] = {}
+    run_counts: Counter[str] = Counter()
+    runs: list[tuple[int, int, str]] = []
+    i = 0
+    while i < len(segments_out):
+        spk = speakers[i]
+        j = i + 1
+        run_dur = max(
+            0.0,
+            float(segments_out[i].get("end", 0.0)) - float(segments_out[i].get("start", 0.0)),
+        )
+        while j < len(segments_out) and speakers[j] == spk:
+            run_dur += max(
+                0.0,
+                float(segments_out[j].get("end", 0.0))
+                - float(segments_out[j].get("start", 0.0)),
+            )
+            j += 1
+        durations[spk] = durations.get(spk, 0.0) + run_dur
+        run_counts[spk] += 1
+        runs.append((i, j, spk))
+        i = j
+
+    fragmented = {
+        spk
+        for spk, total_sec in durations.items()
+        if spk and total_sec <= max_total_sec and run_counts[spk] <= max_runs
+    }
+    if not fragmented:
+        return
+
+    for run_idx, (start, end, spk) in enumerate(runs):
+        if spk not in fragmented:
+            continue
+        prev_spk = runs[run_idx - 1][2] if run_idx > 0 else ""
+        next_spk = runs[run_idx + 1][2] if run_idx + 1 < len(runs) else ""
+        replacement = ""
+        if prev_spk and prev_spk == next_spk and prev_spk != spk:
+            replacement = prev_spk
+        elif prev_spk and prev_spk != spk and prev_spk not in fragmented:
+            replacement = prev_spk
+        elif next_spk and next_spk != spk and next_spk not in fragmented:
+            replacement = next_spk
+        if not replacement:
+            continue
+        for idx in range(start, end):
+            segments_out[idx]["speaker"] = replacement
+            for w in segments_out[idx].get("words") or []:
+                if isinstance(w, dict):
+                    w["speaker"] = replacement
+
+
+def _bridge_short_pyannote_runs(segments_out: list[dict[str, Any]]) -> None:
+    """
+    Склеивает короткий ложный run между двумя одинаковыми спикерами: A B A -> A A A.
+    Полезно, когда pyannote на границе реплик даёт короткую ошибочную вставку.
+    """
+    max_sec = _pyannote_bridge_short_run_sec()
+    if max_sec <= 0 or len(segments_out) < 3:
+        return
+    uniq = {
+        str(seg.get("speaker", "") or "")
+        for seg in segments_out
+        if str(seg.get("speaker", "") or "")
+    }
+    if len(uniq) < _pyannote_bridge_min_distinct_speakers():
+        return
+
+    for _ in range(3):
+        changed = False
+        runs: list[tuple[int, int, str, float]] = []
+        i = 0
+        while i < len(segments_out):
+            spk = str(segments_out[i].get("speaker", "") or "")
+            j = i + 1
+            dur = max(
+                0.0,
+                float(segments_out[i].get("end", 0.0))
+                - float(segments_out[i].get("start", 0.0)),
+            )
+            while j < len(segments_out) and str(segments_out[j].get("speaker", "") or "") == spk:
+                dur += max(
+                    0.0,
+                    float(segments_out[j].get("end", 0.0))
+                    - float(segments_out[j].get("start", 0.0)),
+                )
+                j += 1
+            runs.append((i, j, spk, dur))
+            i = j
+
+        for idx in range(1, len(runs) - 1):
+            start, end, spk, dur = runs[idx]
+            prev_spk = runs[idx - 1][2]
+            next_spk = runs[idx + 1][2]
+            if not spk or spk == prev_spk or spk == next_spk:
+                continue
+            if prev_spk != next_spk:
+                continue
+            if dur > max_sec:
+                continue
+            for seg_idx in range(start, end):
+                segments_out[seg_idx]["speaker"] = prev_spk
+                for w in segments_out[seg_idx].get("words") or []:
+                    if isinstance(w, dict):
+                        w["speaker"] = prev_spk
+            changed = True
+        if not changed:
+            break
 
 
 def _majority_smooth_int_clusters(labels: list[int], radius: int = 4) -> list[int]:
@@ -403,11 +1047,7 @@ def _expand_pyannote_word_segments(
         return specs
 
     raw = [_speaker_for_word_voted(w, diar_rows) for _, w in flat]
-    try:
-        rad = int(os.environ.get("PYANNOTE_LABEL_SMOOTH_RADIUS", "3"))
-    except ValueError:
-        rad = 3
-    rad = max(0, rad)
+    rad = _pyannote_label_smooth_radius()
     smooth_lbl = _smooth_speaker_string_labels(raw, radius=rad) if rad > 0 else raw
     word_to_spk = {id(w): smooth_lbl[i] for i, (_, w) in enumerate(flat)}
 
@@ -665,6 +1305,7 @@ def transcribe_video_to_structure(
     video_path: Path,
     on_progress: Callable[[str], None] | None = None,
     cancel_check: Callable[[], None] | None = None,
+    expected_speaker_count: int | None = None,
 ) -> tuple[dict[str, Any], dict[str, Any] | None]:
     def ping(phase: str) -> None:
         if cancel_check:
@@ -694,27 +1335,71 @@ def transcribe_video_to_structure(
         hf = _hf_token()
         diar_rows: list[tuple[float, float, str]] = []
         diar_error = ""
+        diar_backend = "none"
+        diar_model: str | None = None
+        backend_failures: list[str] = []
         skipped_pyannote: str | None = None
-        if _should_run_pyannote(hf):
-            ping("diarization")
-            try:
-                if cancel_check:
-                    cancel_check()
-                diar_rows = _load_diarization_rows(wav, hf)
-            except Exception as e:
-                diar_error = str(e)
-        elif hf:
-            if sys.platform == "win32":
-                ping("diarization_skip_windows")
-                skipped_pyannote = "windows"
-                diar_error = ""
-            else:
-                ping("diarization_skip")
-                skipped_pyannote = "skip_env"
-                diar_error = "Pyannote отключён (SKIP_PYANNOTE=1) — используется MFCC."
-        else:
-            ping("diarization_skip")
-            diar_error = "HF_TOKEN не задан — говорящие не различаются."
+        skipped_nemo: str | None = None
+        for backend in _diarization_backend_candidates(hf):
+            if backend == "nemo":
+                if not _should_run_nemo(hf):
+                    ping("diarization_skip")
+                    if Path(nemo_model_name()).is_file():
+                        skipped_nemo = "disabled"
+                    else:
+                        skipped_nemo = "no_hf_token"
+                    continue
+                if not nemo_is_installed():
+                    backend_failures.append(
+                        "NeMo Sortformer не установлен; поставьте зависимости из requirements-nemo.txt."
+                    )
+                    continue
+                ping("diarization")
+                try:
+                    if cancel_check:
+                        cancel_check()
+                    diar_rows = load_diarization_rows_nemo(wav)
+                    diar_backend = "nemo"
+                    diar_model = nemo_model_name()
+                    break
+                except Exception as e:
+                    backend_failures.append(f"NeMo Sortformer: {e}")
+                    diar_rows = []
+            elif backend == "pyannote":
+                if _should_run_pyannote(hf):
+                    ping("diarization")
+                    try:
+                        if cancel_check:
+                            cancel_check()
+                        diar_rows = _load_diarization_rows(
+                            wav,
+                            hf or "",
+                            expected_speaker_count=expected_speaker_count,
+                        )
+                        diar_backend = "pyannote"
+                        diar_model = str(_diarization_pipeline_path_or_id())
+                        break
+                    except Exception as e:
+                        backend_failures.append(
+                            f"pyannote: {_friendly_pyannote_error(e)}"
+                        )
+                        diar_rows = []
+                elif hf:
+                    if sys.platform == "win32":
+                        ping("diarization_skip_windows")
+                        skipped_pyannote = "windows"
+                    else:
+                        ping("diarization_skip")
+                        skipped_pyannote = "skip_env"
+                        backend_failures.append(
+                            "Pyannote отключён (SKIP_PYANNOTE=1) — используется fallback."
+                        )
+                else:
+                    ping("diarization_skip")
+                    skipped_pyannote = "no_hf_token"
+            elif backend == "mfcc":
+                break
+        diar_error = " | ".join(x for x in backend_failures if x)
 
         transcribe_kw: dict[str, Any] = {
             "word_timestamps": True,
@@ -767,7 +1452,7 @@ def transcribe_video_to_structure(
         if diar_rows:
             expanded_word_specs = _expand_pyannote_word_segments(seg_list, diar_rows)
             raw_speakers = [s[3] for s in expanded_word_specs]
-            diar_method = "pyannote"
+            diar_method = "nemo_sortformer" if diar_backend == "nemo" else "pyannote"
             norm_speakers = _remap_speakers_sequential(raw_speakers)
         elif bounds and not skip_mfcc:
             if _mfcc_word_level_enabled() and any(
@@ -782,6 +1467,8 @@ def transcribe_video_to_structure(
             if expanded_word_specs:
                 raw_speakers = [s[3] for s in expanded_word_specs]
                 diar_method = "mfcc_word_kmeans"
+                diar_backend = "mfcc"
+                diar_model = "librosa+sklearn"
                 norm_speakers = _remap_speakers_sequential(raw_speakers)
             else:
                 try:
@@ -792,12 +1479,18 @@ def transcribe_video_to_structure(
                         raise ValueError("mfcc length mismatch")
                     norm_speakers = mfcc_labels
                     diar_method = "mfcc_kmeans"
+                    diar_backend = "mfcc"
+                    diar_model = "librosa+sklearn"
                 except Exception:
                     norm_speakers = ["SPEAKER_01"] * len(bounds)
                     diar_method = "mfcc_kmeans_failed"
+                    diar_backend = "mfcc"
+                    diar_model = "librosa+sklearn"
         else:
             norm_speakers = ["SPEAKER_01"] * len(bounds)
             diar_method = "none"
+            if bounds:
+                diar_backend = "none"
 
         segments_out: list[dict[str, Any]] = []
         if expanded_word_specs is not None:
@@ -899,17 +1592,13 @@ def transcribe_video_to_structure(
                 r_mfcc = 2
             if r_mfcc > 0:
                 _apply_segment_speaker_smoothing(segments_out, radius=r_mfcc)
-        elif diar_method == "pyannote":
-            try:
-                r_seg = int(os.environ.get("PYANNOTE_SEGMENT_SMOOTH_RADIUS", "0"))
-            except ValueError:
-                r_seg = 0
+        elif diar_method in ("pyannote", "nemo_sortformer"):
+            r_seg = _pyannote_segment_smooth_radius()
             if r_seg > 0:
                 _apply_segment_speaker_smoothing(segments_out, radius=r_seg)
-
-        speaker_roles = _identify_employee_speaker(segments_out)
-        if speaker_roles:
-            _apply_speaker_roles(segments_out, speaker_roles)
+            _reassign_soft_continuation_prefix_to_next_speaker(segments_out)
+            _merge_fragmented_pyannote_speakers(segments_out)
+            _bridge_short_pyannote_runs(segments_out)
 
         duration = max((s["end"] for s in segments_out), default=0.0)
         speakers = sorted({s["speaker"] for s in segments_out})
@@ -929,18 +1618,25 @@ def transcribe_video_to_structure(
             "video_path": str(video_path),
             "processed_at": datetime.now(timezone.utc).isoformat(),
             "whisper_model": model_name,
+            "whisper_device": device,
+            "whisper_compute_type": compute_type,
+            "whisper_initial_prompt_source": _initial_prompt_source(),
             "language": detected_lang,
             "diarization": diar_method
-            in ("pyannote", "mfcc_kmeans", "mfcc_word_kmeans"),
+            in ("nemo_sortformer", "pyannote", "mfcc_kmeans", "mfcc_word_kmeans"),
+            "diarization_backend": diar_backend,
             "diarization_method": diar_method,
+            "diarization_model": diar_model,
+            "expected_speaker_count": expected_speaker_count,
             "duration_sec": round(float(duration), 3),
             "speakers": speakers,
-            "speaker_roles": speaker_roles if speaker_roles else None,
+            "pyannote_device": _pyannote_device_type() if diar_method == "pyannote" else None,
+            "nemo_device": nemo_device_name() if diar_backend == "nemo" else None,
             "segments": segments_out,
             "delivery_segments_fast_or_rushed": flagged,
             "delivery_note": delivery_summary_note(),
         }
-        if diar_method in ("pyannote", "mfcc_word_kmeans"):
+        if diar_method in ("nemo_sortformer", "pyannote", "mfcc_word_kmeans"):
             result["diarization_speaker_alignment"] = "words"
         if not skip_audio_tone:
             result["speech_audio_tone_version"] = 1
@@ -948,8 +1644,10 @@ def transcribe_video_to_structure(
             result["audio_tone_note"] = audio_tone_summary_note()
         else:
             result["audio_tone_note"] = "Акустический анализ тона отключён (SKIP_AUDIO_TONE=1)."
-        if hf and not diar_rows and diar_error:
+        if diar_error:
             result["diarization_error"] = diar_error
+        if backend_failures:
+            result["diarization_fallbacks"] = backend_failures
 
         if skipped_pyannote == "windows":
             result["diarization_note"] = (
@@ -959,26 +1657,37 @@ def transcribe_video_to_structure(
             )
         elif skipped_pyannote == "skip_env":
             result["diarization_note"] = diar_error
+        elif skipped_nemo == "no_hf_token" and diar_method.startswith("mfcc"):
+            result["diarization_note"] = (
+                "NeMo Sortformer пропущен: для модели с Hugging Face нужен HF_TOKEN либо локальный .nemo-файл. "
+                "Использован локальный MFCC fallback."
+            )
+        elif diar_method == "nemo_sortformer":
+            result["diarization_note"] = "Основной backend: NVIDIA NeMo Sortformer."
+        elif diar_method == "pyannote" and backend_failures:
+            result["diarization_note"] = (
+                "NeMo Sortformer недоступен; использован pyannote fallback."
+            )
         elif diar_method == "mfcc_word_kmeans":
             if not hf:
                 result["diarization_note"] = (
                     "HF_TOKEN не задан — спикеры оценены локально: MFCC по каждому слову + KMeans и разрез по паузам. "
-                    "Для нормальной диаризации задайте HF_TOKEN (pyannote) в .env и перезапустите транскрипцию."
+                    "Для нормальной диаризации задайте HF_TOKEN или локальный NeMo .nemo и перезапустите транскрипцию."
                 )
             else:
                 result["diarization_note"] = (
-                    "Pyannote не дал разметку (см. diarization_error). "
+                    "NeMo/pyannote не дали разметку (см. diarization_error). "
                     "Использован локальный MFCC по словам и разрез по паузам между словами."
                 )
         elif diar_method == "mfcc_kmeans":
             if not hf:
                 result["diarization_note"] = (
                     "HF_TOKEN не задан — говорящие разделены локально (MFCC + KMeans по сегментам Whisper); "
-                    "для более точной диаризации укажите HF_TOKEN (pyannote)."
+                    "для более точной диаризации укажите HF_TOKEN либо локальную/Hub-модель NeMo."
                 )
-            elif hf and not diar_rows:
+            elif not diar_rows:
                 result["diarization_note"] = (
-                    "Pyannote не вернул разметку; использован локальный MFCC (грубее модели)."
+                    "NeMo/pyannote не вернули разметку; использован локальный MFCC (грубее модели)."
                 )
         elif diar_method == "mfcc_kmeans_failed":
             result["diarization_note"] = (

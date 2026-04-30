@@ -1,4 +1,4 @@
-"""Склейка: видео → транскрипт JSON → оценка JSON."""
+"""Склейка: медиафайл → транскрипт JSON → оценка JSON."""
 from __future__ import annotations
 
 import json
@@ -7,7 +7,7 @@ from pathlib import Path
 
 # Ключи совпадают с web/static/app.js STAGE_LABELS и логом в терминале
 _PIPELINE_STAGE_TEXT: dict[str, str] = {
-    "extract_audio": "Аудио: извлечение WAV 16 kHz из видео",
+    "extract_audio": "Аудио: подготовка WAV 16 kHz из медиафайла",
     "diarization": "Диаризация: кто когда говорит (pyannote, может занять несколько минут)",
     "diarization_skip": "Диаризация: HF_TOKEN не задан — позже грубое разделение по MFCC",
     "diarization_skip_windows": "Диаризация: на Windows без pyannote (MFCC); pyannote — только с PYANNOTE_ON_WINDOWS=1",
@@ -42,8 +42,95 @@ def stem_for_outputs(video_path: Path) -> str:
     return video_path.stem
 
 
+def _sync_eval_roles_into_transcript(
+    transcript_data: dict[str, Any], eval_data: dict[str, Any]
+) -> bool:
+    """
+    Роли из evaluation — основной источник истины для transcript/UI.
+    Возвращает True, если transcript_data изменён.
+    """
+    changed = False
+    raw_roles = eval_data.get("speaker_roles")
+    roles = raw_roles if isinstance(raw_roles, dict) and raw_roles else None
+
+    if roles is None:
+        for key in (
+            "speaker_roles",
+            "speaker_roles_method",
+            "speaker_roles_confidence",
+            "speaker_roles_reasoning",
+            "employee_speaker",
+        ):
+            if key in transcript_data:
+                transcript_data.pop(key, None)
+                changed = True
+        for seg in transcript_data.get("segments") or []:
+            if isinstance(seg, dict) and "speaker_role" in seg:
+                seg.pop("speaker_role", None)
+                changed = True
+        return changed
+
+    norm_roles = {
+        str(spk).strip(): str(role).strip().upper()
+        for spk, role in roles.items()
+        if str(spk or "").strip() and str(role or "").strip().upper() in ("EMPLOYEE", "CLIENT")
+    }
+    if not norm_roles:
+        return changed
+
+    if transcript_data.get("speaker_roles") != norm_roles:
+        transcript_data["speaker_roles"] = norm_roles
+        changed = True
+
+    if transcript_data.get("speaker_roles_method") != "eval_llm":
+        transcript_data["speaker_roles_method"] = "eval_llm"
+        changed = True
+
+    confidence = eval_data.get("speaker_roles_confidence")
+    if isinstance(confidence, dict):
+        if transcript_data.get("speaker_roles_confidence") != confidence:
+            transcript_data["speaker_roles_confidence"] = confidence
+            changed = True
+    elif "speaker_roles_confidence" in transcript_data:
+        transcript_data.pop("speaker_roles_confidence", None)
+        changed = True
+
+    reasoning = eval_data.get("speaker_roles_reasoning")
+    if isinstance(reasoning, str) and reasoning.strip():
+        if transcript_data.get("speaker_roles_reasoning") != reasoning.strip():
+            transcript_data["speaker_roles_reasoning"] = reasoning.strip()
+            changed = True
+    elif "speaker_roles_reasoning" in transcript_data:
+        transcript_data.pop("speaker_roles_reasoning", None)
+        changed = True
+
+    employee = eval_data.get("employee_speaker")
+    employee_norm = str(employee).strip() if employee else ""
+    if employee_norm:
+        if transcript_data.get("employee_speaker") != employee_norm:
+            transcript_data["employee_speaker"] = employee_norm
+            changed = True
+    elif "employee_speaker" in transcript_data:
+        transcript_data.pop("employee_speaker", None)
+        changed = True
+
+    for seg in transcript_data.get("segments") or []:
+        if not isinstance(seg, dict):
+            continue
+        role = norm_roles.get(str(seg.get("speaker", "")).strip())
+        if role:
+            if seg.get("speaker_role") != role:
+                seg["speaker_role"] = role
+                changed = True
+        elif "speaker_role" in seg:
+            seg.pop("speaker_role", None)
+            changed = True
+
+    return changed
+
+
 def find_video_for_stem(stem: str, video_dir: Path | None = None) -> Path | None:
-    """Ищет файл видео с тем же stem, что у транскрипта."""
+    """Ищет медиафайл с тем же stem, что у транскрипта."""
     base = video_dir or VIDEO_DIR
     for ext in (
         ".MOV",
@@ -53,6 +140,15 @@ def find_video_for_stem(stem: str, video_dir: Path | None = None) -> Path | None
         ".mkv",
         ".m4v",
         ".m4a",
+        ".mp3",
+        ".wav",
+        ".aac",
+        ".flac",
+        ".ogg",
+        ".oga",
+        ".opus",
+        ".wma",
+        ".amr",
         ".avi",
         ".webm",
     ):
@@ -71,7 +167,7 @@ def emotion_only_from_transcript(
     cancel_check: Callable[[], None] | None = None,
 ) -> Path:
     """
-    SER по готовому JSON транскрипта: то же видео в 01.Video, сегменты из JSON.
+    SER по готовому JSON транскрипта: тот же медиафайл в 01.Video, сегменты из JSON.
     Пишет stem.tone.json и обновляет поле speech_emotion_sidecar в транскрипте.
     """
     import tempfile
@@ -94,7 +190,7 @@ def emotion_only_from_transcript(
     video = find_video_for_stem(stem)
     if not video:
         raise FileNotFoundError(
-            f"Не найдено видео для stem «{stem}» в {VIDEO_DIR}"
+            f"Не найден медиафайл для stem «{stem}» в {VIDEO_DIR}"
         )
 
     vf = data.get("video_file") or video.name
@@ -131,6 +227,7 @@ def process_one_video(
     on_progress: Callable[[str], None] | None = None,
     cancel_check: Callable[[], None] | None = None,
     eval_stream_callback: Callable[[str], None] | None = None,
+    expected_speaker_count: int | None = None,
 ) -> tuple[Path, Path | None, Path | None]:
     video_path = video_path.resolve()
     if not video_path.is_file():
@@ -152,7 +249,10 @@ def process_one_video(
     tone_path = TRANSCRIPT_DIR / f"{stem}.tone.json"
 
     data, tone_data = transcribe_video_to_structure(
-        video_path, on_progress=ping, cancel_check=cancel_check
+        video_path,
+        on_progress=ping,
+        cancel_check=cancel_check,
+        expected_speaker_count=expected_speaker_count,
     )
     write_transcript_json(data, transcript_path)
     if tone_data is not None:
@@ -173,6 +273,8 @@ def process_one_video(
         db=db,
         stream_callback=eval_stream_callback,
     )
+    if _sync_eval_roles_into_transcript(data, ev):
+        write_transcript_json(data, transcript_path)
     write_evaluation_json(ev, eval_path)
     ping("done")
     return transcript_path, eval_path, tone_path
@@ -186,6 +288,7 @@ def process_one_video_resume(
     on_progress: Callable[[str], None] | None = None,
     cancel_check: Callable[[], None] | None = None,
     eval_stream_callback: Callable[[str], None] | None = None,
+    expected_speaker_count: int | None = None,
 ) -> tuple[Path, Path | None, Path | None]:
     """
     После остановки пайплайна: не повторять уже завершённые шаги.
@@ -219,6 +322,7 @@ def process_one_video_resume(
             on_progress=on_progress,
             cancel_check=cancel_check,
             eval_stream_callback=eval_stream_callback,
+            expected_speaker_count=expected_speaker_count,
         )
 
     data = try_load_transcript(transcript_path)
@@ -236,6 +340,7 @@ def process_one_video_resume(
             on_progress=on_progress,
             cancel_check=cancel_check,
             eval_stream_callback=eval_stream_callback,
+            expected_speaker_count=expected_speaker_count,
         )
 
     ping("resume")
@@ -262,6 +367,8 @@ def process_one_video_resume(
         db=db,
         stream_callback=eval_stream_callback,
     )
+    if _sync_eval_roles_into_transcript(data, ev):
+        write_transcript_json(data, transcript_path)
     write_evaluation_json(ev, eval_path)
     ping("done")
     return transcript_path, eval_path, tone_path if tone_path.is_file() else None
@@ -291,6 +398,8 @@ def evaluate_only_from_transcript(
         db=db,
         stream_callback=stream_callback,
     )
+    if _sync_eval_roles_into_transcript(data, ev):
+        write_transcript_json(data, transcript_path)
     write_evaluation_json(ev, eval_path)
     return eval_path
 
@@ -305,7 +414,24 @@ def list_transcripts(transcript_dir: Path | None = None) -> list[Path]:
 
 
 def list_videos(video_dir: Path) -> list[Path]:
-    exts = {".mp4", ".mov", ".mkv", ".avi", ".webm", ".m4v", ".m4a"}
+    exts = {
+        ".mp4",
+        ".mov",
+        ".mkv",
+        ".avi",
+        ".webm",
+        ".m4v",
+        ".m4a",
+        ".mp3",
+        ".wav",
+        ".aac",
+        ".flac",
+        ".ogg",
+        ".oga",
+        ".opus",
+        ".wma",
+        ".amr",
+    }
     out: list[Path] = []
     for p in sorted(video_dir.iterdir()):
         if p.is_file() and p.suffix.lower() in exts:
