@@ -10,7 +10,7 @@
       href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="/static/app.css?v=72" />
+    <link rel="stylesheet" href="/static/app.css?v=74" />
   </head>
   <body>
     <div class="app-shell" id="app-shell">
@@ -105,6 +105,11 @@
               <li role="menuitemradio" aria-checked="false" class="library-sort-option" tabindex="-1" data-value="name_asc">По имени A→Z</li>
               <li role="menuitemradio" aria-checked="false" class="library-sort-option" tabindex="-1" data-value="name_desc">По имени Z→A</li>
               <li class="library-sort-divider" aria-hidden="true"></li>
+              <li class="library-sort-section" aria-hidden="true">Группировка</li>
+              <li class="library-grouping-row">
+                <div class="library-grouping-list" id="library-grouping-list" aria-label="Порядок группировки"></div>
+              </li>
+              <li class="library-sort-divider" aria-hidden="true"></li>
               <li class="library-sort-section" aria-hidden="true">Показать</li>
               <li class="library-sort-check-row">
                 <label class="library-sort-check">
@@ -180,29 +185,37 @@
               <span class="auth-user-label">Учётная запись</span>
               <span class="auth-user-name"></span>
               <span class="auth-user-sub" hidden></span>
+              <div class="auth-user-actions">
+                <button type="button" class="auth-tour" id="auth-tour-button" aria-label="Показать инструкцию" title="Показать инструкцию">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <circle cx="12" cy="12" r="9" />
+                    <path d="M9.6 9.3a2.6 2.6 0 1 1 4.7 1.6c-.5.6-1.2 1-1.7 1.5-.6.5-1 1.1-1 2" />
+                    <circle cx="12" cy="17.2" r=".6" fill="currentColor" stroke="none" />
+                  </svg>
+                </button>
+                <button type="button" class="auth-feedback" id="auth-feedback-button" aria-label="Обратная связь" title="Обратная связь">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4v8Z" />
+                    <path d="M8 9h8" />
+                    <path d="M8 13h5" />
+                  </svg>
+                  <span class="auth-feedback-badge" id="auth-feedback-badge" hidden>0</span>
+                </button>
+                <button type="button" class="auth-settings" aria-label="Настройки аккаунта" title="Настройки аккаунта">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <circle cx="12" cy="12" r="3" />
+                    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33h.01a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h.01a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v.01a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z" />
+                  </svg>
+                </button>
+                <button type="button" class="auth-logout" aria-label="Выйти" title="Выйти">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                    <path d="M16 17l5-5-5-5" />
+                    <path d="M21 12H9" />
+                  </svg>
+                </button>
+              </div>
             </div>
-          </div>
-          <div class="auth-user-actions">
-            <button type="button" class="auth-tour" id="auth-tour-button" aria-label="Показать инструкцию" title="Показать инструкцию">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                <circle cx="12" cy="12" r="9" />
-                <path d="M9.6 9.3a2.6 2.6 0 1 1 4.7 1.6c-.5.6-1.2 1-1.7 1.5-.6.5-1 1.1-1 2" />
-                <circle cx="12" cy="17.2" r=".6" fill="currentColor" stroke="none" />
-              </svg>
-            </button>
-            <button type="button" class="auth-settings" aria-label="Настройки аккаунта" title="Настройки аккаунта">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                <circle cx="12" cy="12" r="3" />
-                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33h.01a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h.01a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v.01a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z" />
-              </svg>
-            </button>
-            <button type="button" class="auth-logout" aria-label="Выйти" title="Выйти">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
-                <path d="M16 17l5-5-5-5" />
-                <path d="M21 12H9" />
-              </svg>
-            </button>
           </div>
         </div>
       </aside>
@@ -226,7 +239,12 @@
         <div id="workspace-empty" class="workspace-empty-state">
           <div class="workspace-hero-card">
             <header class="workspace-hero__header">
-              <span class="workspace-hero__eyebrow">Как это работает</span>
+              <div class="workspace-hero__header-top">
+                <span class="workspace-hero__eyebrow">Как это работает</span>
+                <button type="button" class="workspace-hero-replay-btn" id="workspace-tour-replay">
+                  Показать инструкцию
+                </button>
+              </div>
               <h2 class="workspace-hero__title">Загрузите или выберите запись</h2>
               <p class="workspace-hero__lead">
                 Сначала загрузите видео или откройте уже загруженную запись слева. Дальше система
@@ -320,9 +338,6 @@
                 </span>
                 <span>Откройте запись слева или загрузите новую, чтобы запустить весь сценарий.</span>
               </div>
-              <button type="button" class="workspace-hero-replay-btn" id="workspace-tour-replay">
-                Показать инструкцию
-              </button>
             </div>
           </div>
         </div>
@@ -907,12 +922,92 @@
       <div class="meta-dialog-inner">
         <div class="meta-dialog-head">
           <h3 class="meta-dialog-title" id="app-message-title">Сообщение</h3>
-          <button type="button" class="meta-dialog-close" id="app-message-close" aria-label="Закрыть">×</button>
         </div>
         <p class="app-message-dialog__text" id="app-message-text"></p>
         <div class="app-message-dialog__actions">
           <button type="button" class="app-message-dialog__btn app-message-dialog__btn--ghost" id="app-message-cancel">Отмена</button>
           <button type="button" class="app-message-dialog__btn app-message-dialog__btn--primary" id="app-message-ok">Понятно</button>
+        </div>
+      </div>
+    </dialog>
+
+    <dialog class="meta-dialog feedback-dialog" id="feedback-dialog" aria-labelledby="feedback-dialog-title">
+      <div class="meta-dialog-inner feedback-dialog-inner">
+        <div class="meta-dialog-head feedback-dialog-head">
+          <div class="feedback-dialog-title-row">
+            <span class="feedback-dialog-icon" aria-hidden="true">ОС</span>
+            <div>
+              <p class="feedback-dialog-eyebrow">Центр обращений</p>
+              <h3 class="meta-dialog-title feedback-dialog-title" id="feedback-dialog-title">Обратная связь</h3>
+              <p class="feedback-dialog-subtitle">Расскажите, что улучшить, и отслеживайте ответы по своим заявкам.</p>
+            </div>
+          </div>
+          <button type="button" class="meta-dialog-close" id="feedback-dialog-close" aria-label="Закрыть">×</button>
+        </div>
+        <div class="feedback-layout">
+          <form class="feedback-form" id="feedback-form">
+            <div class="feedback-panel-head">
+              <span class="feedback-panel-step">1</span>
+              <div>
+                <h4>Новая заявка</h4>
+                <p id="feedback-form-intro">Выберите категорию и подробно опишите ситуацию.</p>
+              </div>
+            </div>
+            <div class="meta-row">
+              <label class="meta-label" for="feedback-type">Тип обратной связи</label>
+              <select id="feedback-type" class="meta-select" required></select>
+            </div>
+            <div class="meta-row" id="feedback-target-department-row" hidden>
+              <label class="meta-label" for="feedback-target-department">Отдел</label>
+              <select id="feedback-target-department" class="meta-select"></select>
+            </div>
+            <div class="meta-row" id="feedback-target-row" hidden>
+              <label class="meta-label" for="feedback-target" id="feedback-target-label">Связанный объект</label>
+              <select id="feedback-target" class="meta-select"></select>
+              <p class="feedback-description-hint" id="feedback-target-hint"></p>
+            </div>
+            <div class="meta-row" id="feedback-rating-row">
+              <label class="meta-label" id="feedback-rating-label">Оценка направления</label>
+              <div class="feedback-rating" id="feedback-rating" role="radiogroup" aria-label="Оценка направления">
+                <button type="button" class="feedback-star" data-rating="1" aria-label="1 звезда">★</button>
+                <button type="button" class="feedback-star" data-rating="2" aria-label="2 звезды">★</button>
+                <button type="button" class="feedback-star" data-rating="3" aria-label="3 звезды">★</button>
+                <button type="button" class="feedback-star" data-rating="4" aria-label="4 звезды">★</button>
+                <button type="button" class="feedback-star" data-rating="5" aria-label="5 звезд">★</button>
+              </div>
+            </div>
+            <div class="meta-row">
+              <label class="meta-label" for="feedback-description" id="feedback-description-label">Описание</label>
+              <textarea
+                id="feedback-description"
+                class="meta-input feedback-textarea"
+                rows="6"
+                maxlength="5000"
+                placeholder="Опишите, что нужно улучшить, что не работает или что работает не так, как ожидалось."
+                required
+              ></textarea>
+              <p class="feedback-description-hint" id="feedback-description-hint">
+                Чем конкретнее описание, тем быстрее администратор сможет обработать заявку.
+              </p>
+            </div>
+            <p id="feedback-error" class="block-missing" style="display: none"></p>
+            <button type="submit" class="meta-save-btn" id="feedback-submit">Отправить заявку</button>
+          </form>
+          <section class="feedback-list-panel" aria-label="Мои заявки обратной связи">
+            <div class="feedback-list-head">
+              <div class="feedback-panel-head feedback-panel-head--compact">
+                <span class="feedback-panel-step">2</span>
+                <div>
+                  <h4>Мои заявки</h4>
+                  <p>Ответы администратора и действия на проверке.</p>
+                </div>
+              </div>
+              <button type="button" class="meta-name-btn" id="feedback-refresh">Обновить</button>
+            </div>
+            <div class="feedback-list" id="feedback-list">
+              <p class="block-missing">Заявки ещё не загружены.</p>
+            </div>
+          </section>
         </div>
       </div>
     </dialog>
@@ -954,6 +1049,6 @@
 
     <script src="https://cdn.jsdelivr.net/npm/marked@15.0.6/marked.min.js" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/dompurify@3.2.4/dist/purify.min.js" crossorigin="anonymous"></script>
-    <script src="/static/app.js?v=73"></script>
+    <script src="/static/app.js?v=78"></script>
   </body>
 </html>

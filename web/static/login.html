@@ -144,6 +144,16 @@
       .login-error.visible {
         display: block;
       }
+      .login-success {
+        color: var(--ok);
+        font-size: 0.88rem;
+        margin-top: 0.75rem;
+        display: none;
+        line-height: 1.4;
+      }
+      .login-success.visible {
+        display: block;
+      }
       .login-disabled {
         color: var(--muted);
         font-size: 0.9rem;
@@ -163,12 +173,12 @@
       }
       .login-footer-actions-row:has(#login-mode-switch:not([hidden])) .login-mode-switch {
         margin-bottom: 0;
-        flex: 1;
+        flex: 0 0 118px;
         min-width: 0;
       }
       .login-footer-actions-row:has(#login-mode-switch:not([hidden])) .login-actions {
-        flex: 1;
-        min-width: 0;
+        flex: 1 1 auto;
+        min-width: 190px;
       }
       /* UA задаёт [hidden] как display:none !important; на всякий случай не даём flex перебить скрытие */
       #login-mode-switch[hidden] {
@@ -194,6 +204,16 @@
       .login-mode-secondary:hover {
         border-color: rgba(0, 61, 255, 0.35);
         background: rgba(0, 61, 255, 0.04);
+      }
+      @media (max-width: 420px) {
+        .login-footer-actions-row:has(#login-mode-switch:not([hidden])) {
+          flex-direction: column;
+        }
+        .login-footer-actions-row:has(#login-mode-switch:not([hidden])) .login-mode-switch,
+        .login-footer-actions-row:has(#login-mode-switch:not([hidden])) .login-actions {
+          flex: 1 1 auto;
+          min-width: 0;
+        }
       }
       .login-secondary {
         margin-top: 0.75rem;
@@ -233,7 +253,7 @@
             class="login-brand-fa"
           />
         </div>
-        <h1>Вход</h1>
+        <h1 id="login-title">Вход</h1>
         <p class="sub" id="login-subtitle">Учётная запись домена (Active Directory)</p>
         <p id="login-disabled" class="login-disabled" style="display: none">
           Вход не включён на сервере. Настройте `AUTH_TYPE` в конфигурации.
@@ -261,7 +281,17 @@
         <form id="register-form" autocomplete="on" class="login-panel" hidden>
           <div class="login-field">
             <label for="register-username">Логин</label>
-            <input id="register-username" type="text" autocomplete="username" maxlength="256" />
+            <input
+              id="register-username"
+              type="text"
+              autocomplete="username"
+              maxlength="128"
+              placeholder="ivan.petrov"
+              title="Укажите первую часть корпоративной почты до @"
+            />
+            <div class="login-hint" id="register-email-hint">
+              Укажите часть корпоративной почты до @. Например, для ivan.petrov@freshauto.ru логин: ivan.petrov.
+            </div>
           </div>
           <div class="login-field">
             <label for="register-password">Пароль</label>
@@ -287,7 +317,8 @@
             </select>
           </div>
           <p id="register-error" class="login-error" role="alert"></p>
-          <div class="login-secondary">После регистрации профиль будет сразу заполнен.</div>
+          <p id="register-success" class="login-success" role="status"></p>
+          <div class="login-secondary">После регистрации доступ откроется только после подтверждения администратором.</div>
         </form>
         <div class="login-card-footer" id="login-card-footer">
           <div class="login-footer-actions-row">
@@ -311,8 +342,11 @@
     </div>
     <script>
       const API = "";
+      const CORPORATE_EMAIL_DOMAIN = "freshauto.ru";
       const PASSWORD_POLICY_TEXT =
         "Пароль должен быть не короче 10 символов, содержать строчную и прописную букву, цифру и спецсимвол, без пробелов.";
+      const USERNAME_POLICY_TEXT =
+        "Укажите логин без @: первую часть корпоративной почты, например ivan.petrov.";
       const params = new URLSearchParams(location.search);
       const nextUrl = params.get("next") || "/";
       let authConfig = { auth_type: "none", local_auth_enabled: false, registration_allowed: false };
@@ -326,6 +360,62 @@
         return s;
       }
 
+      function normalizeLocalUsername(raw) {
+        return String(raw || "").trim().toLowerCase();
+      }
+
+      function corporateEmailForUsername(username) {
+        const value = normalizeLocalUsername(username);
+        return value && !value.includes("@") ? `${value}@${CORPORATE_EMAIL_DOMAIN}` : "";
+      }
+
+      function pendingApprovalUrl(username, email, options = {}) {
+        const params = new URLSearchParams();
+        const normalized = normalizeLocalUsername(username);
+        const resolvedEmail = email || corporateEmailForUsername(normalized);
+        if (normalized) params.set("login", normalized);
+        if (resolvedEmail) params.set("email", resolvedEmail);
+        if (options.status) params.set("status", options.status);
+        if (options.reason) params.set("reason", options.reason);
+        const qs = params.toString();
+        return qs ? `/pending-approval.html?${qs}` : "/pending-approval.html";
+      }
+
+      function validateLocalUsername(username) {
+        const value = normalizeLocalUsername(username);
+        if (!value) return "Укажите логин.";
+        if (value.includes("@")) return USERNAME_POLICY_TEXT;
+        if (/\s/u.test(value)) return "Логин не должен содержать пробелы.";
+        if (!/^[a-z0-9](?:[a-z0-9._-]{0,126}[a-z0-9])?$/u.test(value)) return USERNAME_POLICY_TEXT;
+        return "";
+      }
+
+      function updateRegisterEmailHint() {
+        const hint = document.getElementById("register-email-hint");
+        const username = document.getElementById("register-username")?.value || "";
+        const email = corporateEmailForUsername(username);
+        if (hint) {
+          hint.textContent = email
+            ? `Почта для связи и подтверждения: ${email}.`
+            : "Укажите часть корпоративной почты до @. Например, для ivan.petrov@freshauto.ru логин: ivan.petrov.";
+        }
+      }
+
+      function updateAuthHeader(panel) {
+        const title = document.getElementById("login-title");
+        const subtitle = document.getElementById("login-subtitle");
+        const registerOpen = panel === "register";
+        if (title) title.textContent = registerOpen ? "Регистрация" : "Вход";
+        if (!subtitle) return;
+        if (registerOpen) {
+          subtitle.textContent = "Создайте учётную запись для доступа к Fresh FA";
+        } else if (authConfig.auth_type === "local") {
+          subtitle.textContent = "Локальная учётная запись";
+        } else {
+          subtitle.textContent = "Учётная запись домена (Active Directory)";
+        }
+      }
+
       function setActivePanel(panel) {
         const loginForm = document.getElementById("login-form");
         const registerForm = document.getElementById("register-form");
@@ -334,6 +424,7 @@
         const loginSubmit = document.getElementById("login-submit");
         const registerSubmit = document.getElementById("register-submit");
         const registerOpen = panel === "register";
+        updateAuthHeader(panel);
         loginForm.hidden = registerOpen;
         registerForm.hidden = !registerOpen;
         if (toRegister && toLogin) {
@@ -402,13 +493,17 @@
         const r = await fetch(API + "/api/auth/status", { credentials: "same-origin" });
         const s = await r.json();
         authConfig = s || authConfig;
-        const subtitle = document.getElementById("login-subtitle");
         const username = document.getElementById("username");
         const modeSwitch = document.getElementById("login-mode-switch");
         const registerPassword = document.getElementById("register-password");
+        const registerUsername = document.getElementById("register-username");
         if (registerPassword) {
           registerPassword.minLength = 10;
           registerPassword.title = PASSWORD_POLICY_TEXT;
+        }
+        if (registerUsername) {
+          registerUsername.addEventListener("input", updateRegisterEmailHint);
+          updateRegisterEmailHint();
         }
         if (!s.auth_enabled) {
           document.getElementById("login-form").style.display = "none";
@@ -420,10 +515,9 @@
         document.getElementById("login-form").addEventListener("submit", onSubmit);
         document.getElementById("register-form").addEventListener("submit", onRegister);
         if (s.auth_type === "local") {
-          if (subtitle) subtitle.textContent = "Локальная учётная запись";
           if (username) {
-            username.placeholder = "";
-            username.title = "Логин локального пользователя";
+            username.placeholder = "ivan.petrov";
+            username.title = "Логин: первая часть корпоративной почты до @";
           }
           if (modeSwitch && s.registration_allowed) {
             modeSwitch.hidden = false;
@@ -433,7 +527,7 @@
           const locations = await locRes.json().catch(() => []);
           fillLocationOptions(locations);
         } else {
-          if (subtitle) subtitle.textContent = "Учётная запись домена (Active Directory)";
+          updateAuthHeader("login");
           if (username) {
             username.placeholder = "CRM\\пользователь";
             username.title = "Формат: ИМЯ_ДОМЕНА\\логин (например CRM\\ivanov)";
@@ -459,10 +553,22 @@
           });
           if (!r.ok) {
             let msg = "Ошибка входа";
+            let payload = {};
             try {
-              const j = await r.json();
-              if (j.detail) msg = typeof j.detail === "string" ? j.detail : JSON.stringify(j.detail);
+              payload = await r.json();
+              if (payload.detail) msg = typeof payload.detail === "string" ? payload.detail : JSON.stringify(payload.detail);
             } catch (_) {}
+            if (r.status === 403 && payload.approval_status === "rejected") {
+              window.location.href = pendingApprovalUrl(payload.user || username, payload.corporate_email, {
+                status: "rejected",
+                reason: payload.rejection_reason || msg,
+              });
+              return;
+            }
+            if (r.status === 403 && msg.toLowerCase().includes("ожидайте подтверждения")) {
+              window.location.href = pendingApprovalUrl(username);
+              return;
+            }
             errEl.textContent = humanizeLoginError(msg);
             errEl.classList.add("visible");
             return;
@@ -478,10 +584,14 @@
 
       async function onRegister(e) {
         e.preventDefault();
+        const form = e.currentTarget;
         const errEl = document.getElementById("register-error");
+        const successEl = document.getElementById("register-success");
         const btn = document.getElementById("register-submit");
         errEl.classList.remove("visible");
         errEl.textContent = "";
+        successEl.classList.remove("visible");
+        successEl.textContent = "";
         if (!authConfig.local_auth_enabled) {
           errEl.textContent = "Регистрация доступна только при локальной аутентификации.";
           errEl.classList.add("visible");
@@ -492,6 +602,12 @@
         const full_name = document.getElementById("register-full-name").value.trim();
         const location_id = document.getElementById("register-location").value;
         const department = document.getElementById("register-department").value;
+        const usernameError = validateLocalUsername(username);
+        if (usernameError) {
+          errEl.textContent = usernameError;
+          errEl.classList.add("visible");
+          return;
+        }
         const passwordError = validatePasswordStrength(password);
         if (passwordError) {
           errEl.textContent = passwordError;
@@ -516,7 +632,10 @@
             errEl.classList.add("visible");
             return;
           }
-          location.href = nextUrl.startsWith("/") ? nextUrl : "/";
+          const data = await r.json().catch(() => ({}));
+          const email = data.corporate_email || corporateEmailForUsername(username);
+          if (form && typeof form.reset === "function") form.reset();
+          window.location.href = pendingApprovalUrl(username, email);
         } catch (x) {
           errEl.textContent = String(x);
           errEl.classList.add("visible");

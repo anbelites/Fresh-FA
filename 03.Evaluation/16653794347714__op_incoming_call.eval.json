@@ -1,0 +1,411 @@
+{
+  "schema_version": 3,
+  "criteria_version": "1",
+  "criteria_file": "op_incoming_call",
+  "evaluated_at": "2026-05-12T17:20:58.815275+00:00",
+  "model": "deepseek-v4-pro",
+  "video_file": "16653794347714.mp4",
+  "speaker_roles": {
+    "SPEAKER_01": "EMPLOYEE",
+    "SPEAKER_02": "CLIENT"
+  },
+  "employee_speaker": "SPEAKER_01",
+  "criteria": [
+    {
+      "id": "greeting",
+      "name": "Приветствие",
+      "description": "Поприветствовал клиента, представился по имени, назвал свою должность",
+      "weight": 1,
+      "passed": false,
+      "comment": "Сотрудник поприветствовал и представился по имени (Антон), но не назвал свою должность.",
+      "evidence_segments": [
+        {
+          "start": 8.04,
+          "end": 11.6
+        },
+        {
+          "start": 16.4,
+          "end": 17.18
+        }
+      ],
+      "awarded_weight": 0
+    },
+    {
+      "id": "name_usage",
+      "name": "Имя клиента",
+      "description": "Уточнил имя клиента",
+      "weight": 1,
+      "passed": true,
+      "comment": "Сотрудник уточнил, как обращаться к клиенту, и использовал имя (Антон) в разговоре.",
+      "evidence_segments": [
+        {
+          "start": 14.72,
+          "end": 16.18
+        },
+        {
+          "start": 17.6,
+          "end": 19.14
+        }
+      ],
+      "awarded_weight": 1
+    },
+    {
+      "id": "needs_assessment",
+      "name": "Потребности",
+      "description": "Выявление потребностей",
+      "weight": 1,
+      "passed": true,
+      "comment": "Сотрудник активно выявляет потребности: спрашивает, что ищет клиент, бюджет, наличие своего авто.",
+      "evidence_segments": [
+        {
+          "start": 19.52,
+          "end": 25.32
+        },
+        {
+          "start": 44.48,
+          "end": 48.68
+        }
+      ],
+      "awarded_weight": 1
+    },
+    {
+      "id": "stock_scope",
+      "name": "Ассортимент",
+      "description": "Рассказал об общем ассортименте более 8 000 т/с и количестве т/с модели интересующей клиента",
+      "weight": 1,
+      "passed": false,
+      "comment": "Сотрудник упомянул склад на 800 и 2000 машин, но не сообщил об общем ассортименте более 8 000 т/с и не назвал количество интересующей клиенту модели.",
+      "evidence_segments": [
+        {
+          "start": 92.86,
+          "end": 99.22
+        },
+        {
+          "start": 172.0,
+          "end": 174.34
+        }
+      ],
+      "awarded_weight": 0
+    },
+    {
+      "id": "full_diagnostics",
+      "name": "Диагностика",
+      "description": "Сообщил, что все авто проходят комплексную диагностику",
+      "weight": 1,
+      "passed": true,
+      "comment": "Сотрудник ясно сообщил, что все авто проходят комплексную диагностику по 258 пунктам, упомянул отчёты Автотеки.",
+      "evidence_segments": [
+        {
+          "start": 127.5,
+          "end": 132.16
+        },
+        {
+          "start": 68.24,
+          "end": 72.42
+        }
+      ],
+      "awarded_weight": 1
+    },
+    {
+      "id": "no_major_accidents",
+      "name": "Без серьёзных ДТП",
+      "description": "Рассказал, что к продаже не допускаются т/с после серьезных ДТП",
+      "weight": 1,
+      "passed": false,
+      "comment": "Сотрудник ни разу не упомянул, что автомобили после серьёзных ДТП не допускаются к продаже.",
+      "evidence_segments": [],
+      "awarded_weight": 0
+    },
+    {
+      "id": "lift_inspection",
+      "name": "Подъёмник",
+      "description": "Рассказал про осмотр на подъемнике",
+      "weight": 1,
+      "passed": false,
+      "comment": "В разговоре нет упоминания осмотра на подъёмнике.",
+      "evidence_segments": [],
+      "awarded_weight": 0
+    },
+    {
+      "id": "test_drive_offer",
+      "name": "Тест-драйв",
+      "description": "В разговоре есть обсуждение или предложение тест-драйва",
+      "weight": 1,
+      "passed": true,
+      "comment": "Сотрудник предлагает прокатиться на выбранном автомобиле («прокатимся»), что является предложением тест-драйва.",
+      "evidence_segments": [
+        {
+          "start": 108.08,
+          "end": 111.28
+        }
+      ],
+      "awarded_weight": 1
+    },
+    {
+      "id": "focus_on_benefits",
+      "name": "Фокус на плюсах",
+      "description": "Сотрудник больше говорит о плюсах, чем о минусах. Сотрудник рассказывает о минусах автомобиля только если просит клиент.",
+      "weight": 1,
+      "passed": true,
+      "comment": "Сотрудник говорит только о плюсах: широкий выбор, быстрая сделка, рыночная оценка обмена, диагностика. Минусы не упоминает, клиент о них не спрашивал.",
+      "evidence_segments": [
+        {
+          "start": 38.36,
+          "end": 44.44
+        },
+        {
+          "start": 56.02,
+          "end": 62.84
+        }
+      ],
+      "awarded_weight": 1
+    },
+    {
+      "id": "ptz_guarantee",
+      "name": "Гарантия ПТЗ",
+      "description": "Рассказал о гарантии и условиях ПТЗ",
+      "weight": 1,
+      "passed": false,
+      "comment": "Сотрудник не рассказывал о гарантии и условиях ПТЗ.",
+      "evidence_segments": [],
+      "awarded_weight": 0
+    },
+    {
+      "id": "self_intro",
+      "name": "Представление",
+      "description": "Сотрудник упомянул в разговоре 2 преимущества из списка (компания более 20 лет на рынке; компания представлена в 40 городах страны и является официальным дилером 10 марок; компания продает более 20 000 авто в год; все авто проходят диагностику по 258 пунктам; На все авто предоставляется юридическая и техническая гарантия)",
+      "weight": 1,
+      "passed": false,
+      "comment": "Сотрудник упомянул только одно преимущество из списка — диагностику по 258 пунктам. Второе преимущество (например, количество городов или срок на рынке) не названо.",
+      "evidence_segments": [
+        {
+          "start": 127.5,
+          "end": 132.16
+        }
+      ],
+      "awarded_weight": 0
+    },
+    {
+      "id": "trade_in_offer",
+      "name": "Обмен авто",
+      "description": "В разговоре есть обсуждение или предложение услуги обмена автомобиля",
+      "weight": 1,
+      "passed": true,
+      "comment": "Сотрудник обсудил обмен старого авто клиента: объяснил, что оценка рыночная, процедура займёт один день, авто продиагностируют.",
+      "evidence_segments": [
+        {
+          "start": 44.48,
+          "end": 48.68
+        },
+        {
+          "start": 56.02,
+          "end": 68.14
+        }
+      ],
+      "awarded_weight": 1
+    },
+    {
+      "id": "payment_method",
+      "name": "Способ оплаты",
+      "description": "Уточняет способ оплаты кредит или наличные",
+      "weight": 1,
+      "passed": true,
+      "comment": "Сотрудник уточнил способ оплаты, спросив: «наличный кредит?» (наличные или кредит).",
+      "evidence_segments": [
+        {
+          "start": 73.22,
+          "end": 76.36
+        }
+      ],
+      "awarded_weight": 1
+    },
+    {
+      "id": "visit_readiness",
+      "name": "Готовность к визиту",
+      "description": "Спросил, готов ли клиент к визиту и осмотру автомобиля сегодня",
+      "weight": 1,
+      "passed": true,
+      "comment": "Сотрудник сначала спросил, когда удобно подъехать, а затем предложил выезжать сегодня, стимулируя визит в этот же день.",
+      "evidence_segments": [
+        {
+          "start": 177.6,
+          "end": 179.36
+        },
+        {
+          "start": 197.86,
+          "end": 205.84
+        }
+      ],
+      "awarded_weight": 1
+    },
+    {
+      "id": "phone_number",
+      "name": "Телефон",
+      "description": "Сотрудник уточняет номер телефона клиента",
+      "weight": 1,
+      "passed": true,
+      "comment": "Сотрудник запросил номер телефона клиента для отправки визитки (скажите, 301 ваш номер).",
+      "evidence_segments": [
+        {
+          "start": 206.1,
+          "end": 211.02
+        }
+      ],
+      "awarded_weight": 1
+    },
+    {
+      "id": "photo_video_review",
+      "name": "Фото/видео",
+      "description": "Предложил фото/видео обзор по автомобилю",
+      "weight": 1,
+      "passed": false,
+      "comment": "Сотрудник не предлагал фото- или видеообзор автомобиля, настаивал на личном визите на склад.",
+      "evidence_segments": [],
+      "awarded_weight": 0
+    },
+    {
+      "id": "visit_schedule",
+      "name": "Дата визита",
+      "description": "Договорился о конкретном дне и времени визита",
+      "weight": 1,
+      "passed": true,
+      "comment": "Сотрудник договорился о визите сегодня («выезжайте прямо сейчас»), клиент согласился выезжать через час — фактически зафиксированы день и приблизительное время.",
+      "evidence_segments": [
+        {
+          "start": 197.86,
+          "end": 205.84
+        }
+      ],
+      "awarded_weight": 1
+    },
+    {
+      "id": "team_invitation",
+      "name": "Приглашение коллег",
+      "description": "Уточнил не осталось ли вопросов у клиента",
+      "weight": 1,
+      "passed": false,
+      "comment": "Сотрудник не спросил, остались ли у клиента вопросы.",
+      "evidence_segments": [],
+      "awarded_weight": 0
+    }
+  ],
+  "criteria_snapshot": [
+    {
+      "id": "greeting",
+      "name": "Приветствие",
+      "description": "Поприветствовал клиента, представился по имени, назвал свою должность",
+      "weight": 1
+    },
+    {
+      "id": "name_usage",
+      "name": "Имя клиента",
+      "description": "Уточнил имя клиента",
+      "weight": 1
+    },
+    {
+      "id": "needs_assessment",
+      "name": "Потребности",
+      "description": "Выявление потребностей",
+      "weight": 1
+    },
+    {
+      "id": "stock_scope",
+      "name": "Ассортимент",
+      "description": "Рассказал об общем ассортименте более 8 000 т/с и количестве т/с модели интересующей клиента",
+      "weight": 1
+    },
+    {
+      "id": "full_diagnostics",
+      "name": "Диагностика",
+      "description": "Сообщил, что все авто проходят комплексную диагностику",
+      "weight": 1
+    },
+    {
+      "id": "no_major_accidents",
+      "name": "Без серьёзных ДТП",
+      "description": "Рассказал, что к продаже не допускаются т/с после серьезных ДТП",
+      "weight": 1
+    },
+    {
+      "id": "lift_inspection",
+      "name": "Подъёмник",
+      "description": "Рассказал про осмотр на подъемнике",
+      "weight": 1
+    },
+    {
+      "id": "test_drive_offer",
+      "name": "Тест-драйв",
+      "description": "В разговоре есть обсуждение или предложение тест-драйва",
+      "weight": 1
+    },
+    {
+      "id": "focus_on_benefits",
+      "name": "Фокус на плюсах",
+      "description": "Сотрудник больше говорит о плюсах, чем о минусах. Сотрудник рассказывает о минусах автомобиля только если просит клиент.",
+      "weight": 1
+    },
+    {
+      "id": "ptz_guarantee",
+      "name": "Гарантия ПТЗ",
+      "description": "Рассказал о гарантии и условиях ПТЗ",
+      "weight": 1
+    },
+    {
+      "id": "self_intro",
+      "name": "Представление",
+      "description": "Сотрудник упомянул в разговоре 2 преимущества из списка (компания более 20 лет на рынке; компания представлена в 40 городах страны и является официальным дилером 10 марок; компания продает более 20 000 авто в год; все авто проходят диагностику по 258 пунктам; На все авто предоставляется юридическая и техническая гарантия)",
+      "weight": 1
+    },
+    {
+      "id": "trade_in_offer",
+      "name": "Обмен авто",
+      "description": "В разговоре есть обсуждение или предложение услуги обмена автомобиля",
+      "weight": 1
+    },
+    {
+      "id": "payment_method",
+      "name": "Способ оплаты",
+      "description": "Уточняет способ оплаты кредит или наличные",
+      "weight": 1
+    },
+    {
+      "id": "visit_readiness",
+      "name": "Готовность к визиту",
+      "description": "Спросил, готов ли клиент к визиту и осмотру автомобиля сегодня",
+      "weight": 1
+    },
+    {
+      "id": "phone_number",
+      "name": "Телефон",
+      "description": "Сотрудник уточняет номер телефона клиента",
+      "weight": 1
+    },
+    {
+      "id": "photo_video_review",
+      "name": "Фото/видео",
+      "description": "Предложил фото/видео обзор по автомобилю",
+      "weight": 1
+    },
+    {
+      "id": "visit_schedule",
+      "name": "Дата визита",
+      "description": "Договорился о конкретном дне и времени визита",
+      "weight": 1
+    },
+    {
+      "id": "team_invitation",
+      "name": "Приглашение коллег",
+      "description": "Уточнил не осталось ли вопросов у клиента",
+      "weight": 1
+    }
+  ],
+  "earned_score": 10,
+  "max_score": 18,
+  "overall_average": 55.6,
+  "speaker_roles_confidence": {
+    "SPEAKER_01": 0.98,
+    "SPEAKER_02": 0.97
+  },
+  "speaker_roles_reasoning": "SPEAKER_01 открывает разговор от имени компании («первый автомобильный маркетплейс»), представляется, спрашивает имя, выявляет потребности, рассказывает о складе и диагностике, обсуждает обмен и сделку — сотрудник. SPEAKER_02 отвечает на вопросы, говорит о поиске авто для себя, бюджете, местоположении — клиент.",
+  "reasoning_trace": "We are asked to evaluate a transcript for specific criteria about an employee's behavior. First, we need to determine who is the employee (the salesperson/consultant) and who is the client. Looking at the transcript:\n\nSPEAKER_01: starts with \"Добрый день, первый автомобильный маркетплейс, спрашивайте меня, валейте, зовут, какого курса у вас?\" - This appears to be a greeting from a company, likely a marketplace. Could be a bot or employee. The phrase \"спрашивайте меня\" suggests he is offering help. He later asks for the client's name, introduces himself as Anton, etc. He talks about their inventory, diagnostics, trade-in, etc. So SPEAKER_01 is the employee.\n\nSPEAKER_02: responds to queries, says he is looking for a car, mentions budget, location, etc. So client.\n\nSo roles: SPEAKER_01 = EMPLOYEE, SPEAKER_02 = CLIENT.\n\nNow evaluate each criterion only for the employee. Use evidence segments from SPEAKER_01's lines.\n\nList criteria:\n\n1. greeting (Приветствие, вес 1): Поприветствовал клиента, представился по имени, назвал свою должность.\n   From transcript: SPEAKER_01 says: \"Добрый день, первый автомобильный маркетплейс, спрашивайте меня, валейте, зовут, какого курса у вас?\" (8.04-11.60) - This includes greeting and introducing the company, but does he give his own name and должность? He says \"спрашивайте меня, валейте, зовут\" - unclear. \"валейте\" might be a misrecognition of \"Валера\"? But then later he says \"Меня Антон зовут.\" (16.40-17.18). He does not mention his должность (position). So he did greet and introduced himself by name, but missed the job title. The criterion: \"поприветствовал клиента, представился по имени, назвал свою должность\". If должность not mentioned, does it fail? Possibly partial. But we assess if passed. Since he didn't state his position, I'd say false, but could be partial? The requirement is \"представился по имени, назвал свою должность\" - he didn't do должность. So passed = false. But we need to check if elsewhere he mentions it. No, throughout he just says he's Anton, no title. So false. Comment: \"Сотрудник поприветствовал и представился по имени (Антон), но не назвал свою должность.\" Evidence segments from his initial greeting and name introduction. I'll use segments [8.04-11.60] and [16.40-17.18].\n\n2. name_usage (Имя клиента, вес 1): Уточнил имя клиента.\n   He asked: \"как могу обращаться к вам?\" (14.72-16.18) and then \"Антон, очень приятно познакомиться.\" (17.60-19.14) so he learned the client's name. The client's name? Client says \"Антон\" (likely from \"Меня Антон зовут\" is the employee? Wait, that's employee. The client said \"Здравствуйте, автомобиль себе ищу.\" He didn't give his name until later? Wait: In [14.72-16.18] employee asks how to address, but client doesn't respond directly; then employee says \"Меня Антон зовут.\" So employee introduced himself, but did he get client's name? At [17.60-19.14] employee says \"Антон, очень приятно познакомиться.\" This is after he learned the client's name? Actually earlier at [14.72-16.18] he asked \"как могу обращаться к вам?\" but no visible client response before employee says \"Меня Антон зовут.\" Then he says \"Антон, очень приятно познакомиться.\" Possibly the client said something like \"Антон\" but it's not in transcript? Or maybe the employee mistakenly said his own name. Actually the client later at [211.38-211.78] says \"Да, Макс, Макс.\" So his name is Макс. So earlier the employee called him Антон? That might be a mishearing or the employee thought the client's name was Антон. So he did ask for the name and got a response (maybe the client said \"Антон\"? but client's name is Макс). So the employee did inquire and attempted to use the name. But did he successfully get it? The criterion is \"Уточнил имя клиента\" – he asked. So passed true. Even if he got it wrong later, he did ask. So true. Evidence: [14.72-16.18] (asking), and perhaps [17.60-19.14] (using it). I'll mark passed true. Comment: \"Сотрудник уточнил имя клиента и использовал его в разговоре.\"\n\n3. needs_assessment (Потребности, вес 1): Выявление потребностей.\n   Employee asks: \"Скажите подробнее, автомобиль ищите, что-то, может, уже присматривали для себя, есть понимание?\" (19.52-25.32) and later \"А скажите, это у вас бюджет, с учетом, может, свое авто хотите, да, старое?\" (44.48-48.68). Also asks about payment method. So he explores needs. Passed true.\n\n4. stock_scope (Ассортимент, вес 1): Рассказал об общем ассортименте более 8 000 т/с и количестве т/с модели интересующей клиента.\n   Employee mentions \"большой склад, 800 машин\" (92.86-99.22) and later \"2000 автомобилей\" (172.00-174.34). Never says more than 8,000. So he did not mention 8000+. He did mention 800 and 2000, which is less. The criterion specifically says \"более 8 000 т/с\". That's false. Also didn't specify number of the model of interest. So false. Comment: \"Сотрудник упомянул склад на 800 и позже 2000 машин, но не сказал про ассортимент более 8 000 т/с и не уточнил количество интересующей модели.\" Evidence: [92.86-99.22], [172.00-174.34].\n\n5. full_diagnostics (Диагностика, вес 1): Сообщил, что все авто проходят комплексную диагностику.\n   Employee says: \"у нас на каждый автомобиль есть полная диагностика, у нас диагностика идет 258 пунктов\" (127.50-132.16) and earlier \"ваше авто продиагностируем, полностью все посмотрим и хорошую цену вам дадим.\" (68.24-72.42) and \"есть на каждый автомобиль у нас отчет автотеки\" (135.78-139.34). So he does mention full diagnostics. Passed true.\n\n6. no_major_accidents (Без серьёзных ДТП, вес 1): Рассказал, что к продаже не допускаются т/с после серьезных ДТП.\n   I don't see any mention of this. Employee talks about diagnostics but not specifically about excluding cars with major accidents. So false. Comment: \"Сотрудник не упоминал, что автомобили после серьёзных ДТП не допускаются к продаже.\" Evidence: none.\n\n7. lift_inspection (Подъёмник, вес 1): Рассказал про осмотр на подъемнике.\n   No mention of lift. He talks about diagnostics and history, but not specifically about a lift inspection. So false.\n\n8. test_drive_offer (Тест-драйв, вес 1): В разговоре есть обсуждение или предложение тест-драйва.\n   Employee says \"прокатимся\" (108.08-111.28) in the context of \"подберем, посмотрим всю историю по автомобилям, прокатимся\". \"Прокатимся\" likely means a test drive. So there is an offer of test drive. Passed true. Evidence: [108.08-111.28].\n\n9. focus_on_benefits (Фокус на плюсах, вес 1): Сотрудник больше говорит о плюсах, чем о минусах. Сотрудник рассказывает о минусах автомобиля только если просит клиент.\n   Throughout the conversation, employee emphasizes positive aspects: wide choice, diagnostics, fast process, fair trade-in value, etc. He does not mention any negatives about any car. So he focuses on benefits. No client asks for negatives. So passed true. Comment: \"Сотрудник говорит только о преимуществах: широкий выбор, диагностика, быстрая сделка, обмен, рыночные цены. Минусы не упоминает.\" Evidence can be from many segments but I'll pick one or two: [38.36-44.44] (good budget, can pick many), [56.02-62.84] (market prices, not pennies). But it's overall. I'll include evidence range like [38.36-44.44] and [56.02-62.84].\n\n10. ptz_guarantee (Гарантия ПТЗ, вес 1): Рассказал о гарантии и условиях ПТЗ.\n   Employee does not mention PTZ or any extended warranty. He mentions diagnostics and report but no guarantee of technical protection. So false.\n\n11. self_intro (Представление, вес 1): Сотрудник упомянул в разговоре 2 преимущества из списка (компания более 20 лет на рынке; компания представлена в 40 городах страны и является официальным дилером 10 марок; компания продает более 20 000 авто в год; все авто проходят диагностику по 258 пунктам; На все авто предоставляется юридическая и техническая гарантия).\n   Did he mention any two? He mentions full diagnostics (258 пунктов) – that's one. He does not mention 20 лет, 40 городов, 20 000 авто, юридическая гарантия. He only mentioned the full diagnostics. So false. Comment: \"Сотрудник упомянул диагностику по 258 пунктам (одно преимущество), но не назвал второго из списка.\" Evidence: [127.50-132.16].\n\n12. trade_in_offer (Обмен авто, вес 1): В разговоре есть обсуждение или предложение услуги обмена автомобиля.\n   Employee discusses trade-in: asks about old car, \"А скажите, это у вас бюджет, с учетом, может, свое авто хотите, да, старое?\" (44.48-48.68) and then explains how they offer market price, can do in one day, diagnostics, etc. (56.02-68.14). So he clearly offers trade-in service. Passed true.\n\n13. payment_method (Способ оплаты, вес 1): Уточняет способ оплаты кредит или наличные.\n   Employee asks \"Кроме вашего автомобиля, там, у вас, подскажите, наличный кредит?\" (73.22-76.36). Actually it's \"наличный кредит?\" possibly meaning \"наличные или кредит?\". He asks about payment method. So passed true.\n\n14. visit_readiness (Готовность к визиту, вес 1): Спросил, готов ли клиент к визиту и осмотру автомобиля сегодня.\n   Employee says: \"Сегодня выезжайте, прямо сейчас, там, через час мы успеем сделать все-все-все сегодня\" (197.86-205.84) and earlier \"Скажите, когда удобно проехать вам?\" (177.60-179.36). So he asked about timing and encouraged coming today. Does he specifically ask \"готов ли клиент к визиту сегодня\"? He asks when it's convenient, then pushes for today. So I'd say yes, he essentially asked if they can come today. Passed true. Evidence from [177.60-179.36] and [197.86-205.84].\n\n15. phone_number (Телефон, вес 1): Сотрудник уточняет номер телефона клиента.\n   Employee says: \"Я вам сейчас визитку направлю, скажите, 301 ваш номер, Макс, Телеграм, тут что-то\" (206.10-211.02). He asks for number? \"скажите, 301 ваш номер\" maybe means \"скажите, 301 ваш номер?\" He seems to be asking for phone number. Then \"Телеграм\" etc. So yes, he asks for phone number to send contact. Passed true.\n\n16. photo_video_review (Фото/видео, вес 1): Предложил фото/видео обзор по автомобилю.\n   No mention of photo or video. Employee suggests visiting the warehouse and seeing cars in person, not sending photos. So false.\n\n17. visit_schedule (Дата визита, вес 1): Договорился о конкретном дне и времени визита.\n   The conversation ends with employee encouraging to come today, and client says \"я тогда через час буду выезжать\" (218.32-220.30). Did they agree on a specific day and time? \"Через час\" is a time but not a specific date and time (like \"tomorrow at 3 PM\"). But they effectively scheduled: today, after about an hour. The criterion: \"Договорился о конкретном дне и времени визита\" – they have \"сегодня\" as day, and \"через час\" as time frame. Could be considered a specific time? I'd say yes, because they established today and now plus one hour. That is a concrete time. So passed true. Evidence: [197.86-205.84] (employee says today, now) and client's response [218.32-220.30]. I'll use [197.86-205.84] as employee's segment that leads to agreement, and maybe [218.32-220.30] is client's but we need employee segment. Employee didn't explicitly confirm \"через час\", but he initiated the timing. The agreement is there. So passed.\n\n18. team_invitation (Приглашение коллег, вес 1): Уточнил не осталось ли вопросов у клиента.\n   Employee never asks if client has any further questions. So false. He only ends with sending contact and goodbye. No question check. So false.\n\nNow compile JSON with these assessments. Use evidence segments.\n\nNote: Ensure only employee segments for evidence where possible. Some criteria like visit_schedule involve client's statement, but the evidence from employee side is the invitation.\n\nI'll mark false for items that are not met.\n\nOne nuance: greeting - employee didn't say his position; passed false.\n\nAlso for self_intro: he only said one advantage (diagnostics). So false.\n\nNow construct the JSON."
+}

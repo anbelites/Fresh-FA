@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Регистрация на проверке — Fresh FA</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/static/app.css?v=72" />
+    <style>
+      .pending-page {
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 1.5rem;
+        position: relative;
+        overflow: hidden;
+        isolation: isolate;
+        background: #08111f;
+      }
+      .pending-page::before {
+        content: "";
+        position: absolute;
+        inset: -2rem;
+        background:
+          linear-gradient(180deg, rgba(8, 17, 31, 0.18) 0%, rgba(8, 17, 31, 0.6) 100%),
+          url("/static/assets/img/login-bg-racing.png") center center / cover no-repeat;
+        filter: blur(16px) saturate(0.92);
+        transform: scale(1.06);
+        z-index: -2;
+      }
+      .pending-page::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background:
+          radial-gradient(circle at top right, rgba(61, 107, 255, 0.24), transparent 38%),
+          linear-gradient(135deg, rgba(5, 10, 18, 0.58), rgba(5, 10, 18, 0.2));
+        z-index: -1;
+      }
+      .pending-card {
+        width: 100%;
+        max-width: 440px;
+        background: rgba(255, 255, 255, 0.92);
+        border-radius: var(--radius-lg);
+        box-shadow: 0 24px 60px rgba(7, 13, 24, 0.24);
+        padding: 2rem 1.75rem;
+        border: 1px solid rgba(255, 255, 255, 0.55);
+        backdrop-filter: blur(14px);
+      }
+      .pending-brand {
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+        margin-bottom: 1.2rem;
+      }
+      .pending-brand-fresh {
+        display: block;
+        height: 28px;
+        width: auto;
+      }
+      .pending-brand-fa {
+        display: block;
+        height: 34px;
+        width: auto;
+        margin-left: auto;
+      }
+      .pending-card h1 {
+        font-family: var(--font-body);
+        font-size: 1.5rem;
+        font-weight: 700;
+        letter-spacing: -0.03em;
+        margin: 0 0 0.45rem;
+        color: var(--ink);
+      }
+      .pending-card p {
+        color: var(--muted);
+        font-size: 0.92rem;
+        line-height: 1.48;
+        margin: 0;
+      }
+      .pending-email {
+        margin: 1.1rem 0;
+        padding: 0.85rem 0.95rem;
+        border-radius: var(--radius-sm);
+        background: rgba(0, 61, 255, 0.06);
+        border: 1px solid rgba(var(--brand-rgb), 0.14);
+      }
+      .pending-email span {
+        display: block;
+        font-size: 0.72rem;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: var(--muted);
+        margin-bottom: 0.2rem;
+      }
+      .pending-email strong {
+        color: var(--ink);
+        word-break: break-word;
+      }
+      .pending-reason {
+        margin: 1.1rem 0;
+        padding: 0.85rem 0.95rem;
+        border-radius: var(--radius-sm);
+        background: rgba(159, 18, 57, 0.08);
+        border: 1px solid rgba(159, 18, 57, 0.16);
+      }
+      .pending-reason span {
+        display: block;
+        font-size: 0.72rem;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: var(--danger);
+        margin-bottom: 0.2rem;
+      }
+      .pending-reason strong {
+        color: var(--ink);
+        font-weight: 600;
+        white-space: pre-wrap;
+      }
+      .pending-actions {
+        display: block;
+        margin-top: 1.4rem;
+      }
+      .pending-btn {
+        display: block;
+        width: 100%;
+        text-align: center;
+        font: inherit;
+        font-weight: 600;
+        padding: 0.72rem 1rem;
+        border-radius: 10px;
+        text-decoration: none;
+        border: none;
+        background: var(--brand);
+        color: #fff;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="pending-page">
+      <main class="pending-card">
+        <div class="pending-brand" aria-label="Fresh FA">
+          <img
+            src="/static/assets/img/fresh-logo-blue-transparent.png"
+            alt="Fresh"
+            width="182"
+            height="28"
+            class="pending-brand-fresh"
+          />
+          <img
+            src="/static/assets/img/fa-logo-blue.png"
+            alt="FA"
+            width="34"
+            height="34"
+            class="pending-brand-fa"
+          />
+        </div>
+        <h1 id="pending-title">Регистрация на проверке</h1>
+        <p id="pending-message">
+          Заявка отправлена администратору. Доступ к Fresh FA откроется после подтверждения
+          регистрации.
+        </p>
+        <div class="pending-email" id="pending-email-block" hidden>
+          <span>Почта для связи</span>
+          <strong id="pending-email">—</strong>
+        </div>
+        <div class="pending-reason" id="pending-reason-block" hidden>
+          <span>Причина отказа</span>
+          <strong id="pending-reason">—</strong>
+        </div>
+        <p>
+          <span id="pending-help-prefix">Если доступ нужен срочно, напишите администратору</span>
+          <a href="mailto:a.beloborodov@freshauto.ru">a.beloborodov@freshauto.ru</a>
+          и укажите свой логин или корпоративную почту.
+        </p>
+        <div class="pending-actions">
+          <a class="pending-btn" href="/login.html">Ко входу</a>
+        </div>
+      </main>
+    </div>
+    <script>
+      const params = new URLSearchParams(location.search);
+      const email = String(params.get("email") || "").trim();
+      const login = String(params.get("login") || "").trim();
+      const status = String(params.get("status") || "").trim().toLowerCase();
+      const reason = String(params.get("reason") || "").trim();
+      const resolvedEmail = email || (login && !login.includes("@") ? `${login}@freshauto.ru` : "");
+      const title = document.getElementById("pending-title");
+      const message = document.getElementById("pending-message");
+      const helpPrefix = document.getElementById("pending-help-prefix");
+      const block = document.getElementById("pending-email-block");
+      const node = document.getElementById("pending-email");
+      const reasonBlock = document.getElementById("pending-reason-block");
+      const reasonNode = document.getElementById("pending-reason");
+      if (status === "rejected") {
+        document.title = "Регистрация отклонена — Fresh FA";
+        if (title) title.textContent = "В регистрации отказано";
+        if (message) {
+          message.textContent =
+            "Администратор отклонил заявку на доступ к Fresh FA. Причина указана ниже.";
+        }
+        if (helpPrefix) helpPrefix.textContent = "Если у вас есть вопросы, напишите администратору";
+        if (reasonBlock && reasonNode) {
+          reasonNode.textContent = reason || "Причина не указана. Обратитесь к администратору.";
+          reasonBlock.hidden = false;
+        }
+      }
+      if (resolvedEmail && block && node) {
+        node.textContent = resolvedEmail;
+        block.hidden = false;
+      }
+    </script>
+  </body>
+</html>

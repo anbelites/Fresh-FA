@@ -14,12 +14,14 @@ from src.glossary_seed import GLOSSARY_SEED
 from src.seed_data import build_seed_criteria
 
 DB_PATH = PROJECT_ROOT / "fresh_fa.db"
-
-ACTIVE_CHECKLIST_KEY = "active_checklist_slug"
 USER_ROLE_USER = "user"
 USER_ROLE_ADMIN = "admin"
 AUTH_SOURCE_LOCAL = "local"
 AUTH_SOURCE_AD = "ad"
+CORPORATE_EMAIL_DOMAIN = "freshauto.ru"
+USER_APPROVAL_PENDING = "pending"
+USER_APPROVAL_APPROVED = "approved"
+USER_APPROVAL_REJECTED = "rejected"
 _UNSET = object()
 
 # Не импортировать в чеклисты (справочники и проч.)
@@ -137,6 +139,7 @@ CREATE TABLE IF NOT EXISTS users (
     password_hash TEXT NOT NULL DEFAULT '',
     display_name TEXT,
     full_name TEXT,
+    corporate_email TEXT,
     auth_source TEXT NOT NULL DEFAULT 'local',
     location_id TEXT,
     department TEXT,
@@ -147,6 +150,10 @@ CREATE TABLE IF NOT EXISTS users (
     max_queued_jobs INTEGER,
     max_running_jobs INTEGER,
     quotas_updated_at TEXT,
+    approval_status TEXT NOT NULL DEFAULT 'approved',
+    approved_at TEXT,
+    approved_by TEXT,
+    rejection_reason TEXT,
     is_active INTEGER NOT NULL DEFAULT 1,
     created_at TEXT NOT NULL,
     updated_at TEXT NOT NULL
@@ -192,6 +199,20 @@ CREATE TABLE IF NOT EXISTS app_settings (
     value TEXT NOT NULL
 );
 
+CREATE TABLE IF NOT EXISTS api_keys (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    key_hash TEXT NOT NULL UNIQUE,
+    key_prefix TEXT NOT NULL,
+    role TEXT NOT NULL DEFAULT 'admin',
+    is_active INTEGER NOT NULL DEFAULT 1,
+    created_at TEXT NOT NULL,
+    created_by TEXT,
+    last_used_at TEXT,
+    revoked_at TEXT,
+    revoked_by TEXT
+);
+
 CREATE TABLE IF NOT EXISTS glossary_entries (
     id TEXT PRIMARY KEY,
     category TEXT NOT NULL DEFAULT '',
@@ -207,6 +228,38 @@ CREATE TABLE IF NOT EXISTS glossary_entries (
     created_at TEXT NOT NULL,
     updated_at TEXT NOT NULL,
     updated_by TEXT
+);
+
+CREATE TABLE IF NOT EXISTS feedback_tickets (
+    id TEXT PRIMARY KEY,
+    user_username TEXT NOT NULL,
+    user_display_name TEXT,
+    feedback_type TEXT NOT NULL,
+    rating INTEGER NOT NULL,
+    description TEXT NOT NULL,
+    target_type TEXT,
+    target_id TEXT,
+    target_label TEXT,
+    status TEXT NOT NULL DEFAULT 'new',
+    admin_comment TEXT,
+    admin_user TEXT,
+    admin_updated_at TEXT,
+    user_review_comment TEXT,
+    user_reviewed_at TEXT,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS feedback_events (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    ticket_id TEXT NOT NULL REFERENCES feedback_tickets(id) ON DELETE CASCADE,
+    actor TEXT,
+    actor_role TEXT NOT NULL,
+    action TEXT NOT NULL,
+    status_from TEXT,
+    status_to TEXT,
+    comment TEXT,
+    created_at TEXT NOT NULL
 );
 """
 
@@ -244,6 +297,22 @@ def _normalize_user_role(value: Any) -> str:
 def _normalize_auth_source(value: Any) -> str:
     raw = str(value or "").strip().lower()
     return AUTH_SOURCE_AD if raw == AUTH_SOURCE_AD else AUTH_SOURCE_LOCAL
+
+
+def _normalize_approval_status(value: Any) -> str:
+    raw = str(value or "").strip().lower()
+    if raw == USER_APPROVAL_PENDING:
+        return USER_APPROVAL_PENDING
+    if raw == USER_APPROVAL_REJECTED:
+        return USER_APPROVAL_REJECTED
+    return USER_APPROVAL_APPROVED
+
+
+def corporate_email_for_username(username: str | None) -> str | None:
+    local_part = str(username or "").strip().lower()
+    if not local_part or "@" in local_part:
+        return None
+    return f"{local_part}@{CORPORATE_EMAIL_DOMAIN}"
 
 
 def _normalize_optional_limit(value: Any) -> int | None:
@@ -326,6 +395,7 @@ def _migrate_locations_columns(conn: sqlite3.Connection) -> None:
 def _migrate_users_columns(conn: sqlite3.Connection) -> None:
     changed = False
     changed |= _ensure_column(conn, "users", "full_name", "TEXT")
+    changed |= _ensure_column(conn, "users", "corporate_email", "TEXT")
     changed |= _ensure_column(conn, "users", "auth_source", "TEXT NOT NULL DEFAULT 'local'")
     changed |= _ensure_column(conn, "users", "location_id", "TEXT")
     changed |= _ensure_column(conn, "users", "department", "TEXT")
@@ -335,8 +405,40 @@ def _migrate_users_columns(conn: sqlite3.Connection) -> None:
     changed |= _ensure_column(conn, "users", "max_queued_jobs", "INTEGER")
     changed |= _ensure_column(conn, "users", "max_running_jobs", "INTEGER")
     changed |= _ensure_column(conn, "users", "quotas_updated_at", "TEXT")
+    changed |= _ensure_column(conn, "users", "approval_status", "TEXT NOT NULL DEFAULT 'approved'")
+    changed |= _ensure_column(conn, "users", "approved_at", "TEXT")
+    changed |= _ensure_column(conn, "users", "approved_by", "TEXT")
+    changed |= _ensure_column(conn, "users", "rejection_reason", "TEXT")
     if changed:
         conn.commit()
+    now = _utc_now()
+    conn.execute(
+        """
+        UPDATE users
+        SET approval_status = 'approved'
+        WHERE approval_status IS NULL OR trim(approval_status) = ''
+        """
+    )
+    conn.execute(
+        """
+        UPDATE users
+        SET approved_at = COALESCE(approved_at, updated_at, created_at, ?)
+        WHERE approval_status = 'approved'
+          AND (approved_at IS NULL OR trim(approved_at) = '')
+        """,
+        (now,),
+    )
+    conn.execute(
+        """
+        UPDATE users
+        SET corporate_email = lower(username) || '@freshauto.ru'
+        WHERE auth_source = 'local'
+          AND instr(username, '@') = 0
+          AND NULLIF(trim(username), '') IS NOT NULL
+          AND (corporate_email IS NULL OR trim(corporate_email) = '')
+        """
+    )
+    conn.commit()
 
 
 def _migrate_training_type_columns(conn: sqlite3.Connection) -> None:
@@ -348,6 +450,15 @@ def _migrate_checklist_columns(conn: sqlite3.Connection) -> None:
     changed = False
     changed |= _ensure_column(conn, "checklists", "display_name", "TEXT")
     changed |= _ensure_column(conn, "checklists", "department", "TEXT")
+    if changed:
+        conn.commit()
+
+
+def _migrate_feedback_columns(conn: sqlite3.Connection) -> None:
+    changed = False
+    changed |= _ensure_column(conn, "feedback_tickets", "target_type", "TEXT")
+    changed |= _ensure_column(conn, "feedback_tickets", "target_id", "TEXT")
+    changed |= _ensure_column(conn, "feedback_tickets", "target_label", "TEXT")
     if changed:
         conn.commit()
 
@@ -427,10 +538,6 @@ def _migrate_checklist_slugs_strip_extensions(conn: sqlite3.Connection) -> None:
             "UPDATE training_types SET checklist_slug = ? WHERE checklist_slug = ?",
             (new, old),
         )
-        conn.execute(
-            "UPDATE app_settings SET value = ? WHERE key = ? AND value = ?",
-            (new, ACTIVE_CHECKLIST_KEY, old),
-        )
         conn.execute("DELETE FROM checklists WHERE slug = ?", (old,))
     conn.commit()
 
@@ -462,6 +569,10 @@ def _ensure_post_migration_indexes(conn: sqlite3.Connection) -> None:
     user_cols = _table_columns(conn, "users")
     if "location_id" in user_cols:
         conn.execute("CREATE INDEX IF NOT EXISTS idx_users_location_id ON users(location_id)")
+    if "approval_status" in user_cols:
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_users_approval_status ON users(approval_status)")
+    if "corporate_email" in user_cols:
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_users_corporate_email ON users(corporate_email)")
     conn.execute(
         "CREATE INDEX IF NOT EXISTS idx_eval_comparisons_status ON evaluation_comparisons(status_color)"
     )
@@ -472,6 +583,15 @@ def _ensure_post_migration_indexes(conn: sqlite3.Connection) -> None:
     conn.execute("CREATE INDEX IF NOT EXISTS idx_audit_log_action ON audit_log(action)")
     conn.execute("CREATE INDEX IF NOT EXISTS idx_glossary_entries_category ON glossary_entries(category)")
     conn.execute("CREATE INDEX IF NOT EXISTS idx_glossary_entries_active ON glossary_entries(is_active)")
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_feedback_tickets_created_at ON feedback_tickets(created_at DESC)")
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_feedback_tickets_updated_at ON feedback_tickets(updated_at DESC)")
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_feedback_tickets_status ON feedback_tickets(status)")
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_feedback_tickets_type ON feedback_tickets(feedback_type)")
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_feedback_tickets_user ON feedback_tickets(user_username)")
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_feedback_tickets_target ON feedback_tickets(target_type, target_id)")
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_feedback_events_ticket ON feedback_events(ticket_id, created_at)")
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_api_keys_hash ON api_keys(key_hash)")
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_api_keys_active ON api_keys(is_active)")
 
 
 def _ensure_glossary_seed(conn: sqlite3.Connection) -> None:
@@ -529,6 +649,7 @@ def _run_schema_migrations(conn: sqlite3.Connection) -> None:
     _migrate_users_columns(conn)
     _migrate_training_type_columns(conn)
     _migrate_checklist_columns(conn)
+    _migrate_feedback_columns(conn)
     _migrate_checklist_slugs_strip_extensions(conn)
     _migrate_checklist_display_names(conn)
     _migrate_user_display_names(conn)
@@ -763,6 +884,7 @@ class DB:
                 username,
                 display_name,
                 full_name,
+                corporate_email,
                 auth_source,
                 location_id,
                 department,
@@ -773,6 +895,10 @@ class DB:
                 max_queued_jobs,
                 max_running_jobs,
                 quotas_updated_at,
+                approval_status,
+                approved_at,
+                approved_by,
+                rejection_reason,
                 is_active,
                 created_at,
                 updated_at
@@ -790,6 +916,7 @@ class DB:
                 password_hash,
                 display_name,
                 full_name,
+                corporate_email,
                 auth_source,
                 location_id,
                 department,
@@ -800,6 +927,10 @@ class DB:
                 max_queued_jobs,
                 max_running_jobs,
                 quotas_updated_at,
+                approval_status,
+                approved_at,
+                approved_by,
+                rejection_reason,
                 is_active,
                 created_at,
                 updated_at
@@ -817,6 +948,7 @@ class DB:
         password_hash: str | None = None,
         display_name: str | None = None,
         full_name: str | None = None,
+        corporate_email: str | None | object = _UNSET,
         auth_source: str = AUTH_SOURCE_LOCAL,
         location_id: str | None = None,
         department: str | None = None,
@@ -826,10 +958,15 @@ class DB:
         daily_upload_limit: int | None | object = _UNSET,
         max_queued_jobs: int | None | object = _UNSET,
         max_running_jobs: int | None | object = _UNSET,
+        approval_status: str | object = _UNSET,
+        approved_at: str | None | object = _UNSET,
+        approved_by: str | None | object = _UNSET,
+        rejection_reason: str | None | object = _UNSET,
         is_active: bool = True,
     ) -> dict[str, Any]:
         now = _utc_now()
         existing = self.get_user(username) or {}
+        final_auth_source = _normalize_auth_source(auth_source)
         created_at = existing.get("created_at", now) if existing else now
         final_full_name = (full_name or existing.get("full_name") or "").strip() or None
         final_display_name = (
@@ -838,6 +975,12 @@ class DB:
             or str(existing.get("display_name") or "").strip()
             or None
         )
+        if corporate_email is _UNSET:
+            final_corporate_email = str(existing.get("corporate_email") or "").strip().lower() or None
+            if not final_corporate_email and final_auth_source == AUTH_SOURCE_LOCAL:
+                final_corporate_email = corporate_email_for_username(username)
+        else:
+            final_corporate_email = str(corporate_email or "").strip().lower() or None
         final_location_id = location_id if location_id is not None else existing.get("location_id")
         final_department = department if department is not None else existing.get("department")
         final_profile_completed_at = profile_completed_at
@@ -882,6 +1025,34 @@ class DB:
             if password_hash is not None
             else str(existing.get("password_hash") or "")
         )
+        final_approval_status = (
+            _normalize_approval_status(existing.get("approval_status"))
+            if approval_status is _UNSET
+            else _normalize_approval_status(approval_status)
+        )
+        final_approved_at = (
+            existing.get("approved_at")
+            if approved_at is _UNSET
+            else (str(approved_at or "").strip() or None)
+        )
+        final_approved_by = (
+            existing.get("approved_by")
+            if approved_by is _UNSET
+            else (str(approved_by or "").strip() or None)
+        )
+        final_rejection_reason = (
+            existing.get("rejection_reason")
+            if rejection_reason is _UNSET
+            else (str(rejection_reason or "").strip() or None)
+        )
+        if final_approval_status in (USER_APPROVAL_PENDING, USER_APPROVAL_REJECTED):
+            final_approved_at = None
+            final_approved_by = None
+            if final_approval_status != USER_APPROVAL_REJECTED:
+                final_rejection_reason = None
+        elif not final_approved_at:
+            final_approved_at = now
+            final_rejection_reason = None
         self._conn.execute(
             """
             INSERT INTO users (
@@ -889,6 +1060,7 @@ class DB:
                 password_hash,
                 display_name,
                 full_name,
+                corporate_email,
                 auth_source,
                 location_id,
                 department,
@@ -899,15 +1071,20 @@ class DB:
                 max_queued_jobs,
                 max_running_jobs,
                 quotas_updated_at,
+                approval_status,
+                approved_at,
+                approved_by,
+                rejection_reason,
                 is_active,
                 created_at,
                 updated_at
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ON CONFLICT(username) DO UPDATE SET
                 password_hash = excluded.password_hash,
                 display_name = excluded.display_name,
                 full_name = excluded.full_name,
+                corporate_email = excluded.corporate_email,
                 auth_source = excluded.auth_source,
                 location_id = excluded.location_id,
                 department = excluded.department,
@@ -918,6 +1095,10 @@ class DB:
                 max_queued_jobs = excluded.max_queued_jobs,
                 max_running_jobs = excluded.max_running_jobs,
                 quotas_updated_at = excluded.quotas_updated_at,
+                approval_status = excluded.approval_status,
+                approved_at = excluded.approved_at,
+                approved_by = excluded.approved_by,
+                rejection_reason = excluded.rejection_reason,
                 is_active = excluded.is_active,
                 updated_at = excluded.updated_at
             """,
@@ -926,7 +1107,8 @@ class DB:
                 final_password_hash,
                 final_display_name,
                 final_full_name,
-                _normalize_auth_source(auth_source),
+                final_corporate_email,
+                final_auth_source,
                 final_location_id,
                 final_department,
                 final_profile_completed_at,
@@ -936,6 +1118,10 @@ class DB:
                 final_max_queued_jobs,
                 final_max_running_jobs,
                 final_quotas_updated_at,
+                final_approval_status,
+                final_approved_at,
+                final_approved_by,
+                final_rejection_reason,
                 1 if is_active else 0,
                 created_at,
                 now,
@@ -1122,16 +1308,99 @@ class DB:
         return cur.rowcount > 0
 
     def set_user_active(self, username: str, is_active: bool) -> bool:
+        now = _utc_now()
+        existing = self.get_user(username)
+        approval_status = _normalize_approval_status((existing or {}).get("approval_status"))
+        approved_at = existing.get("approved_at") if existing else None
+        rejection_reason = existing.get("rejection_reason") if existing else None
+        if is_active or approval_status in (USER_APPROVAL_PENDING, USER_APPROVAL_REJECTED):
+            approval_status = USER_APPROVAL_APPROVED
+            approved_at = approved_at or now
+            rejection_reason = None
         cur = self._conn.execute(
             """
             UPDATE users
-            SET is_active = ?, updated_at = ?
+            SET is_active = ?,
+                approval_status = ?,
+                approved_at = ?,
+                rejection_reason = ?,
+                corporate_email = COALESCE(NULLIF(trim(corporate_email), ''), ?),
+                updated_at = ?
             WHERE username = ?
             """,
-            (1 if is_active else 0, _utc_now(), username),
+            (
+                1 if is_active else 0,
+                approval_status,
+                approved_at,
+                rejection_reason,
+                corporate_email_for_username(username),
+                now,
+                username,
+            ),
         )
         self._conn.commit()
         return cur.rowcount > 0
+
+    def approve_user_registration(self, username: str, approved_by: str | None = None) -> dict[str, Any] | None:
+        now = _utc_now()
+        cur = self._conn.execute(
+            """
+            UPDATE users
+            SET is_active = 1,
+                approval_status = ?,
+                approved_at = ?,
+                approved_by = ?,
+                rejection_reason = NULL,
+                corporate_email = COALESCE(NULLIF(trim(corporate_email), ''), ?),
+                updated_at = ?
+            WHERE username = ?
+            """,
+            (
+                USER_APPROVAL_APPROVED,
+                now,
+                str(approved_by or "").strip() or None,
+                corporate_email_for_username(username),
+                now,
+                username,
+            ),
+        )
+        self._conn.commit()
+        if cur.rowcount <= 0:
+            return None
+        return self.get_user(username)
+
+    def reject_user_registration(
+        self,
+        username: str,
+        reason: str,
+        rejected_by: str | None = None,
+    ) -> dict[str, Any] | None:
+        now = _utc_now()
+        cur = self._conn.execute(
+            """
+            UPDATE users
+            SET is_active = 0,
+                approval_status = ?,
+                approved_at = NULL,
+                approved_by = ?,
+                rejection_reason = ?,
+                corporate_email = COALESCE(NULLIF(trim(corporate_email), ''), ?),
+                updated_at = ?
+            WHERE username = ?
+            """,
+            (
+                USER_APPROVAL_REJECTED,
+                str(rejected_by or "").strip() or None,
+                str(reason or "").strip(),
+                corporate_email_for_username(username),
+                now,
+                username,
+            ),
+        )
+        self._conn.commit()
+        if cur.rowcount <= 0:
+            return None
+        return self.get_user(username)
 
     def delete_user(self, username: str) -> bool:
         cur = self._conn.execute("DELETE FROM users WHERE username = ?", (username,))
@@ -1210,6 +1479,379 @@ class DB:
                 item["details"] = {}
             out.append(item)
         return out
+
+    # --- API keys ---
+    def create_api_key(
+        self,
+        *,
+        key_id: str,
+        name: str,
+        key_hash: str,
+        key_prefix: str,
+        created_by: str | None,
+        role: str = USER_ROLE_ADMIN,
+    ) -> dict[str, Any]:
+        now = _utc_now()
+        clean_name = str(name or "").strip()
+        if not clean_name:
+            raise ValueError("Укажите название ключа")
+        safe_role = USER_ROLE_ADMIN if str(role or "").strip().lower() == USER_ROLE_ADMIN else USER_ROLE_USER
+        self._conn.execute(
+            """
+            INSERT INTO api_keys (
+                id,
+                name,
+                key_hash,
+                key_prefix,
+                role,
+                is_active,
+                created_at,
+                created_by
+            )
+            VALUES (?, ?, ?, ?, ?, 1, ?, ?)
+            """,
+            (
+                key_id,
+                clean_name,
+                key_hash,
+                key_prefix,
+                safe_role,
+                now,
+                created_by,
+            ),
+        )
+        self._conn.commit()
+        item = self.get_api_key_by_id(key_id)
+        if item is None:
+            raise RuntimeError("Не удалось создать API-ключ")
+        return item
+
+    def get_api_key_by_id(self, key_id: str) -> dict[str, Any] | None:
+        row = self._conn.execute(
+            """
+            SELECT id, name, key_prefix, role, is_active, created_at, created_by, last_used_at, revoked_at, revoked_by
+            FROM api_keys
+            WHERE id = ?
+            """,
+            (key_id,),
+        ).fetchone()
+        return dict(row) if row else None
+
+    def get_active_api_key_by_hash(self, key_hash: str) -> dict[str, Any] | None:
+        row = self._conn.execute(
+            """
+            SELECT id, name, key_prefix, role, is_active, created_at, created_by, last_used_at, revoked_at, revoked_by
+            FROM api_keys
+            WHERE key_hash = ?
+              AND is_active = 1
+              AND revoked_at IS NULL
+            LIMIT 1
+            """,
+            (key_hash,),
+        ).fetchone()
+        return dict(row) if row else None
+
+    def list_api_keys(self, *, include_revoked: bool = True) -> list[dict[str, Any]]:
+        sql = """
+            SELECT id, name, key_prefix, role, is_active, created_at, created_by, last_used_at, revoked_at, revoked_by
+            FROM api_keys
+        """
+        if not include_revoked:
+            sql += " WHERE is_active = 1 AND revoked_at IS NULL"
+        sql += " ORDER BY created_at DESC, name COLLATE NOCASE"
+        return [dict(row) for row in self._conn.execute(sql).fetchall()]
+
+    def mark_api_key_used(self, key_id: str) -> None:
+        self._conn.execute(
+            "UPDATE api_keys SET last_used_at = ? WHERE id = ?",
+            (_utc_now(), key_id),
+        )
+        self._conn.commit()
+
+    def revoke_api_key(self, key_id: str, revoked_by: str | None) -> dict[str, Any] | None:
+        now = _utc_now()
+        cur = self._conn.execute(
+            """
+            UPDATE api_keys
+            SET is_active = 0,
+                revoked_at = COALESCE(revoked_at, ?),
+                revoked_by = COALESCE(revoked_by, ?)
+            WHERE id = ?
+            """,
+            (now, revoked_by, key_id),
+        )
+        self._conn.commit()
+        if cur.rowcount <= 0:
+            return None
+        return self.get_api_key_by_id(key_id)
+
+    # --- feedback tickets ---
+    def _next_feedback_ticket_id(self, now: str | None = None) -> str:
+        date_part = datetime.now(timezone.utc).strftime("%Y%m%d")
+        prefix = f"FB-{date_part}-"
+        row = self._conn.execute(
+            """
+            SELECT id
+            FROM feedback_tickets
+            WHERE id LIKE ?
+            ORDER BY id DESC
+            LIMIT 1
+            """,
+            (f"{prefix}%",),
+        ).fetchone()
+        next_number = 1
+        if row:
+            try:
+                next_number = int(str(row["id"]).rsplit("-", 1)[-1]) + 1
+            except (TypeError, ValueError):
+                next_number = 1
+        return f"{prefix}{next_number:04d}"
+
+    def _feedback_row_to_dict(self, row: sqlite3.Row | dict[str, Any] | None) -> dict[str, Any]:
+        if row is None:
+            return {}
+        item = dict(row)
+        try:
+            item["rating"] = int(item.get("rating") or 0)
+        except (TypeError, ValueError):
+            item["rating"] = 0
+        return item
+
+    def add_feedback_event(
+        self,
+        *,
+        ticket_id: str,
+        actor: str | None,
+        actor_role: str,
+        action: str,
+        status_from: str | None,
+        status_to: str | None,
+        comment: str | None = None,
+    ) -> dict[str, Any]:
+        created_at = _utc_now()
+        cur = self._conn.execute(
+            """
+            INSERT INTO feedback_events (
+                ticket_id,
+                actor,
+                actor_role,
+                action,
+                status_from,
+                status_to,
+                comment,
+                created_at
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                ticket_id,
+                actor,
+                actor_role,
+                action,
+                status_from,
+                status_to,
+                comment,
+                created_at,
+            ),
+        )
+        row = self._conn.execute(
+            """
+            SELECT id, ticket_id, actor, actor_role, action, status_from, status_to, comment, created_at
+            FROM feedback_events
+            WHERE id = ?
+            """,
+            (int(cur.lastrowid),),
+        ).fetchone()
+        if not row:
+            raise RuntimeError("Не удалось сохранить событие обратной связи")
+        return dict(row)
+
+    def list_feedback_events(self, ticket_id: str) -> list[dict[str, Any]]:
+        rows = self._conn.execute(
+            """
+            SELECT id, ticket_id, actor, actor_role, action, status_from, status_to, comment, created_at
+            FROM feedback_events
+            WHERE ticket_id = ?
+            ORDER BY created_at ASC, id ASC
+            """,
+            (ticket_id,),
+        ).fetchall()
+        return [dict(row) for row in rows]
+
+    def get_feedback_ticket(self, ticket_id: str, *, include_events: bool = True) -> dict[str, Any] | None:
+        row = self._conn.execute(
+            "SELECT * FROM feedback_tickets WHERE id = ?",
+            (ticket_id,),
+        ).fetchone()
+        if not row:
+            return None
+        item = self._feedback_row_to_dict(row)
+        if include_events:
+            item["events"] = self.list_feedback_events(ticket_id)
+        return item
+
+    def create_feedback_ticket(
+        self,
+        *,
+        user_username: str,
+        user_display_name: str | None,
+        feedback_type: str,
+        rating: int,
+        description: str,
+        target_type: str | None = None,
+        target_id: str | None = None,
+        target_label: str | None = None,
+    ) -> dict[str, Any]:
+        now = _utc_now()
+        ticket_id = self._next_feedback_ticket_id(now)
+        for attempt in range(20):
+            candidate_id = ticket_id if attempt == 0 else f"{ticket_id}-{attempt + 1}"
+            try:
+                self._conn.execute(
+                    """
+                    INSERT INTO feedback_tickets (
+                        id,
+                        user_username,
+                        user_display_name,
+                        feedback_type,
+                        rating,
+                        description,
+                        target_type,
+                        target_id,
+                        target_label,
+                        status,
+                        created_at,
+                        updated_at
+                    )
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'new', ?, ?)
+                    """,
+                    (
+                        candidate_id,
+                        user_username,
+                        user_display_name,
+                        feedback_type,
+                        int(rating),
+                        description,
+                        target_type,
+                        target_id,
+                        target_label,
+                        now,
+                        now,
+                    ),
+                )
+            except sqlite3.IntegrityError:
+                continue
+            self.add_feedback_event(
+                ticket_id=candidate_id,
+                actor=user_username,
+                actor_role="user",
+                action="create",
+                status_from=None,
+                status_to="new",
+                comment=description,
+            )
+            self._conn.commit()
+            item = self.get_feedback_ticket(candidate_id)
+            if item is None:
+                raise RuntimeError("Не удалось сохранить заявку обратной связи")
+            return item
+        raise RuntimeError("Не удалось сформировать уникальный номер заявки")
+
+    def list_feedback_tickets(
+        self,
+        *,
+        user_username: str | None = None,
+        status: str | None = None,
+        feedback_type: str | None = None,
+        query: str | None = None,
+        limit: int = 500,
+        include_events: bool = False,
+    ) -> list[dict[str, Any]]:
+        safe_limit = max(1, min(int(limit), 1000))
+        sql = ["SELECT * FROM feedback_tickets WHERE 1 = 1"]
+        params: list[Any] = []
+        if user_username:
+            sql.append("AND lower(user_username) = lower(?)")
+            params.append(user_username)
+        if status:
+            sql.append("AND status = ?")
+            params.append(status)
+        if feedback_type:
+            sql.append("AND feedback_type = ?")
+            params.append(feedback_type)
+        if query and str(query).strip():
+            needle = f"%{str(query).strip().lower()}%"
+            sql.append(
+                """
+                AND lower(
+                    id || ' ' ||
+                    COALESCE(user_username, '') || ' ' ||
+                    COALESCE(user_display_name, '') || ' ' ||
+                    COALESCE(description, '') || ' ' ||
+                    COALESCE(target_id, '') || ' ' ||
+                    COALESCE(target_label, '') || ' ' ||
+                    COALESCE(admin_comment, '') || ' ' ||
+                    COALESCE(user_review_comment, '')
+                ) LIKE ?
+                """
+            )
+            params.append(needle)
+        sql.append("ORDER BY updated_at DESC, created_at DESC LIMIT ?")
+        params.append(safe_limit)
+        rows = self._conn.execute("\n".join(sql), params).fetchall()
+        out = [self._feedback_row_to_dict(row) for row in rows]
+        if include_events:
+            for item in out:
+                item["events"] = self.list_feedback_events(str(item.get("id") or ""))
+        return out
+
+    def update_feedback_ticket_status(
+        self,
+        ticket_id: str,
+        *,
+        status: str,
+        actor: str | None,
+        actor_role: str,
+        action: str,
+        comment: str | None = None,
+        admin_comment: Any = _UNSET,
+        user_review_comment: Any = _UNSET,
+    ) -> dict[str, Any] | None:
+        existing = self.get_feedback_ticket(ticket_id, include_events=False)
+        if not existing:
+            return None
+        now = _utc_now()
+        updates = ["status = ?", "updated_at = ?"]
+        params: list[Any] = [status, now]
+        if admin_comment is not _UNSET:
+            updates.extend(["admin_comment = ?", "admin_user = ?", "admin_updated_at = ?"])
+            params.extend([admin_comment, actor, now])
+        elif actor_role == "admin":
+            updates.extend(["admin_user = ?", "admin_updated_at = ?"])
+            params.extend([actor, now])
+        if user_review_comment is not _UNSET:
+            updates.extend(["user_review_comment = ?", "user_reviewed_at = ?"])
+            params.extend([user_review_comment, now])
+        params.append(ticket_id)
+        self._conn.execute(
+            f"""
+            UPDATE feedback_tickets
+            SET {", ".join(updates)}
+            WHERE id = ?
+            """,
+            params,
+        )
+        self.add_feedback_event(
+            ticket_id=ticket_id,
+            actor=actor,
+            actor_role=actor_role,
+            action=action,
+            status_from=str(existing.get("status") or ""),
+            status_to=status,
+            comment=comment,
+        )
+        self._conn.commit()
+        return self.get_feedback_ticket(ticket_id)
 
     # --- video meta ---
     def get_video_meta(self, stem: str) -> dict[str, Any]:
@@ -1428,13 +2070,20 @@ class DB:
 
     def get_current_checklist_slug_for_video(self, stem: str) -> str:
         meta = self.get_video_meta(stem)
+        if not meta:
+            raise ValueError("Видео не найдено")
         training_slug = str(meta.get("training_type_slug") or "").strip()
-        if training_slug:
-            training_type = self.get_training_type(training_slug)
-            checklist_slug = str((training_type or {}).get("checklist_slug") or "").strip()
-            if checklist_slug and self.checklist_exists(checklist_slug):
-                return checklist_slug
-        return self.get_active_checklist_slug()
+        if not training_slug:
+            raise ValueError("Для записи не выбран тип тренировки")
+        training_type = self.get_training_type(training_slug)
+        if not training_type:
+            raise ValueError("Тип тренировки не найден")
+        checklist_slug = str(training_type.get("checklist_slug") or "").strip()
+        if not checklist_slug:
+            raise ValueError("У выбранного типа тренировки не привязан чеклист")
+        if not self.checklist_exists(checklist_slug):
+            raise ValueError(f"Чеклист не найден: {checklist_slug}")
+        return checklist_slug
 
     # --- human eval state ---
     def get_human_eval_state(self, stem: str, criteria_slug: str) -> dict[str, Any]:
@@ -1968,24 +2617,6 @@ class DB:
         self._conn.commit()
         return cur.rowcount > 0
 
-    def get_active_checklist_slug(self) -> str:
-        raw = self.get_setting(ACTIVE_CHECKLIST_KEY)
-        if raw and self.checklist_exists(raw.strip()):
-            return raw.strip()
-        rows = self._conn.execute(
-            "SELECT slug FROM checklists ORDER BY slug COLLATE NOCASE LIMIT 1"
-        ).fetchall()
-        if rows:
-            slug = str(rows[0]["slug"])
-            self.set_setting(ACTIVE_CHECKLIST_KEY, slug)
-            return slug
-        return DEFAULT_CHECKLIST_SLUG
-
-    def set_active_checklist_slug(self, slug: str) -> None:
-        if not self.checklist_exists(slug):
-            raise ValueError(f"Чеклист не найден: {slug}")
-        self.set_setting(ACTIVE_CHECKLIST_KEY, slug)
-
     def get_checklist_meta(self, slug: str) -> dict[str, Any] | None:
         row = self._conn.execute(
             """
@@ -2170,9 +2801,6 @@ class DB:
             raise ValueError("Чеклист привязан к типу тренировки")
         cur = self._conn.execute("DELETE FROM checklists WHERE slug = ?", (slug,))
         self._conn.commit()
-        if cur.rowcount and self.get_setting(ACTIVE_CHECKLIST_KEY) == slug:
-            self._conn.execute("DELETE FROM app_settings WHERE key = ?", (ACTIVE_CHECKLIST_KEY,))
-            self._conn.commit()
         return cur.rowcount > 0
 
     # --- migration: import from YAML config files ---
@@ -2189,7 +2817,6 @@ def migrate_checklists_from_config(
     db: DB,
     *,
     config_dir: Path | None = None,
-    active_marker: Path | None = None,
     delete_source_files: bool = True,
 ) -> None:
     """Импорт YAML из config/ в БД при пустой таблице checklists; затем удаление исходных файлов."""
@@ -2197,7 +2824,7 @@ def migrate_checklists_from_config(
         return
 
     cd = config_dir or CONFIG_DIR
-    marker = active_marker or (cd / ".active_criteria")
+    marker = cd / ".active_criteria"
     cd.mkdir(parents=True, exist_ok=True)
 
     paths: list[Path] = []
@@ -2272,34 +2899,6 @@ def migrate_checklists_from_config(
             display_name=DEFAULT_CHECKLIST_SLUG,
             department=None,
         )
-
-    active: str | None = None
-    if marker.is_file():
-        try:
-            raw_active = marker.read_text(encoding="utf-8").strip()
-            if raw_active:
-                candidates: list[str] = []
-                if raw_active.lower().endswith((".yaml", ".yml")):
-                    candidates.append(Path(raw_active).stem)
-                candidates.append(raw_active)
-                for candidate in candidates:
-                    if candidate and db.checklist_exists(candidate):
-                        active = candidate
-                        break
-        except OSError:
-            pass
-    if not active and db.checklist_exists(DEFAULT_CHECKLIST_SLUG):
-        active = DEFAULT_CHECKLIST_SLUG
-    if not active:
-        files = db.list_checklist_files()
-        if files:
-            active = files[0]["name"]
-    if active and db.checklist_exists(active):
-        db.set_active_checklist_slug(active)
-    else:
-        files = db.list_checklist_files()
-        if files:
-            db.set_active_checklist_slug(files[0]["name"])
 
     if delete_source_files and imported_source_files:
         for fp in imported_source_files:

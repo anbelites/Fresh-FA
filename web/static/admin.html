@@ -11,7 +11,7 @@
       rel="stylesheet"
     />
     <link rel="stylesheet" href="/static/app.css?v=60" />
-    <link rel="stylesheet" href="/static/admin.css?v=3" />
+    <link rel="stylesheet" href="/static/admin.css?v=5" />
   </head>
   <body>
     <div class="admin-shell">
@@ -44,10 +44,14 @@
         <nav class="admin-nav" aria-label="Навигация по админке">
           <button type="button" class="admin-nav-btn admin-nav-btn--active" data-section="overview">Обзор</button>
           <button type="button" class="admin-nav-btn" data-section="jobs">Задачи</button>
-          <button type="button" class="admin-nav-btn" data-section="users">Пользователи</button>
+          <button type="button" class="admin-nav-btn" data-section="users">
+            <span>Пользователи</span>
+            <span class="admin-nav-badge" id="users-pending-badge" hidden>0</span>
+          </button>
           <button type="button" class="admin-nav-btn" data-section="videos">Видео</button>
           <button type="button" class="admin-nav-btn" data-section="checklists">Чеклисты</button>
           <button type="button" class="admin-nav-btn" data-section="glossary">Глоссарий</button>
+          <button type="button" class="admin-nav-btn" data-section="feedback">Обратная связь</button>
           <button type="button" class="admin-nav-btn" data-section="settings">Настройки</button>
           <button type="button" class="admin-nav-btn" data-section="audit">Аудит</button>
         </nav>
@@ -220,27 +224,73 @@
               </div>
             </div>
 
-            <div class="admin-grid-2">
-              <div class="admin-card admin-card--scroll">
-                <div class="admin-table-wrap">
-                  <table class="admin-table">
-                    <thead>
-                      <tr>
-                        <th>Логин</th>
-                        <th>ФИО</th>
-                        <th>Источник</th>
-                        <th>Локация</th>
-                        <th>Отдел</th>
-                        <th>Роль</th>
-                        <th>Статус</th>
-                      </tr>
-                    </thead>
-                    <tbody id="users-body"></tbody>
-                  </table>
+            <div class="admin-card admin-users-pending-card">
+              <div class="admin-card-head">
+                <div>
+                  <h3>Ожидают подтверждения</h3>
+                  <p class="admin-note">Заявки саморегистрации. После подтверждения пользователь сможет войти в систему.</p>
                 </div>
+                <span class="admin-pill" data-tone="warn" id="users-pending-count">0 заявок</span>
               </div>
+              <div class="admin-users-pending-list" id="users-pending-list"></div>
+            </div>
 
-              <div class="admin-card admin-detail-card">
+            <div class="admin-card admin-card--scroll">
+              <div class="admin-toolbar admin-toolbar--split">
+                <div class="admin-form-grid admin-form-grid--4 admin-users-filters">
+                  <div class="admin-field">
+                    <label for="users-query">Поиск</label>
+                    <input id="users-query" class="admin-search" type="search" placeholder="логин, ФИО, почта…" />
+                  </div>
+                  <div class="admin-field">
+                    <label for="users-status-filter">Статус</label>
+                    <select id="users-status-filter" class="admin-select">
+                      <option value="">Все</option>
+                      <option value="pending">На подтверждении</option>
+                      <option value="rejected">Отказано</option>
+                      <option value="active">Активен</option>
+                      <option value="inactive">Неактивен</option>
+                    </select>
+                  </div>
+                  <div class="admin-field">
+                    <label for="users-source-filter">Источник</label>
+                    <select id="users-source-filter" class="admin-select">
+                      <option value="">Все</option>
+                      <option value="local">local</option>
+                      <option value="ad">ad</option>
+                    </select>
+                  </div>
+                  <div class="admin-field">
+                    <label for="users-role-filter">Роль</label>
+                    <select id="users-role-filter" class="admin-select">
+                      <option value="">Все</option>
+                      <option value="user">user</option>
+                      <option value="admin">admin</option>
+                    </select>
+                  </div>
+                </div>
+                <button type="button" class="admin-btn-secondary" id="user-new-btn">Новый пользователь</button>
+              </div>
+              <div class="admin-table-wrap">
+                <table class="admin-table">
+                  <thead>
+                    <tr>
+                      <th>Логин</th>
+                      <th>Почта</th>
+                      <th>ФИО</th>
+                      <th>Источник</th>
+                      <th>Локация</th>
+                      <th>Отдел</th>
+                      <th>Роль</th>
+                      <th>Статус</th>
+                    </tr>
+                  </thead>
+                  <tbody id="users-body"></tbody>
+                </table>
+              </div>
+            </div>
+
+            <div class="admin-card admin-detail-card">
                 <div class="admin-card-head">
                   <div>
                     <h3 id="user-form-title">Новый пользователь</h3>
@@ -252,14 +302,19 @@
                     <div class="admin-field">
                       <label for="user-username">Логин</label>
                       <input id="user-username" class="admin-input" type="text" autocomplete="off" />
+                      <small>Первая часть корпоративной почты до @.</small>
                     </div>
                     <div class="admin-field">
-                      <label for="user-auth-source">Источник</label>
-                      <select id="user-auth-source" class="admin-select">
-                        <option value="local">local</option>
-                        <option value="ad">ad</option>
-                      </select>
+                      <label for="user-corporate-email">Корпоративная почта</label>
+                      <input id="user-corporate-email" class="admin-input" type="text" readonly />
                     </div>
+                  </div>
+                  <div class="admin-field">
+                    <label for="user-auth-source">Источник</label>
+                    <select id="user-auth-source" class="admin-select">
+                      <option value="local">local</option>
+                      <option value="ad">ad</option>
+                    </select>
                   </div>
                   <div class="admin-field">
                     <label for="user-password">Пароль</label>
@@ -332,14 +387,15 @@
                     <div class="admin-action-group admin-action-group--soft">
                       <span class="admin-action-group-title">Доступ и пароль</span>
                       <div class="admin-toolbar">
+                        <button type="button" class="admin-btn" id="user-approve-btn">Подтвердить</button>
                         <button type="button" class="admin-btn-secondary" id="user-activate-btn">Активировать</button>
                         <button type="button" class="admin-btn-secondary" id="user-deactivate-btn">Отключить</button>
                         <button type="button" class="admin-btn-danger" id="user-reset-password-btn">Сбросить пароль</button>
+                        <button type="button" class="admin-btn-danger" id="user-delete-btn">Удалить пользователя</button>
                       </div>
                     </div>
                   </div>
                 </form>
-              </div>
             </div>
           </section>
 
@@ -473,35 +529,28 @@
             <div class="admin-zone">
               <div class="admin-zone-head">
                 <div>
-                  <h3 class="admin-zone-title">Активный и новый чеклист</h3>
-                  <p class="admin-zone-subtitle">Частые действия по настройке рабочего набора без перехода в редактор.</p>
+                  <h3 class="admin-zone-title">Новый чеклист</h3>
+                  <p class="admin-zone-subtitle">Создайте пустой чеклист или скопируйте существующий, затем привяжите его к типу тренировки.</p>
                 </div>
               </div>
               <div class="admin-grid-2">
                 <div class="admin-card">
-                <h3>Активный чеклист</h3>
-                <div class="admin-toolbar">
-                  <select id="active-checklist-select" class="admin-select"></select>
-                  <button type="button" class="admin-btn" id="active-checklist-save">Сделать активным</button>
-                </div>
-              </div>
-                <div class="admin-card">
-                <h3>Новый чеклист</h3>
-                <div class="admin-form-grid admin-form-grid--2">
-                  <div class="admin-field">
-                    <label for="new-checklist-name">Slug</label>
-                    <input id="new-checklist-name" class="admin-input admin-code" type="text" placeholder="sales_script" />
+                  <h3>Создать чеклист</h3>
+                  <div class="admin-form-grid admin-form-grid--2">
+                    <div class="admin-field">
+                      <label for="new-checklist-name">Slug</label>
+                      <input id="new-checklist-name" class="admin-input admin-code" type="text" placeholder="sales_script" />
+                    </div>
+                    <div class="admin-field">
+                      <label for="new-checklist-copy">Копировать из</label>
+                      <select id="new-checklist-copy" class="admin-select"></select>
+                    </div>
                   </div>
-                  <div class="admin-field">
-                    <label for="new-checklist-copy">Копировать из</label>
-                    <select id="new-checklist-copy" class="admin-select"></select>
+                  <div class="admin-toolbar">
+                    <button type="button" class="admin-btn" id="create-checklist-btn">Создать</button>
                   </div>
                 </div>
-                <div class="admin-toolbar">
-                  <button type="button" class="admin-btn" id="create-checklist-btn">Создать</button>
-                </div>
               </div>
-            </div>
             </div>
 
             <div class="admin-zone">
@@ -797,6 +846,83 @@
             </div>
           </section>
 
+          <section class="admin-section" id="section-feedback" data-section="feedback">
+            <div class="admin-section-head">
+              <div>
+                <span class="admin-section-eyebrow">Голос пользователей</span>
+                <h2>Обратная связь</h2>
+                <p>Заявки пользователей, статусы обработки, ответы и подтверждение готовности.</p>
+              </div>
+            </div>
+
+            <div class="admin-card">
+              <div class="admin-toolbar">
+                <div class="admin-field" style="flex: 1 1 280px">
+                  <label for="feedback-query">Поиск</label>
+                  <input id="feedback-query" class="admin-search" type="search" placeholder="тикет, пользователь, описание, комментарий…" />
+                </div>
+                <div class="admin-field">
+                  <label for="feedback-status-filter">Статус</label>
+                  <select id="feedback-status-filter" class="admin-select">
+                    <option value="">Все</option>
+                  </select>
+                </div>
+                <div class="admin-field">
+                  <label for="feedback-type-filter">Тип</label>
+                  <select id="feedback-type-filter" class="admin-select">
+                    <option value="">Все</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <div class="admin-grid-2 admin-grid-2--wide-left">
+              <div class="admin-card admin-card--scroll">
+                <div class="admin-table-wrap">
+                  <table class="admin-table">
+                    <thead>
+                      <tr>
+                        <th>Тикет</th>
+                        <th>Пользователь</th>
+                        <th>Дата</th>
+                        <th>Тип</th>
+                        <th>Объект</th>
+                        <th>Оценка</th>
+                        <th>Статус</th>
+                      </tr>
+                    </thead>
+                    <tbody id="feedback-body"></tbody>
+                  </table>
+                </div>
+              </div>
+
+              <div class="admin-card admin-detail-card">
+                <div class="admin-card-head">
+                  <div>
+                    <h3 id="feedback-detail-title">Карточка заявки</h3>
+                    <p class="admin-note" id="feedback-detail-summary">Выберите тикет слева, чтобы увидеть описание, историю и действия.</p>
+                  </div>
+                </div>
+                <div class="admin-meta" id="feedback-detail"></div>
+                <div class="admin-field admin-feedback-comment-field">
+                  <label for="feedback-admin-comment">Комментарий</label>
+                  <textarea
+                    id="feedback-admin-comment"
+                    class="admin-textarea"
+                    rows="5"
+                    placeholder="Комментарий обязателен для смены статуса"
+                  ></textarea>
+                </div>
+                <div class="admin-toolbar admin-feedback-actions">
+                  <button type="button" class="admin-inline-btn" id="feedback-start-btn">В работу</button>
+                  <button type="button" class="admin-inline-btn admin-inline-btn--brand" id="feedback-review-btn">На проверку</button>
+                  <button type="button" class="admin-inline-btn" id="feedback-complete-btn">Готово</button>
+                  <button type="button" class="admin-inline-btn admin-inline-btn--danger" id="feedback-reject-btn">Отклонить</button>
+                </div>
+              </div>
+            </div>
+          </section>
+
           <section class="admin-section" id="section-settings" data-section="settings">
             <div class="admin-section-head">
               <div>
@@ -854,6 +980,50 @@
                 <div class="admin-meta" id="settings-runtime"></div>
               </div>
             </div>
+
+            <div class="admin-card">
+              <div class="admin-card-head">
+                <div>
+                  <h3>API-ключи для BI / Qlik Sense</h3>
+                  <p class="admin-note">
+                    Ключ можно передавать в REST connector через заголовок <span class="admin-code">X-API-Key</span>
+                    или <span class="admin-code">Authorization: Bearer &lt;key&gt;</span>. Сам ключ показывается только один раз при создании.
+                  </p>
+                </div>
+              </div>
+              <form class="admin-toolbar" id="api-key-form">
+                <div class="admin-field" style="flex: 1 1 320px">
+                  <label for="api-key-name">Название ключа</label>
+                  <input id="api-key-name" class="admin-input" type="text" placeholder="Qlik Sense prod connector" autocomplete="off" />
+                </div>
+                <button type="submit" class="admin-btn" id="api-key-create-btn">Создать API-ключ</button>
+              </form>
+              <div class="admin-api-key-secret" id="api-key-secret-box" hidden>
+                <div>
+                  <strong>Новый ключ</strong>
+                  <p class="admin-note">Скопируйте сейчас: после обновления страницы полный ключ больше не показывается.</p>
+                </div>
+                <div class="admin-secret-row">
+                  <input id="api-key-secret" class="admin-input admin-code" type="text" readonly />
+                  <button type="button" class="admin-btn-secondary" id="api-key-copy-btn">Скопировать</button>
+                </div>
+              </div>
+              <div class="admin-table-wrap">
+                <table class="admin-table">
+                  <thead>
+                    <tr>
+                      <th>Название</th>
+                      <th>Префикс</th>
+                      <th>Статус</th>
+                      <th>Создан</th>
+                      <th>Последнее использование</th>
+                      <th>Действия</th>
+                    </tr>
+                  </thead>
+                  <tbody id="api-keys-body"></tbody>
+                </table>
+              </div>
+            </div>
           </section>
 
           <section class="admin-section" id="section-audit" data-section="audit">
@@ -887,6 +1057,35 @@
       </main>
     </div>
 
-    <script src="/static/admin.js?v=4"></script>
+    <dialog class="admin-dialog" id="user-reject-dialog" aria-labelledby="user-reject-title">
+      <form method="dialog" class="admin-dialog-card" id="user-reject-form">
+        <div class="admin-dialog-head">
+          <div>
+            <h3 id="user-reject-title">Отказать в регистрации</h3>
+            <p class="admin-note" id="user-reject-subtitle">
+              Укажите причину отказа. Пользователь увидит это сообщение при попытке входа.
+            </p>
+          </div>
+          <button type="button" class="admin-dialog-close" id="user-reject-cancel-x" aria-label="Закрыть">×</button>
+        </div>
+        <div class="admin-field">
+          <label for="user-reject-reason">Причина отказа</label>
+          <textarea
+            id="user-reject-reason"
+            class="admin-textarea"
+            rows="5"
+            placeholder="Например: заявка не подтверждена руководителем или указаны некорректные данные."
+            required
+          ></textarea>
+        </div>
+        <p class="admin-dialog-error" id="user-reject-error" hidden>Укажите причину отказа.</p>
+        <div class="admin-dialog-actions">
+          <button type="button" class="admin-btn-secondary" id="user-reject-cancel">Отмена</button>
+          <button type="submit" class="admin-btn-danger" id="user-reject-submit">Отказать</button>
+        </div>
+      </form>
+    </dialog>
+
+    <script src="/static/admin.js?v=10"></script>
   </body>
 </html>

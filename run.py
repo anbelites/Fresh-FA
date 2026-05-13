@@ -99,8 +99,14 @@ from src.cuda_runtime_path import ensure_nvidia_pip_libs
 
 ensure_nvidia_pip_libs()
 
-from src.database import DB, init_db, migrate_checklists_from_config
-from src.local_auth import hash_local_password, normalize_local_username
+from src.database import (
+    DB,
+    USER_APPROVAL_APPROVED,
+    corporate_email_for_username,
+    init_db,
+    migrate_checklists_from_config,
+)
+from src.local_auth import hash_local_password, normalize_local_username, validate_local_username
 from src.paths import CONFIG_DIR, TRANSCRIPT_DIR, VIDEO_DIR
 from src.pipeline import (
     emotion_only_from_transcript,
@@ -111,17 +117,37 @@ from src.pipeline import (
 )
 
 
-def _cli_checklist_db() -> tuple[DB, Path]:
+def _cli_db() -> DB:
     """Инициализация SQLite и чеклистов (импорт YAML при первом запуске)."""
     init_db()
     db = DB()
     migrate_checklists_from_config(
         db,
         config_dir=CONFIG_DIR,
-        active_marker=CONFIG_DIR / ".active_criteria",
         delete_source_files=True,
     )
-    return db, Path(db.get_active_checklist_slug())
+    return db
+
+
+def _cli_checklist_path(db: DB, raw: str) -> Path:
+    slug = (raw or "").strip()
+    if slug.lower().endswith((".yaml", ".yml")):
+        slug = Path(slug).stem
+    if not slug:
+        raise ValueError("Укажите чеклист через --criteria")
+    if not db.checklist_exists(slug):
+        raise ValueError(f"Чеклист не найден: {slug}")
+    return Path(slug)
+
+
+def _add_required_criteria_arg(parser: argparse.ArgumentParser) -> None:
+    parser.add_argument(
+        "--criteria",
+        "--checklist",
+        dest="criteria",
+        required=True,
+        help="Slug чеклиста в БД (обязателен)",
+    )
 
 
 def main() -> None:
@@ -134,6 +160,7 @@ def main() -> None:
         action="store_true",
         help="Только транскрипт, без оценки (без OPENAI_API_KEY)",
     )
+    _add_required_criteria_arg(p_all)
 
     p_one = sub.add_parser("process", help="Один видео- или аудиофайл (путь к файлу)")
     p_one.add_argument("video", type=Path, help="Файл видео или аудио")
@@ -142,6 +169,7 @@ def main() -> None:
         action="store_true",
         help="Только транскрипт",
     )
+    _add_required_criteria_arg(p_one)
 
     p_ev = sub.add_parser(
         "eval-only",
@@ -153,6 +181,7 @@ def main() -> None:
         nargs="?",
         help="Один файл транскрипта; если не указан — все *.json в 02.Transcript",
     )
+    _add_required_criteria_arg(p_ev)
 
     p_em = sub.add_parser(
         "emotion-only",
@@ -190,7 +219,7 @@ def main() -> None:
         "user-add",
         help="Создать или обновить локального пользователя в SQLite",
     )
-    p_user_add.add_argument("username", help="Логин локального пользователя")
+    p_user_add.add_argument("username", help="Логин локального пользователя: первая часть почты до @")
     p_user_add.add_argument("--password", required=True, help="Пароль")
     p_user_add.add_argument("--display-name", default="", help="Отображаемое имя")
     p_user_add.add_argument(
@@ -209,14 +238,14 @@ def main() -> None:
         "user-set-password",
         help="Сменить пароль локального пользователя",
     )
-    p_user_set_pw.add_argument("username", help="Логин локального пользователя")
+    p_user_set_pw.add_argument("username", help="Логин локального пользователя: первая часть почты до @")
     p_user_set_pw.add_argument("--password", required=True, help="Новый пароль")
 
     p_user_toggle = sub.add_parser(
         "user-set-active",
         help="Включить или отключить локального пользователя",
     )
-    p_user_toggle.add_argument("username", help="Логин локального пользователя")
+    p_user_toggle.add_argument("username", help="Логин локального пользователя: первая часть почты до @")
     p_user_toggle.add_argument(
         "--active",
         choices=("0", "1"),
@@ -227,7 +256,11 @@ def main() -> None:
     args = parser.parse_args()
 
     if args.cmd == "process-all":
-        db, crit = _cli_checklist_db()
+        db = _cli_db()
+        try:
+            crit = _cli_checklist_path(db, args.criteria)
+        except ValueError as e:
+            parser.error(str(e))
         videos = list_videos(VIDEO_DIR)
         if not videos:
             print(f"Нет видео или аудио в {VIDEO_DIR}", file=sys.stderr)
@@ -245,7 +278,11 @@ def main() -> None:
         return
 
     if args.cmd == "process":
-        db, crit = _cli_checklist_db()
+        db = _cli_db()
+        try:
+            crit = _cli_checklist_path(db, args.criteria)
+        except ValueError as e:
+            parser.error(str(e))
         tr, ev, tone = process_one_video(
             args.video, skip_eval=args.skip_eval, db=db, criteria_path=crit
         )
@@ -257,7 +294,11 @@ def main() -> None:
         return
 
     if args.cmd == "eval-only":
-        db, crit = _cli_checklist_db()
+        db = _cli_db()
+        try:
+            crit = _cli_checklist_path(db, args.criteria)
+        except ValueError as e:
+            parser.error(str(e))
         if args.transcript:
             paths = [args.transcript.resolve()]
         else:
@@ -307,19 +348,22 @@ def main() -> None:
         init_db()
         db = DB()
         username = normalize_local_username(args.username)
-        if not username:
-            print("Пустой username", file=sys.stderr)
+        username_error = validate_local_username(username)
+        if username_error:
+            print(username_error, file=sys.stderr)
             sys.exit(1)
         user = db.upsert_user(
             username,
             password_hash=hash_local_password(args.password),
             display_name=(args.display_name or "").strip() or None,
+            corporate_email=corporate_email_for_username(username),
             role=args.role,
+            approval_status=USER_APPROVAL_APPROVED,
             is_active=True,
         )
         print(
             f"Сохранён пользователь {user['username']} "
-            f"(role={user['role']}, active={user['is_active']})"
+            f"(role={user['role']}, active={user['is_active']}, email={user.get('corporate_email') or '—'})"
         )
         return
 
@@ -332,8 +376,9 @@ def main() -> None:
             return
         for user in users:
             display_name = user.get("display_name") or ""
+            email = user.get("corporate_email") or ""
             print(
-                f"{user['username']}\trole={user['role']}\tactive={user['is_active']}\t{display_name}"
+                f"{user['username']}\t{email}\trole={user['role']}\tactive={user['is_active']}\t{display_name}"
             )
         return
 

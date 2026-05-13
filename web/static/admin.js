@@ -12,6 +12,7 @@ const SECTION_LABELS = {
   videos: "Видео",
   checklists: "Чеклисты",
   glossary: "Глоссарий",
+  feedback: "Обратная связь",
   settings: "Настройки",
   audit: "Аудит",
 };
@@ -25,7 +26,12 @@ const state = {
   videos: [],
   glossary: [],
   glossaryCategories: [],
+  feedback: [],
+  feedbackTypes: [],
+  feedbackStatuses: [],
+  feedbackCounts: {},
   audit: [],
+  apiKeys: [],
   settings: null,
   selectedJobId: null,
   selectedUser: null,
@@ -33,6 +39,7 @@ const state = {
   selectedChecklist: null,
   selectedTrainingType: null,
   selectedGlossaryId: null,
+  selectedFeedbackId: null,
   checklistContent: null,
   activeSection: "overview",
   lastUpdatedAt: null,
@@ -163,6 +170,60 @@ function makePill(label, tone = "muted") {
   return `<span class="admin-pill" data-tone="${escapeHtml(tone)}">${escapeHtml(label)}</span>`;
 }
 
+function corporateEmailForUser(item) {
+  const explicit = String((item && item.corporate_email) || "").trim();
+  if (explicit) return explicit;
+  const username = String((item && item.username) || "").trim();
+  return username && !username.includes("@") ? `${username}@freshauto.ru` : "";
+}
+
+function userAccessStatus(item) {
+  const raw = String((item && item.access_status) || "").trim().toLowerCase();
+  if (raw) return raw;
+  if (item && item.is_pending_approval) return "pending";
+  return item && item.is_active ? "active" : "inactive";
+}
+
+function userStatusPill(item) {
+  const status = userAccessStatus(item);
+  if (status === "pending") return makePill("на подтверждении", "warn");
+  if (status === "rejected") return makePill("отказано", "danger");
+  if (status === "active") return makePill("active", "ok");
+  return makePill("disabled", "danger");
+}
+
+function feedbackTypeLabel(value) {
+  const item = (state.feedbackTypes || []).find((row) => row.value === value);
+  return item ? item.label : value || "—";
+}
+
+function feedbackRatingLabel(item) {
+  const rating = Number((item && item.rating) || 0);
+  return rating > 0 ? "★".repeat(rating) : "—";
+}
+
+function feedbackStatusLabel(item) {
+  if (item && item.status_label) return item.status_label;
+  const value = String((item && item.status) || "");
+  const found = (state.feedbackStatuses || []).find((row) => row.value === value);
+  return found ? found.label : value || "—";
+}
+
+function feedbackStatusTone(status) {
+  if (status === "done") return "ok";
+  if (status === "rejected") return "danger";
+  if (status === "in_progress" || status === "returned") return "warn";
+  if (status === "review") return "muted";
+  return "muted";
+}
+
+function updateUsersPendingBadge(count) {
+  const badge = qs("users-pending-badge");
+  if (!badge) return;
+  badge.textContent = String(count || 0);
+  badge.hidden = !count;
+}
+
 function setSection(section) {
   state.activeSection = section;
   document.querySelectorAll(".admin-nav-btn").forEach((button) => {
@@ -213,7 +274,6 @@ function renderReferenceControls() {
   selectOptions(qs("video-location"), reference.locations || [], "id", "crm_name", "—");
   selectOptions(qs("video-manager"), reference.managers || [], "id", "name", "—");
   selectOptions(qs("video-training-type"), reference.training_types || [], "slug", "name", "—");
-  selectOptions(qs("active-checklist-select"), (reference.checklists || {}).files || [], "name", "display_name", "—");
   selectOptions(qs("new-checklist-copy"), (reference.checklists || {}).files || [], "name", "display_name", "Пустой шаблон");
   selectOptions(qs("training-type-checklist-admin"), (reference.checklists || {}).files || [], "name", "display_name", "—");
 }
@@ -249,6 +309,10 @@ function restartAutoRefresh() {
     }
     if (state.activeSection === "glossary") {
       void loadGlossary().catch(() => {});
+      return;
+    }
+    if (state.activeSection === "feedback") {
+      void loadFeedback().catch(() => {});
     }
   }, currentRefreshSeconds() * 1000);
 }
@@ -263,11 +327,12 @@ function renderOverview() {
   qs("overview-kpis").innerHTML = `
     <div class="admin-card"><div class="admin-kpi-label">Видео</div><div class="admin-kpi-value">${videos.total ?? 0}</div><div class="admin-kpi-sub">processing: ${videos.processing ?? 0}</div></div>
     <div class="admin-card"><div class="admin-kpi-label">Jobs</div><div class="admin-kpi-value">${jobs.total ?? 0}</div><div class="admin-kpi-sub">running: ${jobs.running ?? 0}, error: ${jobs.error ?? 0}</div></div>
-    <div class="admin-card"><div class="admin-kpi-label">Пользователи</div><div class="admin-kpi-value">${users.total ?? 0}</div><div class="admin-kpi-sub">admin: ${users.admins ?? 0}, active: ${users.active ?? 0}</div></div>
+    <div class="admin-card"><div class="admin-kpi-label">Пользователи</div><div class="admin-kpi-value">${users.total ?? 0}</div><div class="admin-kpi-sub">pending: ${users.pending_approval ?? 0}, active: ${users.active ?? 0}</div></div>
     <div class="admin-card"><div class="admin-kpi-label">Чеклисты</div><div class="admin-kpi-value">${counts.checklists ?? 0}</div><div class="admin-kpi-sub">training types: ${counts.training_types ?? 0}</div></div>
     <div class="admin-card"><div class="admin-kpi-label">Локации</div><div class="admin-kpi-value">${counts.locations ?? 0}</div><div class="admin-kpi-sub">managers: ${counts.managers ?? 0}</div></div>
     <div class="admin-card"><div class="admin-kpi-label">Оценки</div><div class="admin-kpi-value">${data.analytics?.total_evaluations ?? 0}</div><div class="admin-kpi-sub">avg: ${data.analytics?.average_score ?? "—"}</div></div>
   `;
+  updateUsersPendingBadge(Number(users.pending_approval || 0));
 
   const runtime = data.runtime || {};
   qs("overview-runtime").innerHTML = `
@@ -363,25 +428,86 @@ function renderJobs() {
   `;
 }
 
+function filteredUsers() {
+  const query = String(qs("users-query")?.value || "").trim().toLowerCase();
+  const status = String(qs("users-status-filter")?.value || "").trim();
+  const source = String(qs("users-source-filter")?.value || "").trim();
+  const role = String(qs("users-role-filter")?.value || "").trim();
+  return [...(state.users || [])]
+    .filter((item) => {
+      if (status && userAccessStatus(item) !== status) return false;
+      if (source && String(item.auth_source || "") !== source) return false;
+      if (role && String(item.effective_role || item.stored_role || "") !== role) return false;
+      if (!query) return true;
+      const haystack = [
+        item.username,
+        corporateEmailForUser(item),
+        item.full_name,
+        item.display_name,
+        item.location_name,
+        item.department_label,
+      ].join(" ").toLowerCase();
+      return haystack.includes(query);
+    })
+    .sort((a, b) => {
+      const ap = userAccessStatus(a) === "pending" ? 0 : 1;
+      const bp = userAccessStatus(b) === "pending" ? 0 : 1;
+      if (ap !== bp) return ap - bp;
+      return String(a.username || "").localeCompare(String(b.username || ""), "ru");
+    });
+}
+
+function renderPendingUsers() {
+  const pending = (state.users || []).filter((item) => userAccessStatus(item) === "pending");
+  const list = qs("users-pending-list");
+  const count = qs("users-pending-count");
+  if (count) count.textContent = `${pending.length} ${pending.length === 1 ? "заявка" : "заявок"}`;
+  updateUsersPendingBadge(pending.length);
+  if (!list) return;
+  if (!pending.length) {
+    list.innerHTML = '<div class="admin-empty">Нет пользователей на подтверждении.</div>';
+    return;
+  }
+  list.innerHTML = pending.map((item) => `
+    <div class="admin-pending-user">
+      <div>
+        <strong>${escapeHtml(item.full_name || item.display_name || item.username || "—")}</strong>
+        <div class="admin-note">${escapeHtml(item.username || "—")} · ${escapeHtml(corporateEmailForUser(item) || "—")} · ${escapeHtml(item.location_name || item.location_id || "—")} · ${escapeHtml(item.department_label || "—")}</div>
+      </div>
+      <div class="admin-table-actions">
+        <button type="button" class="admin-inline-btn admin-inline-btn--brand" data-user-action="approve" data-username="${escapeHtml(item.username)}">Подтвердить</button>
+        <button type="button" class="admin-inline-btn admin-inline-btn--danger" data-user-action="reject" data-username="${escapeHtml(item.username)}">Отказать</button>
+      </div>
+    </div>
+  `).join("");
+}
+
 function renderUsers() {
   const tbody = qs("users-body");
+  const usersTable = tbody?.closest("table");
+  usersTable?.querySelectorAll("thead th").forEach((th) => {
+    if (String(th.textContent || "").trim().toLowerCase() === "действия") th.remove();
+  });
   tbody.innerHTML = "";
-  for (const item of state.users || []) {
+  renderPendingUsers();
+  const items = filteredUsers();
+  for (const item of items) {
     const row = document.createElement("tr");
     row.dataset.username = item.username;
     row.classList.toggle("is-selected", state.selectedUser === item.username);
     row.innerHTML = `
       <td class="admin-code">${escapeHtml(item.username)}</td>
+      <td>${escapeHtml(corporateEmailForUser(item) || "—")}</td>
       <td>${escapeHtml(item.full_name || item.display_name || "—")}</td>
       <td>${escapeHtml(item.auth_source || "—")}</td>
       <td>${escapeHtml(item.location_name || item.location_id || "—")}</td>
       <td>${escapeHtml(item.department_label || "—")}</td>
       <td>${makePill(item.effective_role || "user", item.is_admin ? "ok" : "muted")}</td>
-      <td>${makePill(item.is_active ? "active" : "disabled", item.is_active ? "ok" : "danger")}</td>
+      <td>${userStatusPill(item)}</td>
     `;
     tbody.appendChild(row);
   }
-  if (!tbody.children.length) tbody.innerHTML = '<tr><td colspan="7" class="admin-empty">Нет пользователей.</td></tr>';
+  if (!tbody.children.length) tbody.innerHTML = '<tr><td colspan="8" class="admin-empty">Нет пользователей по выбранным фильтрам.</td></tr>';
 }
 
 function renderUserQuotaSummary(item) {
@@ -400,6 +526,13 @@ function renderUserQuotaSummary(item) {
   `;
 }
 
+function updateUserCorporateEmailPreview() {
+  const username = String(qs("user-username")?.value || "").trim().toLowerCase();
+  const node = qs("user-corporate-email");
+  if (!node) return;
+  node.value = username && !username.includes("@") ? `${username}@freshauto.ru` : "";
+}
+
 function resetUserForm() {
   state.selectedUser = null;
   qs("user-form-title").textContent = "Новый пользователь";
@@ -408,6 +541,7 @@ function resetUserForm() {
   qs("user-username").disabled = false;
   qs("user-auth-source").disabled = false;
   qs("user-username").value = "";
+  qs("user-corporate-email").value = "";
   qs("user-auth-source").value = "local";
   qs("user-password").value = "";
   qs("user-full-name").value = "";
@@ -418,9 +552,11 @@ function resetUserForm() {
   qs("user-daily-upload-limit").value = "";
   qs("user-max-queued-jobs").value = "";
   qs("user-max-running-jobs").value = "";
+  qs("user-approve-btn").disabled = true;
   qs("user-activate-btn").disabled = true;
   qs("user-deactivate-btn").disabled = true;
   qs("user-reset-password-btn").disabled = true;
+  qs("user-delete-btn").disabled = true;
   renderUserQuotaSummary(null);
   renderUsers();
 }
@@ -432,13 +568,17 @@ function fillUserForm(username) {
   qs("user-form-title").textContent = `Пользователь ${username}`;
   qs("user-form-meta").textContent = [
     item.auth_source ? `Источник: ${item.auth_source}` : null,
+    corporateEmailForUser(item),
     item.location_name || item.location_id,
     item.department_label,
+    item.approved_at ? `Подтверждён: ${formatDateTime(item.approved_at)}` : null,
+    item.rejection_reason ? `Отказ: ${item.rejection_reason}` : null,
   ].filter(Boolean).join(" · ") || "Редактирование профиля и прав доступа.";
   qs("user-save-btn").textContent = "Сохранить изменения";
   qs("user-username").disabled = true;
   qs("user-auth-source").disabled = true;
   qs("user-username").value = item.username || "";
+  qs("user-corporate-email").value = corporateEmailForUser(item) || "";
   qs("user-auth-source").value = item.auth_source || "local";
   qs("user-password").value = "";
   qs("user-full-name").value = item.full_name || "";
@@ -449,9 +589,14 @@ function fillUserForm(username) {
   qs("user-daily-upload-limit").value = item.daily_upload_limit ?? "";
   qs("user-max-queued-jobs").value = item.max_queued_jobs ?? "";
   qs("user-max-running-jobs").value = item.max_running_jobs ?? "";
-  qs("user-activate-btn").disabled = Boolean(item.is_active);
-  qs("user-deactivate-btn").disabled = !Boolean(item.is_active);
+  const pending = userAccessStatus(item) === "pending";
+  qs("user-approve-btn").disabled = !pending;
+  qs("user-activate-btn").disabled = Boolean(item.is_active) || pending;
+  qs("user-deactivate-btn").disabled = !Boolean(item.is_active) && !pending;
   qs("user-reset-password-btn").disabled = item.auth_source !== "local";
+  qs("user-delete-btn").disabled =
+    Boolean(item.forced_admin) ||
+    String(item.username || "").toLowerCase() === String(state.me?.user || "").toLowerCase();
   renderUserQuotaSummary(item);
   renderUsers();
 }
@@ -470,7 +615,7 @@ function renderVideos() {
       <td>${escapeHtml(item.manager_name || item.manager_id || "—")}</td>
       <td>${escapeHtml(item.location_name || item.location_id || "—")}</td>
       <td>${makePill(pipelineStatus, pipelineStatus === "error" ? "danger" : pipelineStatus === "running" ? "ok" : pipelineStatus === "queued" ? "warn" : "muted")}</td>
-      <td>${escapeHtml(item.checklist_slug_snapshot || "—")}</td>
+      <td>${escapeHtml(item.checklist_display_name_snapshot || item.checklist_slug_snapshot || "—")}</td>
     `;
     tbody.appendChild(row);
   }
@@ -531,7 +676,6 @@ function fillVideoForm(stem) {
 
 function renderChecklists() {
   const files = (state.reference?.checklists || {}).files || [];
-  const active = (state.reference?.checklists || {}).active || "";
   const tbody = qs("checklists-body");
   tbody.innerHTML = "";
   for (const item of files) {
@@ -542,12 +686,11 @@ function renderChecklists() {
       <td class="admin-code">${escapeHtml(item.name)}</td>
       <td>${escapeHtml(item.display_name || item.name)}</td>
       <td>${escapeHtml(departmentLabel(item.department))}</td>
-      <td>${escapeHtml(item.version || "1")}${item.name === active ? " · active" : ""}</td>
+      <td>${escapeHtml(item.version || "1")}</td>
     `;
     tbody.appendChild(row);
   }
   if (!tbody.children.length) tbody.innerHTML = '<tr><td colspan="4" class="admin-empty">Нет чеклистов.</td></tr>';
-  qs("active-checklist-select").value = active;
 }
 
 function clearChecklistEditor() {
@@ -788,6 +931,134 @@ function glossaryPayloadFromForm() {
   };
 }
 
+function renderFeedbackFilterOptions() {
+  const statusSelect = qs("feedback-status-filter");
+  const typeSelect = qs("feedback-type-filter");
+  if (statusSelect) {
+    const current = statusSelect.value;
+    statusSelect.innerHTML = '<option value="">Все</option>';
+    for (const item of state.feedbackStatuses || []) {
+      const count = state.feedbackCounts?.[item.value];
+      const option = document.createElement("option");
+      option.value = item.value;
+      option.textContent = count == null ? item.label : `${item.label} (${count})`;
+      statusSelect.appendChild(option);
+    }
+    if ([...statusSelect.options].some((option) => option.value === current)) statusSelect.value = current;
+  }
+  if (typeSelect) {
+    const current = typeSelect.value;
+    typeSelect.innerHTML = '<option value="">Все</option>';
+    for (const item of state.feedbackTypes || []) {
+      const option = document.createElement("option");
+      option.value = item.value;
+      option.textContent = item.label;
+      typeSelect.appendChild(option);
+    }
+    if ([...typeSelect.options].some((option) => option.value === current)) typeSelect.value = current;
+  }
+}
+
+function feedbackEventsHtml(item) {
+  const events = item?.events || [];
+  if (!events.length) return '<p class="admin-note">История пока пустая.</p>';
+  return `
+    <div class="admin-feedback-events">
+      ${events
+        .map(
+          (event) => `
+            <div class="admin-feedback-event">
+              <div><strong>${escapeHtml(event.action || "—")}</strong> · ${escapeHtml(formatDateTime(event.created_at))}</div>
+              <div class="admin-note">${escapeHtml(event.actor || "system")} · ${escapeHtml(event.status_from || "—")} → ${escapeHtml(event.status_to || "—")}</div>
+              ${event.comment ? `<p>${escapeHtml(event.comment)}</p>` : ""}
+            </div>
+          `,
+        )
+        .join("")}
+    </div>
+  `;
+}
+
+function renderFeedback() {
+  renderFeedbackFilterOptions();
+  const tbody = qs("feedback-body");
+  const detail = qs("feedback-detail");
+  const summary = qs("feedback-detail-summary");
+  const title = qs("feedback-detail-title");
+  const comment = qs("feedback-admin-comment");
+  if (!tbody || !detail) return;
+  tbody.innerHTML = "";
+  for (const item of state.feedback || []) {
+    const row = document.createElement("tr");
+    row.dataset.feedbackId = item.id;
+    row.classList.toggle("is-selected", item.id === state.selectedFeedbackId);
+    row.innerHTML = `
+      <td class="admin-code">${escapeHtml(item.id || "—")}</td>
+      <td>${escapeHtml(item.user_display_name || item.user_username || "—")}</td>
+      <td>${escapeHtml(formatDateTime(item.created_at))}</td>
+      <td>${escapeHtml(feedbackTypeLabel(item.feedback_type))}</td>
+      <td>${escapeHtml(item.target_label || item.target_id || "—")}</td>
+      <td>${escapeHtml(feedbackRatingLabel(item))}</td>
+      <td>${makePill(feedbackStatusLabel(item), feedbackStatusTone(item.status))}</td>
+    `;
+    tbody.appendChild(row);
+  }
+  if (!tbody.children.length) {
+    tbody.innerHTML = '<tr><td colspan="7" class="admin-empty">Заявки не найдены.</td></tr>';
+  }
+
+  const selected = (state.feedback || []).find((item) => item.id === state.selectedFeedbackId) || null;
+  const buttons = {
+    start: qs("feedback-start-btn"),
+    review: qs("feedback-review-btn"),
+    complete: qs("feedback-complete-btn"),
+    reject: qs("feedback-reject-btn"),
+  };
+  if (!selected) {
+    if (title) title.textContent = "Карточка заявки";
+    if (summary) summary.textContent = "Выберите тикет слева, чтобы увидеть описание, историю и действия.";
+    detail.innerHTML = '<div class="admin-meta__row"><span class="admin-meta__key">Заявка</span><strong>Не выбрана</strong></div>';
+    if (comment) {
+      comment.value = "";
+      comment.disabled = true;
+    }
+    Object.values(buttons).forEach((button) => {
+      if (button) button.disabled = true;
+    });
+    return;
+  }
+
+  if (title) title.textContent = selected.id || "Карточка заявки";
+  if (summary) {
+    summary.textContent = `${feedbackStatusLabel(selected)} · ${feedbackTypeLabel(selected.feedback_type)} · ${selected.user_display_name || selected.user_username || "—"}`;
+  }
+  if (comment) comment.disabled = false;
+  detail.innerHTML = `
+    <div class="admin-meta__row"><span class="admin-meta__key">Пользователь</span><strong>${escapeHtml(selected.user_display_name || selected.user_username || "—")}</strong></div>
+    <div class="admin-meta__row"><span class="admin-meta__key">Создано</span><strong>${escapeHtml(formatDateTime(selected.created_at))}</strong></div>
+    <div class="admin-meta__row"><span class="admin-meta__key">Тип</span><strong>${escapeHtml(feedbackTypeLabel(selected.feedback_type))}</strong></div>
+    <div class="admin-meta__row"><span class="admin-meta__key">Объект</span><strong>${escapeHtml(selected.target_label || selected.target_id || "—")}</strong></div>
+    <div class="admin-meta__row"><span class="admin-meta__key">Оценка</span><strong>${escapeHtml(feedbackRatingLabel(selected))}</strong></div>
+    <div class="admin-meta__row"><span class="admin-meta__key">Статус</span><strong>${feedbackStatusLabel(selected)}</strong></div>
+    <div class="admin-feedback-detail-block"><strong>Описание</strong><p>${escapeHtml(selected.description || "—")}</p></div>
+    ${
+      selected.admin_comment
+        ? `<div class="admin-feedback-detail-block"><strong>Комментарий администратора</strong><p>${escapeHtml(selected.admin_comment)}</p></div>`
+        : ""
+    }
+    ${
+      selected.user_review_comment
+        ? `<div class="admin-feedback-detail-block"><strong>Комментарий пользователя</strong><p>${escapeHtml(selected.user_review_comment)}</p></div>`
+        : ""
+    }
+    <div class="admin-feedback-detail-block"><strong>История</strong>${feedbackEventsHtml(selected)}</div>
+  `;
+  if (buttons.start) buttons.start.disabled = !selected.can_admin_start;
+  if (buttons.review) buttons.review.disabled = !selected.can_admin_send_for_review;
+  if (buttons.complete) buttons.complete.disabled = !selected.can_admin_complete;
+  if (buttons.reject) buttons.reject.disabled = !selected.can_admin_reject;
+}
+
 function renderSettings() {
   const payload = state.settings || {};
   const runtime = payload.runtime || {};
@@ -810,6 +1081,35 @@ function renderSettings() {
     <div class="admin-meta__row"><span class="admin-meta__key">Queued jobs default</span><strong>${runtime.default_max_queued_jobs ?? "—"}</strong></div>
     <div class="admin-meta__row"><span class="admin-meta__key">Running jobs default</span><strong>${runtime.default_max_running_jobs ?? "—"}</strong></div>
   `;
+  renderApiKeys();
+}
+
+function renderApiKeys() {
+  const tbody = qs("api-keys-body");
+  if (!tbody) return;
+  tbody.innerHTML = "";
+  for (const item of state.apiKeys || []) {
+    const active = Boolean(item.is_active) && !item.revoked_at;
+    const row = document.createElement("tr");
+    row.dataset.apiKeyId = item.id || "";
+    row.innerHTML = `
+      <td>
+        <strong>${escapeHtml(item.name || "—")}</strong>
+        <div class="admin-note">${escapeHtml(item.created_by || "system")}</div>
+      </td>
+      <td class="admin-code">${escapeHtml(item.key_prefix || "—")}…</td>
+      <td>${makePill(active ? "active" : "revoked", active ? "ok" : "muted")}</td>
+      <td>${escapeHtml(formatDateTime(item.created_at))}</td>
+      <td>${escapeHtml(item.last_used_at ? formatDateTime(item.last_used_at) : "—")}</td>
+      <td>
+        <button type="button" class="admin-inline-btn admin-inline-btn--danger" data-api-key-revoke="${escapeHtml(item.id || "")}" ${active ? "" : "disabled"}>Отозвать</button>
+      </td>
+    `;
+    tbody.appendChild(row);
+  }
+  if (!tbody.children.length) {
+    tbody.innerHTML = '<tr><td colspan="6" class="admin-empty">API-ключей пока нет.</td></tr>';
+  }
 }
 
 function renderAudit() {
@@ -924,7 +1224,12 @@ async function loadChecklists() {
 }
 
 async function loadSettings() {
-  state.settings = await apiJson(`${API}/api/admin/settings`);
+  const [settings, apiKeys] = await Promise.all([
+    apiJson(`${API}/api/admin/settings`),
+    apiJson(`${API}/api/admin/api-keys`),
+  ]);
+  state.settings = settings;
+  state.apiKeys = apiKeys.items || [];
   renderSettings();
   restartAutoRefresh();
   touchUpdatedAt();
@@ -944,6 +1249,25 @@ async function loadGlossary() {
   touchUpdatedAt();
 }
 
+async function loadFeedback() {
+  const params = new URLSearchParams();
+  if (qs("feedback-query").value.trim()) params.set("q", qs("feedback-query").value.trim());
+  if (qs("feedback-status-filter").value) params.set("status", qs("feedback-status-filter").value);
+  if (qs("feedback-type-filter").value) params.set("feedback_type", qs("feedback-type-filter").value);
+  const data = await apiJson(`${API}/api/admin/feedback?${params.toString()}`);
+  state.feedback = data.items || [];
+  state.feedbackTypes = data.types || [];
+  state.feedbackStatuses = data.statuses || [];
+  state.feedbackCounts = data.counts || {};
+  if (state.selectedFeedbackId && !state.feedback.some((item) => item.id === state.selectedFeedbackId)) {
+    state.selectedFeedbackId = null;
+    const comment = qs("feedback-admin-comment");
+    if (comment) comment.value = "";
+  }
+  renderFeedback();
+  touchUpdatedAt();
+}
+
 async function loadAudit() {
   const data = await apiJson(`${API}/api/admin/audit?limit=200`);
   state.audit = data.items || [];
@@ -953,7 +1277,7 @@ async function loadAudit() {
 
 async function loadAll() {
   await loadBootstrap();
-  await Promise.all([loadOverview(), loadJobs(), loadUsers(), loadVideos(), loadChecklists(), loadGlossary(), loadAudit()]);
+  await Promise.all([loadOverview(), loadJobs(), loadUsers(), loadVideos(), loadChecklists(), loadSettings(), loadGlossary(), loadFeedback(), loadAudit()]);
 }
 
 async function handleRefreshAll() {
@@ -987,6 +1311,10 @@ async function handleUserSubmit(event) {
       max_running_jobs: numberInputValueOrNull("user-max-running-jobs"),
       is_active: boolValue(qs("user-is-active").value),
     };
+    if (body.auth_source === "local" && (body.username.includes("@") || /\s/u.test(body.username))) {
+      setFlash("Укажите логин без @: первую часть корпоративной почты.", "error", 0);
+      return;
+    }
     if (state.selectedUser) {
       await apiJson(`${API}/api/admin/users/${encodeURIComponent(state.selectedUser)}`, {
         method: "PUT",
@@ -1020,6 +1348,68 @@ async function handleUserSubmit(event) {
   }
 }
 
+function openUserRejectDialog(username) {
+  const dialog = qs("user-reject-dialog");
+  const form = qs("user-reject-form");
+  const reasonInput = qs("user-reject-reason");
+  const error = qs("user-reject-error");
+  const subtitle = qs("user-reject-subtitle");
+  const cancel = qs("user-reject-cancel");
+  const close = qs("user-reject-cancel-x");
+  if (!dialog || !form || !reasonInput || !error) {
+    return Promise.resolve("");
+  }
+
+  const user = (state.users || []).find((item) => item.username === username) || {};
+  const label = user.full_name || user.display_name || username || "пользователю";
+  if (subtitle) {
+    subtitle.textContent = `Укажите причину отказа для ${label}. Пользователь увидит это сообщение при попытке входа.`;
+  }
+  reasonInput.value = "";
+  error.hidden = true;
+
+  return new Promise((resolve) => {
+    let settled = false;
+    const finish = (value) => {
+      if (settled) return;
+      settled = true;
+      form.removeEventListener("submit", onSubmit);
+      cancel?.removeEventListener("click", onCancel);
+      close?.removeEventListener("click", onCancel);
+      dialog.removeEventListener("cancel", onCancel);
+      dialog.removeEventListener("close", onClose);
+      if (dialog.open) dialog.close();
+      resolve(value);
+    };
+    const onSubmit = (event) => {
+      event.preventDefault();
+      const reason = String(reasonInput.value || "").trim();
+      if (!reason) {
+        error.hidden = false;
+        reasonInput.focus();
+        return;
+      }
+      finish(reason);
+    };
+    const onCancel = (event) => {
+      event.preventDefault();
+      finish("");
+    };
+    const onClose = () => {
+      finish("");
+    };
+
+    form.addEventListener("submit", onSubmit);
+    cancel?.addEventListener("click", onCancel);
+    close?.addEventListener("click", onCancel);
+    dialog.addEventListener("cancel", onCancel);
+    dialog.addEventListener("close", onClose);
+    if (typeof dialog.showModal === "function") dialog.showModal();
+    else dialog.setAttribute("open", "");
+    requestAnimationFrame(() => reasonInput.focus());
+  });
+}
+
 async function handleUserLifecycle(action) {
   if (!state.selectedUser) {
     setFlash("Сначала выберите пользователя.", "error", 0);
@@ -1039,6 +1429,31 @@ async function handleUserLifecycle(action) {
       });
       qs("user-password").value = "";
       setFlash("Пароль обновлён.", "ok");
+    } else if (action === "delete") {
+      const item = (state.users || []).find((row) => row.username === state.selectedUser) || {};
+      const label = item.full_name || item.display_name || state.selectedUser;
+      if (!window.confirm(`Удалить пользователя «${label}»? Это действие нельзя отменить.`)) return;
+      await apiJson(`${API}/api/admin/users/${encodeURIComponent(state.selectedUser)}`, {
+        method: "DELETE",
+      });
+      resetUserForm();
+      setFlash("Пользователь удалён.", "ok");
+    } else if (action === "approve") {
+      await apiJson(`${API}/api/admin/users/${encodeURIComponent(state.selectedUser)}/approve`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: "{}",
+      });
+      setFlash("Регистрация подтверждена. Пользователь может войти.", "ok");
+    } else if (action === "reject") {
+      const trimmedReason = await openUserRejectDialog(state.selectedUser);
+      if (!trimmedReason) return;
+      await apiJson(`${API}/api/admin/users/${encodeURIComponent(state.selectedUser)}/reject`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ reason: trimmedReason }),
+      });
+      setFlash("В регистрации отказано. Причина будет показана пользователю при входе.", "ok");
     } else {
       const path = action === "activate" ? "activate" : "deactivate";
       await apiJson(`${API}/api/admin/users/${encodeURIComponent(state.selectedUser)}/${path}`, {
@@ -1048,7 +1463,7 @@ async function handleUserLifecycle(action) {
       });
       setFlash(action === "activate" ? "Пользователь активирован." : "Пользователь отключён.", "ok");
     }
-    await Promise.all([loadUsers(), loadOverview()]);
+    await Promise.all([loadUsers(), loadOverview(), refreshReferenceData(), loadAudit()]);
   } catch (error) {
     setFlash(error.message || String(error), "error", 0);
   }
@@ -1103,6 +1518,12 @@ async function handleVideoAction(stem, action) {
       return;
     }
     if (action === "delete") {
+      const item = (state.videos || []).find((row) => row.stem === stem) || {};
+      const label = item.display_title || item.video_file || stem;
+      const ok = window.confirm(
+        `Видео «${label}» будет удалено безвозвратно.\n\nБудут удалены файл, транскрипт, тон, ручные и ИИ-оценки, сравнение и история задач. Продолжить?`,
+      );
+      if (!ok) return;
       await apiJson(`${API}/api/admin/videos/${encodeURIComponent(stem)}`, { method: "DELETE" });
     } else if (action === "restore") {
       await apiJson(`${API}/api/admin/videos/${encodeURIComponent(stem)}/restore`, {
@@ -1193,25 +1614,6 @@ async function handleChecklistDelete() {
     });
     setFlash("Чеклист удалён.", "ok");
     clearChecklistEditor();
-    await Promise.all([loadChecklists(), loadOverview(), loadAudit()]);
-  } catch (error) {
-    setFlash(error.message || String(error), "error", 0);
-  }
-}
-
-async function handleSetActiveChecklist() {
-  const selected = qs("active-checklist-select").value;
-  if (!selected) {
-    setFlash("Выберите активный чеклист.", "error", 0);
-    return;
-  }
-  try {
-    await apiJson(`${API}/api/admin/checklists/active`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ file: selected }),
-    });
-    setFlash("Активный чеклист обновлён.", "ok");
     await Promise.all([loadChecklists(), loadOverview(), loadAudit()]);
   } catch (error) {
     setFlash(error.message || String(error), "error", 0);
@@ -1337,6 +1739,66 @@ async function handleSettingsSubmit(event) {
   }
 }
 
+async function handleApiKeyCreate(event) {
+  event.preventDefault();
+  const nameEl = qs("api-key-name");
+  const button = qs("api-key-create-btn");
+  const name = String(nameEl?.value || "").trim();
+  if (!name) {
+    setFlash("Укажите название API-ключа.", "error", 0);
+    nameEl?.focus();
+    return;
+  }
+  setBusy(button, true);
+  try {
+    const data = await apiJson(`${API}/api/admin/api-keys`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name, role: "admin" }),
+    });
+    if (nameEl) nameEl.value = "";
+    const secretBox = qs("api-key-secret-box");
+    const secretInput = qs("api-key-secret");
+    if (secretBox && secretInput) {
+      secretInput.value = data.key?.api_key || "";
+      secretBox.hidden = false;
+    }
+    setFlash("API-ключ создан. Скопируйте его сейчас.", "ok", 5000);
+    await Promise.all([loadSettings(), loadAudit()]);
+  } catch (error) {
+    setFlash(error.message || String(error), "error", 0);
+  } finally {
+    setBusy(button, false);
+  }
+}
+
+async function copyApiKeySecret() {
+  const input = qs("api-key-secret");
+  const value = String(input?.value || "");
+  if (!value) return;
+  try {
+    await navigator.clipboard.writeText(value);
+    setFlash("API-ключ скопирован.", "ok", 2200);
+  } catch (_) {
+    input?.select();
+    setFlash("Не удалось скопировать автоматически. Ключ выделен в поле.", "info", 3500);
+  }
+}
+
+async function revokeApiKey(keyId) {
+  if (!keyId) return;
+  const item = (state.apiKeys || []).find((row) => row.id === keyId) || {};
+  const label = item.name || item.key_prefix || keyId;
+  if (!window.confirm(`Отозвать API-ключ «${label}»? Qlik больше не сможет использовать этот ключ.`)) return;
+  try {
+    await apiJson(`${API}/api/admin/api-keys/${encodeURIComponent(keyId)}`, { method: "DELETE" });
+    setFlash("API-ключ отозван.", "ok");
+    await Promise.all([loadSettings(), loadAudit()]);
+  } catch (error) {
+    setFlash(error.message || String(error), "error", 0);
+  }
+}
+
 async function handleGlossarySubmit(event) {
   event.preventDefault();
   const button = qs("glossary-save-btn");
@@ -1402,6 +1864,39 @@ async function handleGlossaryPreview() {
   }
 }
 
+async function handleFeedbackAction(action) {
+  if (!state.selectedFeedbackId) {
+    setFlash("Сначала выберите заявку обратной связи.", "error", 0);
+    return;
+  }
+  const commentEl = qs("feedback-admin-comment");
+  const comment = String((commentEl && commentEl.value) || "").trim();
+  if (!comment) {
+    setFlash("Укажите комментарий для смены статуса.", "error", 0);
+    commentEl?.focus();
+    return;
+  }
+  const endpoint = {
+    start: "start",
+    review: "send-for-review",
+    complete: "complete",
+    reject: "reject",
+  }[action];
+  if (!endpoint) return;
+  try {
+    await apiJson(`${API}/api/admin/feedback/${encodeURIComponent(state.selectedFeedbackId)}/${endpoint}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ comment }),
+    });
+    if (commentEl) commentEl.value = "";
+    setFlash("Статус заявки обновлён.", "ok");
+    await Promise.all([loadFeedback(), loadAudit(), loadOverview()]);
+  } catch (error) {
+    setFlash(error.message || String(error), "error", 0);
+  }
+}
+
 async function handleJobAction(jobId, action) {
   if (!jobId) {
     setFlash("Не удалось определить задачу.", "error", 0);
@@ -1450,9 +1945,17 @@ function bindEvents() {
 
   qs("user-form").addEventListener("submit", handleUserSubmit);
   qs("user-form-reset").addEventListener("click", resetUserForm);
+  qs("user-new-btn").addEventListener("click", resetUserForm);
+  qs("user-username").addEventListener("input", updateUserCorporateEmailPreview);
+  qs("users-query").addEventListener("input", renderUsers);
+  qs("users-status-filter").addEventListener("change", renderUsers);
+  qs("users-source-filter").addEventListener("change", renderUsers);
+  qs("users-role-filter").addEventListener("change", renderUsers);
+  qs("user-approve-btn").addEventListener("click", () => void handleUserLifecycle("approve"));
   qs("user-activate-btn").addEventListener("click", () => void handleUserLifecycle("activate"));
   qs("user-deactivate-btn").addEventListener("click", () => void handleUserLifecycle("deactivate"));
   qs("user-reset-password-btn").addEventListener("click", () => void handleUserLifecycle("reset-password"));
+  qs("user-delete-btn").addEventListener("click", () => void handleUserLifecycle("delete"));
 
   qs("video-form").addEventListener("submit", handleVideoSubmit);
   qs("video-resume-btn").addEventListener("click", () => void handleVideoAction(state.selectedVideo, "resume"));
@@ -1462,7 +1965,6 @@ function bindEvents() {
   qs("video-delete-btn").addEventListener("click", () => void handleVideoAction(state.selectedVideo, "delete"));
 
   qs("create-checklist-btn").addEventListener("click", () => void handleChecklistCreate());
-  qs("active-checklist-save").addEventListener("click", () => void handleSetActiveChecklist());
   qs("checklist-editor-form").addEventListener("submit", handleChecklistSave);
   qs("checklist-delete-btn").addEventListener("click", () => void handleChecklistDelete());
   qs("checklist-add-row").addEventListener("click", () => appendChecklistCriterionRow());
@@ -1482,7 +1984,17 @@ function bindEvents() {
   qs("glossary-disable-btn").addEventListener("click", () => void handleGlossaryDisable());
   qs("glossary-preview-btn").addEventListener("click", () => void handleGlossaryPreview());
 
+  qs("feedback-query").addEventListener("input", () => void loadFeedback());
+  qs("feedback-status-filter").addEventListener("change", () => void loadFeedback());
+  qs("feedback-type-filter").addEventListener("change", () => void loadFeedback());
+  qs("feedback-start-btn").addEventListener("click", () => void handleFeedbackAction("start"));
+  qs("feedback-review-btn").addEventListener("click", () => void handleFeedbackAction("review"));
+  qs("feedback-complete-btn").addEventListener("click", () => void handleFeedbackAction("complete"));
+  qs("feedback-reject-btn").addEventListener("click", () => void handleFeedbackAction("reject"));
+
   qs("settings-form").addEventListener("submit", handleSettingsSubmit);
+  qs("api-key-form").addEventListener("submit", handleApiKeyCreate);
+  qs("api-key-copy-btn").addEventListener("click", () => void copyApiKeySecret());
 
   qs("admin-logout").addEventListener("click", async () => {
     await apiFetch(`${API}/api/auth/logout`, { method: "POST" });
@@ -1491,6 +2003,17 @@ function bindEvents() {
 
   document.addEventListener("click", (event) => {
     const target = event.target;
+    const userAction = target.closest && target.closest("[data-user-action][data-username]");
+    if (userAction) {
+      const username = userAction.dataset.username;
+      if (userAction.dataset.userAction === "approve" || userAction.dataset.userAction === "reject") {
+        state.selectedUser = username;
+        void handleUserLifecycle(userAction.dataset.userAction);
+      } else if (username) {
+        fillUserForm(username);
+      }
+      return;
+    }
     const userRow = target.closest && target.closest("#users-body tr[data-username]");
     if (userRow) {
       fillUserForm(userRow.dataset.username);
@@ -1533,6 +2056,21 @@ function bindEvents() {
     const glossaryRow = target.closest && target.closest("#glossary-body tr[data-glossary-id]");
     if (glossaryRow) {
       fillGlossaryForm(glossaryRow.dataset.glossaryId);
+      return;
+    }
+
+    const feedbackRow = target.closest && target.closest("#feedback-body tr[data-feedback-id]");
+    if (feedbackRow) {
+      state.selectedFeedbackId = feedbackRow.dataset.feedbackId;
+      const comment = qs("feedback-admin-comment");
+      if (comment) comment.value = "";
+      renderFeedback();
+      return;
+    }
+
+    const apiKeyRevoke = target.closest && target.closest("[data-api-key-revoke]");
+    if (apiKeyRevoke) {
+      void revokeApiKey(apiKeyRevoke.dataset.apiKeyRevoke);
       return;
     }
 

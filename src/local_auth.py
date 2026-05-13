@@ -5,9 +5,10 @@ import base64
 import hashlib
 import hmac
 import os
+import re
 from typing import Any
 
-from src.database import DB
+from src.database import DB, USER_APPROVAL_PENDING, USER_APPROVAL_REJECTED
 
 _PBKDF2_ALGO = "sha256"
 _PBKDF2_ITERATIONS = int(os.environ.get("LOCAL_AUTH_PBKDF2_ITERATIONS", "600000"))
@@ -16,10 +17,28 @@ LOCAL_PASSWORD_POLICY_TEXT = (
     f"Пароль должен быть не короче {_PASSWORD_MIN_LENGTH} символов, содержать строчную и "
     "прописную букву, цифру и спецсимвол, без пробелов."
 )
+LOCAL_USERNAME_POLICY_TEXT = (
+    "Логин должен быть первой частью корпоративной почты до @: только латинские буквы, "
+    "цифры, точка, дефис или подчёркивание."
+)
+_LOCAL_USERNAME_RE = re.compile(r"^[a-z0-9](?:[a-z0-9._-]{0,126}[a-z0-9])?$")
 
 
 def normalize_local_username(raw: str) -> str:
     return (raw or "").strip().lower()
+
+
+def validate_local_username(username: str) -> str | None:
+    value = normalize_local_username(username)
+    if not value:
+        return "Укажите логин"
+    if "@" in value:
+        return "Укажите только первую часть корпоративной почты до @"
+    if any(ch.isspace() for ch in value):
+        return "Логин не должен содержать пробелы"
+    if not _LOCAL_USERNAME_RE.fullmatch(value):
+        return LOCAL_USERNAME_POLICY_TEXT
+    return None
 
 
 def validate_local_password_strength(password: str) -> str | None:
@@ -90,6 +109,12 @@ def verify_local_user_password(
     if not user:
         return None, "Пользователь не найден"
     if not int(user.get("is_active") or 0):
+        approval_status = str(user.get("approval_status") or "").strip().lower()
+        if approval_status == USER_APPROVAL_PENDING:
+            return None, "Доступ пока не открыт: ожидайте подтверждения регистрации администратором"
+        if approval_status == USER_APPROVAL_REJECTED:
+            reason = str(user.get("rejection_reason") or "").strip()
+            return None, reason or "В регистрации отказано. Обратитесь к администратору."
         return None, "Пользователь отключён"
     stored_hash = str(user.get("password_hash") or "")
     if not stored_hash or not verify_local_password(password, stored_hash):

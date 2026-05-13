@@ -81,6 +81,17 @@ const DEPARTMENT_LABELS = {
   "ОП": "Отдел продаж",
 };
 
+const LIBRARY_GROUPING_STORAGE_KEY = "fresh-fa-library-grouping-v1";
+const LIBRARY_GROUP_DEFINITIONS = [
+  { key: "training_type", label: "Тип тренировки" },
+  { key: "location", label: "Локация" },
+  { key: "manager", label: "Менеджер" },
+  { key: "uploader", label: "Кто выложил" },
+  { key: "checklist", label: "Чеклист" },
+  { key: "department", label: "Отдел" },
+];
+const LIBRARY_DEFAULT_GROUP_KEYS = ["training_type", "location", "manager"];
+
 let _transcriptMedia = { el: null, onTime: null };
 let _evalPlaybackSync = null;
 let _lastEvalScrollKey = null;
@@ -105,10 +116,16 @@ let _humanEvalDraftBaseline = "[]";
 /** Кеш ответа POST /compare-eval: пересчёт только если ИИ/человек на диске изменились. */
 let _compareEvalCache = null;
 let _authState = { auth_enabled: false, auth_type: "none", is_admin: false };
+let _feedbackItems = [];
+let _feedbackTypes = [];
+let _feedbackStatuses = [];
+let _feedbackReferences = { checklists: [], videos: [], departments: [], reference_targets: [] };
+let _feedbackRating = 5;
 let _metaTrainingTypes = [];
 let _trainingTypeEditingSlug = null;
 let _showDeletedLibrary = false;
 let _showForeignLibrary = false;
+let _libraryGroupingConfig = loadLibraryGroupingConfig();
 let _pendingUploadFiles = [];
 let _activeUploadItems = new Map();
 let _uploadQuota = null;
@@ -119,7 +136,7 @@ let _evalTransientState = {
   compareError: "",
   publishPending: false,
 };
-const ONBOARDING_TOUR_VERSION = 1;
+const ONBOARDING_TOUR_VERSION = 3;
 const ONBOARDING_TOUR_STORAGE_KEY = "fresh-fa-onboarding-version";
 const ONBOARDING_TOUR_PREVIEW_FILE = Object.freeze({
   name: "primer-zvonok.mp4",
@@ -485,6 +502,9 @@ let _onboardingTour = {
   target: null,
   metaOpenedByTour: false,
   metaPreviewOnly: false,
+  feedbackOpenedByTour: false,
+  feedbackPreviewOnly: false,
+  feedbackPreviewSnapshot: null,
   autoStartHandled: false,
   previewActive: false,
   previewSnapshot: null,
@@ -687,6 +707,62 @@ function departmentLabel(code) {
 
 function currentUserDepartment() {
   return String((_authState && _authState.department) || "").trim().toUpperCase() || "";
+}
+
+function libraryGroupDefinition(key) {
+  return LIBRARY_GROUP_DEFINITIONS.find((item) => item.key === key) || null;
+}
+
+function defaultLibraryGroupingConfig() {
+  return LIBRARY_GROUP_DEFINITIONS.map((item) => ({
+    key: item.key,
+    enabled: LIBRARY_DEFAULT_GROUP_KEYS.includes(item.key),
+  }));
+}
+
+function normalizeLibraryGroupingConfig(value) {
+  const source = Array.isArray(value) ? value : [];
+  const seen = new Set();
+  const out = [];
+  for (const raw of source) {
+    const key = String((raw && raw.key) || "").trim();
+    if (!key || seen.has(key) || !libraryGroupDefinition(key)) continue;
+    seen.add(key);
+    out.push({ key, enabled: Boolean(raw.enabled) });
+  }
+  for (const fallback of defaultLibraryGroupingConfig()) {
+    if (!seen.has(fallback.key)) out.push(fallback);
+  }
+  return out;
+}
+
+function loadLibraryGroupingConfig() {
+  try {
+    const raw = localStorage.getItem(LIBRARY_GROUPING_STORAGE_KEY);
+    if (raw) return normalizeLibraryGroupingConfig(JSON.parse(raw));
+  } catch (_) {
+    /* localStorage может быть недоступен в приватном режиме. */
+  }
+  return defaultLibraryGroupingConfig();
+}
+
+function saveLibraryGroupingConfig() {
+  try {
+    localStorage.setItem(LIBRARY_GROUPING_STORAGE_KEY, JSON.stringify(_libraryGroupingConfig));
+  } catch (_) {
+    /* Настройка не критична: без storage останется до перезагрузки страницы. */
+  }
+}
+
+function libraryGroupingIsDefault() {
+  const current = normalizeLibraryGroupingConfig(_libraryGroupingConfig);
+  const defaults = defaultLibraryGroupingConfig();
+  if (current.length !== defaults.length) return false;
+  return current.every((item, index) => item.key === defaults[index].key && item.enabled === defaults[index].enabled);
+}
+
+function activeLibraryGrouping() {
+  return normalizeLibraryGroupingConfig(_libraryGroupingConfig).filter((item) => item.enabled);
 }
 
 function itemPermissions(item) {
@@ -951,11 +1027,9 @@ function showAppConfirm(message, options = {}) {
 
 function setupSystemMessageDialog() {
   const dlg = document.getElementById("app-message-dialog");
-  const closeBtn = document.getElementById("app-message-close");
   const cancelBtn = document.getElementById("app-message-cancel");
   const okBtn = document.getElementById("app-message-ok");
-  if (!dlg || !closeBtn || !cancelBtn || !okBtn) return;
-  closeBtn.addEventListener("click", () => resolveAppMessageDialog(false));
+  if (!dlg || !cancelBtn || !okBtn) return;
   cancelBtn.addEventListener("click", () => resolveAppMessageDialog(false));
   okBtn.addEventListener("click", () => resolveAppMessageDialog(true));
   dlg.addEventListener("cancel", (e) => {
@@ -964,6 +1038,593 @@ function setupSystemMessageDialog() {
   });
   dlg.addEventListener("click", (e) => {
     if (e.target === dlg) resolveAppMessageDialog(false);
+  });
+}
+
+function feedbackFallbackTypes() {
+  return [
+    { value: "bug", label: "Ошибка или сбой" },
+    { value: "checklist_change", label: "Корректировка чеклиста" },
+    { value: "missing_functionality", label: "Запрос недостающей функции" },
+    { value: "ai_quality", label: "Качество оценки ИИ" },
+    { value: "transcription_quality", label: "Качество транскрибации" },
+    { value: "ux_improvement", label: "Улучшение интерфейса" },
+    { value: "performance", label: "Производительность и стабильность" },
+    { value: "data_reference", label: "Справочники и данные" },
+    { value: "other", label: "Другое предложение" },
+  ];
+}
+
+const FEEDBACK_TYPE_DETAILS = {
+  bug: {
+    intro: "Опишите ошибку или сбой так, чтобы его можно было повторить.",
+    label: "Что сломалось",
+    placeholder: "Где возникла ошибка, что вы нажали, какой результат ожидали и что увидели вместо этого?",
+    hint: "Если ошибка повторяется, укажите страницу, запись, время и текст сообщения об ошибке.",
+    ratingLabel: "Оценка стабильности",
+  },
+  checklist_change: {
+    intro: "Опишите, какие пункты чеклиста нужно изменить и почему.",
+    label: "Какие правки нужны",
+    placeholder: "Укажите чеклист, пункт, текущую формулировку и желаемое изменение.",
+    hint: "Чем точнее критерий и причина правки, тем проще согласовать изменение.",
+    ratingLabel: "Оценка чеклиста",
+    target: "checklist",
+    targetLabel: "Чеклист",
+    targetHint: "Сначала выберите отдел, затем чеклист, к которому относится предложение.",
+    departmentRequired: true,
+  },
+  missing_functionality: {
+    intro: "Расскажите, какой возможности сейчас не хватает в работе.",
+    label: "Какой функции не хватает",
+    placeholder: "Опишите сценарий: что хотите сделать, зачем это нужно и как это должно работать.",
+    hint: "Полезно указать, кому это нужно и как часто такой сценарий возникает.",
+    ratingLabel: "Оценка полноты функционала",
+  },
+  ai_quality: {
+    intro: "Опишите, где оценка ИИ кажется некорректной.",
+    label: "Что ИИ оценил не так",
+    placeholder: "Укажите запись, чеклист, пункт оценки и почему вывод ИИ кажется неверным.",
+    hint: "Если есть ожидаемый правильный ответ, добавьте его в описание.",
+    ratingLabel: "Оценка качества ИИ",
+  },
+  transcription_quality: {
+    intro: "Опишите проблему с распознаванием речи или ролями спикеров.",
+    label: "Что не так в транскрипте",
+    placeholder: "Укажите запись, примерное время фрагмента и что было распознано неправильно.",
+    hint: "Таймкоды и точная фраза сильно ускоряют проверку.",
+    ratingLabel: "Оценка транскрибации",
+    target: "video",
+    targetLabel: "Видео",
+    targetHint: "Выберите запись, где нужно проверить транскрибацию.",
+  },
+  ux_improvement: {
+    intro: "Предложите улучшение интерфейса или навигации.",
+    label: "Что улучшить в интерфейсе",
+    placeholder: "Опишите, какой экран неудобен, что сложно найти и как было бы понятнее.",
+    hint: "Лучше описывать конкретный рабочий сценарий, а не только общий дискомфорт.",
+    ratingLabel: "Оценка удобства интерфейса",
+  },
+  performance: {
+    intro: "Сообщите о медленной работе, зависаниях или нестабильности.",
+    label: "Где система тормозит",
+    placeholder: "Опишите действие, примерное время ожидания, размер файла или страницу, где стало медленно.",
+    hint: "Если проблема появилась после конкретного действия, укажите его.",
+    ratingLabel: "Оценка производительности",
+  },
+  data_reference: {
+    intro: "Опишите проблему со справочниками, пользователями, локациями или данными.",
+    label: "Какие данные исправить",
+    placeholder: "Укажите справочник, неверное значение и правильный вариант.",
+    hint: "Для справочников полезны точные названия локаций, менеджеров, отделов или типов тренировок.",
+    ratingLabel: "Оценка справочников",
+    target: "reference",
+    targetLabel: "Справочник",
+    targetHint: "Выберите, какой именно справочник нужно проверить или исправить.",
+  },
+  other: {
+    intro: "Опишите предложение или вопрос, который не подходит под остальные категории.",
+    label: "Описание предложения",
+    placeholder: "Расскажите, что хотите предложить и какой результат ожидаете.",
+    hint: "Добавьте контекст: где это пригодится и какой эффект даст.",
+    ratingLabel: "Оценка направления",
+  },
+};
+
+const FEEDBACK_READ_STORAGE_PREFIX = "fresh-fa-feedback-read-v1";
+
+function feedbackTypeDetails(value) {
+  return FEEDBACK_TYPE_DETAILS[value] || FEEDBACK_TYPE_DETAILS.other;
+}
+
+function feedbackTypeLabel(value) {
+  const item = (_feedbackTypes.length ? _feedbackTypes : feedbackFallbackTypes()).find((row) => row.value === value);
+  return item ? item.label : value || "—";
+}
+
+function feedbackStatusLabel(item) {
+  if (item && item.status_label) return item.status_label;
+  const status = String((item && item.status) || "");
+  const found = (_feedbackStatuses || []).find((row) => row.value === status);
+  return found ? found.label : status || "—";
+}
+
+function onboardingFeedbackMockReferences() {
+  return {
+    departments: [
+      { value: "ОО", label: "Отдел оценки" },
+      { value: "ОП", label: "Отдел продаж" },
+    ],
+    checklists: [
+      { value: "oo_visit_salon", label: "Отдел оценки · Визит в салон", department: "ОО" },
+      { value: "op_first_call", label: "Отдел продаж · Первый звонок", department: "ОП" },
+    ],
+    videos: [
+      { value: "demo-visit.mp4", label: "Пример: визит в салон" },
+      { value: "demo-call.mp4", label: "Пример: первый звонок" },
+    ],
+    reference_targets: [
+      { value: "locations", label: "Локации" },
+      { value: "managers", label: "Менеджеры" },
+      { value: "training_types", label: "Типы тренировок" },
+    ],
+  };
+}
+
+function onboardingFeedbackMockItems() {
+  return [
+    {
+      id: "FB-DEMO-1024",
+      feedback_type: "checklist_change",
+      rating: 4,
+      target_label: "Отдел оценки · Визит в салон",
+      status: "in_progress",
+      status_label: "В работе",
+      description:
+        "В чеклисте визита в салон нужно уточнить критерий про следующий шаг: сейчас неясно, засчитывать ли предложение перезвонить клиенту.",
+      admin_comment: "Проверяем формулировку вместе с руководителем отдела. Вернёмся с обновлённым текстом критерия.",
+      admin_updated_at: "2026-04-30T08:40:00Z",
+      created_at: "2026-04-29T15:20:00Z",
+      can_user_confirm: false,
+      can_user_return: false,
+    },
+    {
+      id: "FB-DEMO-1025",
+      feedback_type: "transcription_quality",
+      rating: 3,
+      target_label: "Пример: первый звонок",
+      status: "review",
+      status_label: "На проверке",
+      description:
+        "В транскрипте на 01:14 менеджер и клиент поменялись ролями, из-за этого комментарий ИИ выглядит неверным.",
+      admin_comment:
+        "Исправили роли спикеров и пересчитали оценку. Проверьте, пожалуйста, стал ли фрагмент корректным.",
+      admin_updated_at: "2026-04-30T10:05:00Z",
+      created_at: "2026-04-30T09:15:00Z",
+      can_user_confirm: true,
+      can_user_return: true,
+    },
+  ];
+}
+
+function feedbackReadStorageKey() {
+  return `${FEEDBACK_READ_STORAGE_PREFIX}:${String((_authState && _authState.user) || "anonymous")}`;
+}
+
+function loadFeedbackReadMap() {
+  try {
+    const raw = localStorage.getItem(feedbackReadStorageKey());
+    return raw ? JSON.parse(raw) || {} : {};
+  } catch (_) {
+    return {};
+  }
+}
+
+function saveFeedbackReadMap(map) {
+  try {
+    localStorage.setItem(feedbackReadStorageKey(), JSON.stringify(map || {}));
+  } catch (_) {
+    /* ignore storage errors */
+  }
+}
+
+function feedbackUnreadCount(items = _feedbackItems) {
+  const readMap = loadFeedbackReadMap();
+  return (items || []).filter((item) => {
+    const updated = String(item.admin_updated_at || "").trim();
+    if (!updated || !String(item.admin_comment || "").trim()) return false;
+    return readMap[String(item.id || "")] !== updated;
+  }).length;
+}
+
+function updateFeedbackBadge(count = feedbackUnreadCount()) {
+  const badge = document.getElementById("auth-feedback-badge");
+  if (!badge) return;
+  badge.textContent = String(count);
+  badge.hidden = !count;
+}
+
+function markFeedbackItemsRead(items = _feedbackItems) {
+  const readMap = loadFeedbackReadMap();
+  for (const item of items || []) {
+    const id = String(item.id || "").trim();
+    const updated = String(item.admin_updated_at || "").trim();
+    if (id && updated && String(item.admin_comment || "").trim()) {
+      readMap[id] = updated;
+    }
+  }
+  saveFeedbackReadMap(readMap);
+  updateFeedbackBadge(0);
+}
+
+async function feedbackApiJson(url, init) {
+  const response = await apiFetch(url, init);
+  const payload = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    const detail = payload && payload.detail;
+    throw new Error(typeof detail === "string" ? detail : "Не удалось выполнить действие");
+  }
+  return payload;
+}
+
+function renderFeedbackRating() {
+  document.querySelectorAll("#feedback-rating .feedback-star").forEach((button) => {
+    const value = Number(button.dataset.rating || 0);
+    button.classList.toggle("is-active", value <= _feedbackRating);
+    button.setAttribute("aria-checked", value === _feedbackRating ? "true" : "false");
+  });
+}
+
+function renderFeedbackDepartmentOptions(typeValue) {
+  const row = document.getElementById("feedback-target-department-row");
+  const select = document.getElementById("feedback-target-department");
+  if (!row || !select) return;
+  const details = feedbackTypeDetails(typeValue);
+  const visible = Boolean(details.departmentRequired);
+  row.hidden = !visible;
+  row.style.display = visible ? "" : "none";
+  select.required = visible;
+  select.disabled = !visible;
+  if (!visible) {
+    select.value = "";
+    select.innerHTML = "";
+    return;
+  }
+  const current = select.value || currentUserDepartment();
+  const departments = _feedbackReferences.departments || [];
+  select.innerHTML = `<option value="">Выберите отдел</option>${departments
+    .map((item) => `<option value="${escapeHtml(item.value)}">${escapeHtml(item.label || item.value)}</option>`)
+    .join("")}`;
+  if (current && departments.some((item) => item.value === current)) select.value = current;
+}
+
+function renderFeedbackTargetOptions(typeValue) {
+  const row = document.getElementById("feedback-target-row");
+  const select = document.getElementById("feedback-target");
+  const label = document.getElementById("feedback-target-label");
+  const hint = document.getElementById("feedback-target-hint");
+  if (!row || !select) return;
+  const details = feedbackTypeDetails(typeValue);
+  const targetKind = details.target || "";
+  const visible = Boolean(targetKind);
+  row.hidden = !visible;
+  row.style.display = visible ? "" : "none";
+  select.required = visible;
+  select.disabled = !visible;
+  if (!targetKind) {
+    select.value = "";
+    select.innerHTML = "";
+    return;
+  }
+  const department = document.getElementById("feedback-target-department")?.value || "";
+  const sourceItems =
+    targetKind === "checklist"
+      ? _feedbackReferences.checklists || []
+      : targetKind === "reference"
+        ? _feedbackReferences.reference_targets || []
+        : _feedbackReferences.videos || [];
+  const items = targetKind === "checklist" && department
+    ? sourceItems.filter((item) => !item.department || item.department === department)
+    : sourceItems;
+  if (label) label.textContent = details.targetLabel || "Связанный объект";
+  if (hint) hint.textContent = details.targetHint || "";
+  const emptyLabel = targetKind === "checklist"
+    ? "Выберите чеклист"
+    : targetKind === "reference"
+      ? "Выберите справочник"
+      : "Выберите видео";
+  const current = select.value;
+  select.innerHTML = `<option value="">${escapeHtml(emptyLabel)}</option>${items
+    .map((item) => `<option value="${escapeHtml(item.value)}">${escapeHtml(item.label || item.value)}</option>`)
+    .join("")}`;
+  if (current && items.some((item) => item.value === current)) select.value = current;
+}
+
+function renderFeedbackTypeOptions() {
+  const select = document.getElementById("feedback-type");
+  if (!select) return;
+  const current = select.value;
+  const types = _feedbackTypes.length ? _feedbackTypes : feedbackFallbackTypes();
+  select.innerHTML = types
+    .map((item) => `<option value="${escapeHtml(item.value)}">${escapeHtml(item.label)}</option>`)
+    .join("");
+  if (current && types.some((item) => item.value === current)) {
+    select.value = current;
+  }
+  syncFeedbackTypeDetails();
+}
+
+function syncFeedbackTypeDetails() {
+  const select = document.getElementById("feedback-type");
+  const description = document.getElementById("feedback-description");
+  const label = document.getElementById("feedback-description-label");
+  const hint = document.getElementById("feedback-description-hint");
+  const intro = document.getElementById("feedback-form-intro");
+  const ratingLabel = document.getElementById("feedback-rating-label");
+  const typeValue = select?.value || "bug";
+  const details = feedbackTypeDetails(typeValue);
+  if (description) description.placeholder = details.placeholder;
+  if (label) label.textContent = details.label;
+  if (hint) hint.textContent = details.hint;
+  if (intro) intro.textContent = details.intro;
+  if (ratingLabel) ratingLabel.textContent = details.ratingLabel || "Оценка направления";
+  renderFeedbackDepartmentOptions(typeValue);
+  renderFeedbackTargetOptions(typeValue);
+  renderFeedbackRating();
+}
+
+function setFeedbackError(message) {
+  const error = document.getElementById("feedback-error");
+  if (!error) return;
+  error.textContent = message || "";
+  error.style.display = message ? "block" : "none";
+}
+
+function renderFeedbackList() {
+  const list = document.getElementById("feedback-list");
+  if (!list) return;
+  const previewOnly = Boolean(_onboardingTour.feedbackPreviewOnly);
+  if (!_feedbackItems.length) {
+    list.innerHTML = '<p class="block-missing">Пока нет заявок. Опишите проблему или предложение слева.</p>';
+    return;
+  }
+  list.innerHTML = _feedbackItems
+    .map((item) => {
+      const canReview = item.can_user_confirm || item.can_user_return || item.status === "review";
+      const adminComment = String(item.admin_comment || "").trim();
+      const userReviewComment = String(item.user_review_comment || "").trim();
+      return `
+        <article class="feedback-card" data-ticket-id="${escapeHtml(item.id || "")}">
+          <div class="feedback-card__top">
+            <div>
+              <div class="feedback-card__id">${escapeHtml(item.id || "—")}</div>
+              <div class="feedback-card__meta">
+                ${escapeHtml(
+                  [
+                    formatEvaluatedAt(item.created_at),
+                    feedbackTypeLabel(item.feedback_type),
+                    item.target_label || "",
+                    Number(item.rating || 0) > 0 ? "★".repeat(Number(item.rating || 0)) : "",
+                  ]
+                    .filter(Boolean)
+                    .join(" · "),
+                )}
+              </div>
+            </div>
+            <span class="feedback-status" data-status="${escapeHtml(item.status || "")}">${escapeHtml(feedbackStatusLabel(item))}</span>
+          </div>
+          <p class="feedback-card__text">${escapeHtml(item.description || "")}</p>
+          ${
+            adminComment
+              ? `<p class="feedback-card__comment"><strong>Ответ администратора</strong>${escapeHtml(adminComment)}</p>`
+              : ""
+          }
+          ${
+            userReviewComment
+              ? `<p class="feedback-card__comment"><strong>Ваш комментарий на доработку</strong>${escapeHtml(userReviewComment)}</p>`
+              : ""
+          }
+          ${
+            canReview
+              ? `<div class="feedback-review-actions">
+                  <textarea class="meta-input" data-feedback-return-comment="${escapeHtml(item.id || "")}" placeholder="Если результат не подходит, опишите, что именно работает не так" ${previewOnly ? "disabled" : ""}></textarea>
+                  <div class="feedback-review-actions__buttons">
+                    <button type="button" class="meta-name-btn meta-name-btn--primary" data-feedback-action="confirm" data-ticket-id="${escapeHtml(item.id || "")}" ${previewOnly ? 'disabled title="В инструкции действия не отправляются"' : ""}>Подтвердить готовность</button>
+                    <button type="button" class="meta-name-btn" data-feedback-action="return" data-ticket-id="${escapeHtml(item.id || "")}" ${previewOnly ? 'disabled title="В инструкции действия не отправляются"' : ""}>Вернуть с комментарием</button>
+                  </div>
+                </div>`
+              : ""
+          }
+        </article>
+      `;
+    })
+    .join("");
+}
+
+async function loadFeedback() {
+  const data = await feedbackApiJson(`${API}/api/feedback`);
+  _feedbackItems = data.items || [];
+  _feedbackTypes = data.types || _feedbackTypes;
+  _feedbackStatuses = data.statuses || _feedbackStatuses;
+  _feedbackReferences = data.references || _feedbackReferences;
+  renderFeedbackTypeOptions();
+  renderFeedbackList();
+  updateFeedbackBadge(feedbackUnreadCount());
+}
+
+async function refreshFeedbackBadge() {
+  try {
+    await loadFeedback();
+  } catch (_) {
+    updateFeedbackBadge(0);
+  }
+}
+
+async function openFeedbackDialog() {
+  const dlg = document.getElementById("feedback-dialog");
+  if (!dlg) return;
+  setFeedbackError("");
+  renderFeedbackRating();
+  try {
+    await loadFeedback();
+    markFeedbackItemsRead();
+  } catch (error) {
+    setFeedbackError(error.message || String(error));
+    renderFeedbackTypeOptions();
+  }
+  if (typeof dlg.showModal === "function") dlg.showModal();
+}
+
+async function submitFeedbackForm(event) {
+  event.preventDefault();
+  if (_onboardingTour.feedbackPreviewOnly) {
+    setFeedbackError("Это демонстрационная форма в инструкции. Реальная заявка отсюда не отправляется.");
+    return;
+  }
+  const typeEl = document.getElementById("feedback-type");
+  const targetEl = document.getElementById("feedback-target");
+  const departmentEl = document.getElementById("feedback-target-department");
+  const descriptionEl = document.getElementById("feedback-description");
+  const submitBtn = document.getElementById("feedback-submit");
+  if (!typeEl || !descriptionEl || !submitBtn) return;
+  const description = String(descriptionEl.value || "").trim();
+  const details = feedbackTypeDetails(typeEl.value);
+  const targetId = String((targetEl && targetEl.value) || "").trim();
+  const targetDepartment = String((departmentEl && departmentEl.value) || "").trim();
+  if (details.departmentRequired && !targetDepartment) {
+    setFeedbackError("Выберите отдел.");
+    departmentEl?.focus();
+    return;
+  }
+  if (details.target && !targetId) {
+    setFeedbackError(
+      details.target === "checklist"
+        ? "Выберите чеклист."
+        : details.target === "reference"
+          ? "Выберите справочник."
+          : "Выберите видео.",
+    );
+    targetEl?.focus();
+    return;
+  }
+  if (!description) {
+    setFeedbackError("Подробно опишите заявку.");
+    descriptionEl.focus();
+    return;
+  }
+  submitBtn.disabled = true;
+  setFeedbackError("");
+  try {
+    await feedbackApiJson(`${API}/api/feedback`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        feedback_type: typeEl.value,
+        rating: _feedbackRating,
+        target_id: targetId || null,
+        target_department: targetDepartment || null,
+        description,
+      }),
+    });
+    descriptionEl.value = "";
+    if (targetEl) targetEl.value = "";
+    if (departmentEl) departmentEl.value = "";
+    _feedbackRating = 5;
+    renderFeedbackRating();
+    await loadFeedback();
+    await showAppAlert("Заявка отправлена. Ответ появится в разделе обратной связи.", { title: "Обратная связь" });
+  } catch (error) {
+    setFeedbackError(error.message || String(error));
+  } finally {
+    submitBtn.disabled = false;
+  }
+}
+
+async function handleFeedbackReviewAction(ticketId, action) {
+  if (!ticketId) return;
+  if (_onboardingTour.feedbackPreviewOnly) {
+    await showAppAlert("Это демонстрационная заявка в инструкции. Действие не отправляется.", {
+      title: "Обратная связь",
+    });
+    return;
+  }
+  try {
+    if (action === "confirm") {
+      const ok = await showAppConfirm("Подтвердить, что заявка решена?", {
+        title: "Подтверждение готовности",
+        okLabel: "Подтвердить",
+      });
+      if (!ok) return;
+      await feedbackApiJson(`${API}/api/feedback/${encodeURIComponent(ticketId)}/confirm`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ comment: "Готовность подтверждена пользователем" }),
+      });
+    } else if (action === "return") {
+      const textarea = [...document.querySelectorAll("[data-feedback-return-comment]")].find(
+        (node) => node.dataset.feedbackReturnComment === ticketId,
+      );
+      const comment = String((textarea && textarea.value) || "").trim();
+      if (!comment) {
+        await showAppAlert("Опишите, что именно не так работает.", { title: "Нужен комментарий" });
+        if (textarea) textarea.focus();
+        return;
+      }
+      await feedbackApiJson(`${API}/api/feedback/${encodeURIComponent(ticketId)}/return`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ comment }),
+      });
+    }
+    await loadFeedback();
+  } catch (error) {
+    await showAppAlert(error.message || String(error), { title: "Обратная связь" });
+  }
+}
+
+function setupFeedbackDialog() {
+  const dlg = document.getElementById("feedback-dialog");
+  const form = document.getElementById("feedback-form");
+  const closeBtn = document.getElementById("feedback-dialog-close");
+  const refreshBtn = document.getElementById("feedback-refresh");
+  if (!dlg || !form) return;
+  renderFeedbackTypeOptions();
+  renderFeedbackRating();
+  document.getElementById("feedback-type")?.addEventListener("change", syncFeedbackTypeDetails);
+  document.getElementById("feedback-target-department")?.addEventListener("change", () => {
+    const target = document.getElementById("feedback-target");
+    if (target) target.value = "";
+    syncFeedbackTypeDetails();
+  });
+  closeBtn?.addEventListener("click", () => dlg.close());
+  dlg.addEventListener("close", () => {
+    if (_onboardingTour.feedbackOpenedByTour || _onboardingTour.feedbackPreviewOnly) {
+      restoreOnboardingFeedbackPreview();
+      _onboardingTour.feedbackOpenedByTour = false;
+    }
+  });
+  dlg.addEventListener("click", (event) => {
+    if (event.target === dlg) dlg.close();
+  });
+  form.addEventListener("submit", submitFeedbackForm);
+  refreshBtn?.addEventListener("click", () => {
+    if (_onboardingTour.feedbackPreviewOnly) {
+      renderFeedbackList();
+      return;
+    }
+    void loadFeedback().catch((error) => setFeedbackError(error.message || String(error)));
+  });
+  document.querySelectorAll("#feedback-rating .feedback-star").forEach((button) => {
+    button.addEventListener("click", () => {
+      _feedbackRating = Math.max(1, Math.min(5, Number(button.dataset.rating || 5)));
+      renderFeedbackRating();
+    });
+  });
+  document.addEventListener("click", (event) => {
+    const target = event.target;
+    const actionBtn = target && target.closest && target.closest("[data-feedback-action][data-ticket-id]");
+    if (!actionBtn) return;
+    void handleFeedbackReviewAction(actionBtn.dataset.ticketId, actionBtn.dataset.feedbackAction);
   });
 }
 
@@ -1114,7 +1775,7 @@ function createOnboardingPreviewWorkspace(kind) {
     tone: clonePreviewEvaluation(ONBOARDING_PREVIEW_TONE),
     job: null,
     permissions: onboardingPreviewPermissions(),
-    criteria: { active: ONBOARDING_PREVIEW_CHECKLIST_SLUG, files: [] },
+    criteria: { bound: ONBOARDING_PREVIEW_CHECKLIST_SLUG, files: [] },
     criteria_content: criteriaContent,
     evaluation_criteria: ONBOARDING_PREVIEW_CHECKLIST_SLUG,
     ai_evaluation_available: true,
@@ -1262,6 +1923,7 @@ function renderOnboardingPreviewWorkspace(kind) {
         { text: "Демо-сценарий", tone: "info" },
         { text: onboardingPreviewLocationLabel(), tone: "neutral" },
         { text: "Чеклист: Визит в салон", tone: "neutral" },
+        { text: departmentLabel(currentUserDepartment() || "ОО"), tone: "neutral" },
       ],
       "Демо-сценарий инструкции",
     );
@@ -1366,7 +2028,7 @@ function restoreOnboardingWorkspacePreview() {
     renderAiPipelinePanel(_lastWorkspaceData);
     renderEvaluation(_lastWorkspaceData.evaluation, {
       hasTranscript: !!_lastWorkspaceData.transcript,
-      criteriaLabel: _lastWorkspaceData.evaluation_criteria || _lastWorkspaceData.criteria?.active || "",
+      criteriaLabel: _lastWorkspaceData.evaluation_criteria || _lastWorkspaceData.criteria?.bound || "",
       aiAvailable: !!_lastWorkspaceData.ai_evaluation_available,
       hiddenReason: _lastWorkspaceData.ai_hidden_reason || "",
     });
@@ -1399,10 +2061,120 @@ function closeOnboardingMetaDialog() {
   _onboardingTour.metaPreviewOnly = false;
 }
 
+function closeOnboardingFeedbackDialog() {
+  const dlg = document.getElementById("feedback-dialog");
+  if (dlg && dlg.open && _onboardingTour.feedbackOpenedByTour) dlg.close();
+  restoreOnboardingFeedbackPreview();
+  _onboardingTour.feedbackOpenedByTour = false;
+}
+
 async function openOnboardingUploadPreview() {
   const dlg = document.getElementById("upload-wizard-dialog");
   if (dlg && dlg.open && !_uploadWizardPreviewOnly) return;
   await openUploadWizard([createOnboardingPreviewFile()], { previewOnly: true });
+}
+
+function snapshotFeedbackPreviewState() {
+  const submitBtn = document.getElementById("feedback-submit");
+  const refreshBtn = document.getElementById("feedback-refresh");
+  return {
+    items: _feedbackItems,
+    types: _feedbackTypes,
+    statuses: _feedbackStatuses,
+    references: _feedbackReferences,
+    rating: _feedbackRating,
+    form: {
+      type: document.getElementById("feedback-type")?.value || "",
+      department: document.getElementById("feedback-target-department")?.value || "",
+      target: document.getElementById("feedback-target")?.value || "",
+      description: document.getElementById("feedback-description")?.value || "",
+      submitText: submitBtn?.textContent || "Отправить заявку",
+      submitDisabled: Boolean(submitBtn?.disabled),
+      refreshDisabled: Boolean(refreshBtn?.disabled),
+    },
+  };
+}
+
+function restoreOnboardingFeedbackPreview() {
+  const snap = _onboardingTour.feedbackPreviewSnapshot;
+  if (!snap) {
+    _onboardingTour.feedbackPreviewOnly = false;
+    return;
+  }
+  const submitBtn = document.getElementById("feedback-submit");
+  const refreshBtn = document.getElementById("feedback-refresh");
+  _feedbackItems = snap.items || [];
+  _feedbackTypes = snap.types || [];
+  _feedbackStatuses = snap.statuses || [];
+  _feedbackReferences = snap.references || { checklists: [], videos: [], departments: [], reference_targets: [] };
+  _feedbackRating = snap.rating || 5;
+  _onboardingTour.feedbackPreviewSnapshot = null;
+  _onboardingTour.feedbackPreviewOnly = false;
+  renderFeedbackTypeOptions();
+  const typeEl = document.getElementById("feedback-type");
+  const departmentEl = document.getElementById("feedback-target-department");
+  const targetEl = document.getElementById("feedback-target");
+  const descriptionEl = document.getElementById("feedback-description");
+  if (typeEl && snap.form.type) typeEl.value = snap.form.type;
+  syncFeedbackTypeDetails();
+  if (departmentEl) departmentEl.value = snap.form.department || "";
+  syncFeedbackTypeDetails();
+  if (targetEl) targetEl.value = snap.form.target || "";
+  if (descriptionEl) descriptionEl.value = snap.form.description || "";
+  if (submitBtn) {
+    submitBtn.disabled = snap.form.submitDisabled;
+    submitBtn.textContent = snap.form.submitText || "Отправить заявку";
+  }
+  if (refreshBtn) refreshBtn.disabled = snap.form.refreshDisabled;
+  renderFeedbackList();
+  setFeedbackError("");
+}
+
+function openOnboardingFeedbackPreview() {
+  const dlg = document.getElementById("feedback-dialog");
+  if (!dlg) return;
+  if (!_onboardingTour.feedbackPreviewSnapshot) {
+    _onboardingTour.feedbackPreviewSnapshot = snapshotFeedbackPreviewState();
+  }
+  _onboardingTour.feedbackPreviewOnly = true;
+  _feedbackItems = onboardingFeedbackMockItems();
+  _feedbackTypes = feedbackFallbackTypes();
+  _feedbackStatuses = [
+    { value: "new", label: "Новая" },
+    { value: "in_progress", label: "В работе" },
+    { value: "review", label: "На проверке" },
+    { value: "returned", label: "Возвращена" },
+    { value: "rejected", label: "Отклонена" },
+    { value: "done", label: "Готово" },
+  ];
+  _feedbackReferences = onboardingFeedbackMockReferences();
+  _feedbackRating = 4;
+  const submitBtn = document.getElementById("feedback-submit");
+  const refreshBtn = document.getElementById("feedback-refresh");
+  const descriptionEl = document.getElementById("feedback-description");
+  const typeEl = document.getElementById("feedback-type");
+  const departmentEl = document.getElementById("feedback-target-department");
+  const targetEl = document.getElementById("feedback-target");
+  if (typeEl) typeEl.value = "checklist_change";
+  if (descriptionEl) {
+    descriptionEl.value =
+      "Демо: нужно уточнить формулировку критерия и добавить пример, когда пункт считается выполненным.";
+  }
+  if (submitBtn) {
+    submitBtn.disabled = true;
+    submitBtn.textContent = "Демо: отправка недоступна";
+  }
+  if (refreshBtn) refreshBtn.disabled = true;
+  renderFeedbackTypeOptions();
+  if (typeEl) typeEl.value = "checklist_change";
+  syncFeedbackTypeDetails();
+  if (departmentEl) departmentEl.value = "ОО";
+  syncFeedbackTypeDetails();
+  if (targetEl) targetEl.value = "oo_visit_salon";
+  renderFeedbackList();
+  setFeedbackError("Это демонстрационный режим инструкции: заявки и действия не отправляются.");
+  _onboardingTour.feedbackOpenedByTour = true;
+  if (typeof dlg.showModal === "function" && !dlg.open) dlg.showModal();
 }
 
 function openOnboardingMetaPreview() {
@@ -1542,6 +2314,31 @@ function resolveOnboardingTrafficLightTarget() {
     () => document.getElementById("workspace-head-status-wrap"),
     () => document.querySelector("#library-list .status-dot-wrap"),
     () => document.getElementById("workspace"),
+  ]);
+}
+
+function resolveOnboardingFeedbackButtonTarget() {
+  return resolveFirstVisibleTourTarget([
+    () => document.getElementById("auth-feedback-button"),
+    () => document.getElementById("auth-user-bar"),
+    resolveOnboardingReplayTarget,
+  ]);
+}
+
+function resolveOnboardingFeedbackFormTarget() {
+  return resolveFirstVisibleTourTarget([
+    () => document.getElementById("feedback-form"),
+    () => document.getElementById("feedback-dialog"),
+    resolveOnboardingFeedbackButtonTarget,
+  ]);
+}
+
+function resolveOnboardingFeedbackListTarget() {
+  return resolveFirstVisibleTourTarget([
+    () => document.getElementById("feedback-list"),
+    () => document.querySelector(".feedback-list-panel"),
+    () => document.getElementById("feedback-dialog"),
+    resolveOnboardingFeedbackButtonTarget,
   ]);
 }
 
@@ -1768,19 +2565,66 @@ function buildOnboardingSteps() {
       prepare: async () => {
         closeOnboardingUploadPreview();
         closeOnboardingMetaDialog();
+        closeOnboardingFeedbackDialog();
         ensureOnboardingWorkspacePreview("traffic");
+      },
+    },
+    {
+      id: "feedback-open",
+      title: "Обратная связь",
+      text:
+        "Если заметили ошибку, неточность чеклиста, проблему с транскрибацией или идею по улучшению, откройте форму обратной связи через кнопку с иконкой сообщения внизу слева.",
+      detail:
+        "Если администратор ответил по вашим заявкам, на этой кнопке появится счетчик непрочитанных ответов.",
+      target: resolveOnboardingFeedbackButtonTarget,
+      prepare: async () => {
+        closeOnboardingUploadPreview();
+        closeOnboardingMetaDialog();
+        closeOnboardingFeedbackDialog();
+        ensureOnboardingWorkspacePreview("traffic");
+      },
+    },
+    {
+      id: "feedback-create",
+      title: "Как создать заявку",
+      text:
+        "В форме выберите тип обращения, укажите связанный объект, если он нужен для выбранного типа, поставьте оценку направления и подробно опишите, что именно нужно проверить или исправить.",
+      detail:
+        "Для корректировки чеклиста сначала выбирается отдел, затем чеклист. Для транскрибации выбирается запись, для справочников — нужный справочник. Если дополнительный объект не нужен, поле будет скрыто.",
+      target: resolveOnboardingFeedbackFormTarget,
+      prepare: async () => {
+        closeOnboardingUploadPreview();
+        closeOnboardingMetaDialog();
+        ensureOnboardingWorkspacePreview("traffic");
+        openOnboardingFeedbackPreview();
+      },
+    },
+    {
+      id: "feedback-review",
+      title: "Как отслеживать ответ",
+      text:
+        "Во вкладке “Мои заявки” видно статус обращения, комментарий администратора и историю обработки. Когда заявку отправят на проверку, подтвердите результат или верните её с комментарием, что именно нужно доработать.",
+      detail:
+        "Статусы помогают понять, где сейчас обращение: новая заявка, в работе, на проверке, возвращена, отклонена или готова.",
+      target: resolveOnboardingFeedbackListTarget,
+      prepare: async () => {
+        closeOnboardingUploadPreview();
+        closeOnboardingMetaDialog();
+        ensureOnboardingWorkspacePreview("traffic");
+        openOnboardingFeedbackPreview();
       },
     },
     {
       id: "finish",
       title: "Готово",
       text:
-        "Теперь вы знаете полный сценарий работы: загрузка записи, ручной чеклист, публикация результата и сравнение с ИИ. Инструкцию можно открыть повторно в любой момент из меню аккаунта.",
+        "Теперь вы знаете полный сценарий работы: загрузка записи, ручной чеклист, публикация результата, сравнение с ИИ и отправка обратной связи. Инструкцию можно открыть повторно в любой момент из меню аккаунта.",
       target: resolveOnboardingReplayTarget,
       nextLabel: "Завершить",
       prepare: async () => {
         closeOnboardingUploadPreview();
         closeOnboardingMetaDialog();
+        closeOnboardingFeedbackDialog();
         ensureOnboardingWorkspacePreview("traffic");
       },
     },
@@ -2011,6 +2855,7 @@ async function stopOnboardingTour(options = {}) {
   _onboardingTour.autoStartHandled = true;
   closeOnboardingUploadPreview();
   closeOnboardingMetaDialog();
+  closeOnboardingFeedbackDialog();
   restoreOnboardingWorkspacePreview();
   if (root && root.open) root.close();
   if (spotlight) spotlight.hidden = true;
@@ -2033,6 +2878,7 @@ async function startOnboardingTour(options = {}) {
   _onboardingTour.stepIndex = 0;
   _onboardingTour.target = null;
   _onboardingTour.metaOpenedByTour = false;
+  _onboardingTour.feedbackOpenedByTour = false;
   _onboardingTour.active = true;
   syncOnboardingReplayUi();
   await renderOnboardingStep(0);
@@ -2583,6 +3429,12 @@ function buildWorkspaceMetaItems(ws) {
   const items = [];
   const permissions = workspacePermissions(ws);
   if (ws.training_type && ws.training_type.name) items.push({ text: ws.training_type.name, tone: "primary" });
+  const checklistDepartment =
+    (ws.meta && ws.meta.checklist_department_snapshot) || (ws.training_type && ws.training_type.department) || "";
+  const checklistDepartmentLabel = departmentLabel(checklistDepartment);
+  if (checklistDepartmentLabel) {
+    items.push({ text: checklistDepartmentLabel, tone: "neutral" });
+  }
   if (permissions.read_only) items.push({ text: "Только чтение", tone: "warn" });
   if (ws.meta && ws.meta.uploaded_at) items.push({ text: formatShortDate(ws.meta.uploaded_at), tone: "neutral" });
   return items;
@@ -3023,10 +3875,83 @@ function syncLibraryViewMenuState() {
   const hasNonDefaultSort = (select?.value || "date_desc") !== "date_desc";
   const hasDeletedFilter = Boolean(deletedToggle?.checked);
   const hasForeignFilter = Boolean(foreignToggle?.checked && !foreignToggle?.disabled);
+  const hasCustomGrouping = !libraryGroupingIsDefault();
   root.classList.toggle(
     "library-sort--nondefault",
-    hasNonDefaultSort || hasDeletedFilter || hasForeignFilter
+    hasNonDefaultSort || hasDeletedFilter || hasForeignFilter || hasCustomGrouping
   );
+}
+
+function setupLibraryGroupingControls() {
+  const list = document.getElementById("library-grouping-list");
+  if (!list) return { sync: () => {} };
+
+  function syncFromDom() {
+    const rows = [...list.querySelectorAll(".library-grouping-item[data-group-key]")];
+    const next = rows.map((row) => ({
+      key: row.dataset.groupKey,
+      enabled: Boolean(row.querySelector("input[type='checkbox']")?.checked),
+    }));
+    _libraryGroupingConfig = normalizeLibraryGroupingConfig(next);
+    saveLibraryGroupingConfig();
+    renderLibrary(_allLibraryItems);
+    syncLibraryViewMenuState();
+  }
+
+  function render() {
+    _libraryGroupingConfig = normalizeLibraryGroupingConfig(_libraryGroupingConfig);
+    list.replaceChildren();
+    for (const item of _libraryGroupingConfig) {
+      const def = libraryGroupDefinition(item.key);
+      if (!def) continue;
+      const row = document.createElement("div");
+      row.className = "library-grouping-item";
+      row.draggable = true;
+      row.dataset.groupKey = item.key;
+
+      const handle = document.createElement("span");
+      handle.className = "library-grouping-handle";
+      handle.textContent = "⋮⋮";
+      handle.setAttribute("aria-hidden", "true");
+
+      const label = document.createElement("label");
+      label.className = "library-grouping-check";
+      const input = document.createElement("input");
+      input.type = "checkbox";
+      input.checked = Boolean(item.enabled);
+      input.addEventListener("change", syncFromDom);
+      const text = document.createElement("span");
+      text.textContent = def.label;
+      label.appendChild(input);
+      label.appendChild(text);
+
+      row.appendChild(handle);
+      row.appendChild(label);
+      row.addEventListener("dragstart", (e) => {
+        row.classList.add("library-grouping-item--dragging");
+        e.dataTransfer.effectAllowed = "move";
+        e.dataTransfer.setData("text/plain", item.key);
+      });
+      row.addEventListener("dragend", () => {
+        row.classList.remove("library-grouping-item--dragging");
+        syncFromDom();
+      });
+      list.appendChild(row);
+    }
+  }
+
+  list.addEventListener("dragover", (e) => {
+    const active = list.querySelector(".library-grouping-item--dragging");
+    const over = e.target.closest && e.target.closest(".library-grouping-item[data-group-key]");
+    if (!active || !over || active === over || !list.contains(over)) return;
+    e.preventDefault();
+    const rect = over.getBoundingClientRect();
+    const insertAfter = e.clientY > rect.top + rect.height / 2;
+    list.insertBefore(active, insertAfter ? over.nextSibling : over);
+  });
+
+  render();
+  return { sync: render };
 }
 
 function setupLibrarySortCustom() {
@@ -3057,9 +3982,9 @@ function setupLibrarySortCustom() {
     menu.style.position = "fixed";
     menu.style.left = `${Math.max(8, r.left)}px`;
     menu.style.top = `${r.bottom + 4}px`;
-    menu.style.width = `${Math.max(r.width, 248)}px`;
+    menu.style.width = `${Math.max(r.width, 292)}px`;
     menu.style.right = "auto";
-    menu.style.maxHeight = `min(320px, calc(100vh - ${r.bottom + 12}px))`;
+    menu.style.maxHeight = `min(520px, calc(100vh - ${r.bottom + 12}px))`;
     menu.style.overflowY = "auto";
   }
 
@@ -3211,9 +4136,10 @@ function setupLibrarySortCustom() {
   });
 
   syncFromSelect();
+  const groupingUi = setupLibraryGroupingControls();
   select.addEventListener("change", syncFromSelect);
 
-  return { syncFromSelect, syncUiState: syncLibraryViewMenuState, closeMenu };
+  return { syncFromSelect, syncGrouping: groupingUi.sync, syncUiState: syncLibraryViewMenuState, closeMenu };
 }
 
 function filterAndSortLibrary(items) {
@@ -3231,6 +4157,10 @@ function filterAndSortLibrary(items) {
         item.training_type_name,
         item.manager_name,
         item.location_name,
+        item.uploaded_by_name,
+        item.uploaded_by,
+        item.checklist_display_name_snapshot,
+        item.checklist_slug_snapshot,
         item.department_label,
         item.interaction_date,
         item.added_at,
@@ -3294,6 +4224,77 @@ function sortLibraryGroupKeys(keys) {
   });
 }
 
+function libraryGroupValueForItem(item, groupKey) {
+  switch (groupKey) {
+    case "manager":
+      return item.manager_name || item.manager_id || "";
+    case "location":
+      return item.location_name || item.location_id || "";
+    case "department":
+      return item.department_label || departmentLabel(item.department || "");
+    case "uploader":
+      return item.uploaded_by_name || item.uploaded_by || "";
+    case "checklist":
+      return item.checklist_display_name_snapshot || item.checklist_slug_snapshot || "";
+    case "training_type":
+    default:
+      return item.training_type_name || item.training_type_slug || "";
+  }
+}
+
+function libraryFolderClassForLevel(level) {
+  if (level <= 0) return "library-folder library-folder--level-0";
+  return `library-subfolder library-folder--level-${level}${level >= 2 ? " library-subfolder--third" : ""}`;
+}
+
+function appendLibraryRows(container, items) {
+  const rows = document.createElement("div");
+  rows.className = "library-group-rows";
+  for (const it of items) {
+    rows.appendChild(createLibraryRow(it));
+  }
+  container.appendChild(rows);
+}
+
+function appendLibraryGroupedLevel(container, items, groups, level = 0) {
+  const group = groups[level];
+  if (!group) {
+    appendLibraryRows(container, items);
+    return;
+  }
+
+  const byValue = new Map();
+  for (const item of items) {
+    const key = libraryGroupKey(libraryGroupValueForItem(item, group.key));
+    if (!byValue.has(key)) byValue.set(key, []);
+    byValue.get(key).push(item);
+  }
+
+  for (const valueKey of sortLibraryGroupKeys([...byValue.keys()])) {
+    const groupItems = byValue.get(valueKey) || [];
+    const details = document.createElement("details");
+    details.className = libraryFolderClassForLevel(level);
+    details.open = true;
+    const summary = document.createElement("summary");
+    summary.className = level <= 0 ? "library-folder-summary" : "library-subfolder-summary";
+    const label = document.createElement("span");
+    label.className = "library-folder-label";
+    label.textContent = libraryGroupLabel(valueKey);
+    summary.appendChild(label);
+    if (level <= 0) {
+      const count = document.createElement("span");
+      count.className = "library-folder-count";
+      count.textContent = String(groupItems.length);
+      summary.appendChild(count);
+    }
+    const def = libraryGroupDefinition(group.key);
+    if (def) summary.title = `${def.label}: ${libraryGroupLabel(valueKey)} · ${groupItems.length}`;
+    details.appendChild(summary);
+    appendLibraryGroupedLevel(details, groupItems, groups, level + 1);
+    container.appendChild(details);
+  }
+}
+
 function basenameWithoutExtension(filename) {
   return String(filename || "").replace(/\.[^.]+$/, "") || String(filename || "");
 }
@@ -3342,23 +4343,6 @@ function removeUploadLibraryItem(item) {
   if (!item || !item.upload_id) return;
   _activeUploadItems.delete(item.upload_id);
   renderLibrary(_allLibraryItems);
-}
-
-/** Тип тренировки → локация → менеджер → список записей. */
-function buildLibraryGroupMap(visible) {
-  const byTraining = new Map();
-  for (const item of visible) {
-    const tk = libraryGroupKey(item.training_type_name);
-    const lk = libraryGroupKey(item.location_name);
-    const mk = libraryGroupKey(item.manager_name);
-    if (!byTraining.has(tk)) byTraining.set(tk, new Map());
-    const byLoc = byTraining.get(tk);
-    if (!byLoc.has(lk)) byLoc.set(lk, new Map());
-    const byMan = byLoc.get(lk);
-    if (!byMan.has(mk)) byMan.set(mk, []);
-    byMan.get(mk).push(item);
-  }
-  return byTraining;
 }
 
 function createLibraryRow(item) {
@@ -3503,7 +4487,8 @@ function createLibraryRow(item) {
     e.preventDefault();
     openMetaDialog(item.stem);
   });
-  settingsBtn.hidden = isUploadItem || !isAdmin() || !permissions.can_edit_meta;
+  const canEditMeta = Boolean(!isUploadItem && (permissions.can_edit_meta || isAdmin()));
+  settingsBtn.hidden = !canEditMeta;
 
   wrap.appendChild(row);
   if (!settingsBtn.hidden) wrap.appendChild(settingsBtn);
@@ -3528,49 +4513,9 @@ function renderLibrary(items) {
   }
   empty.style.display = "none";
 
-  const byTraining = buildLibraryGroupMap(visible);
-  for (const trainingKey of sortLibraryGroupKeys([...byTraining.keys()])) {
-    const byLoc = byTraining.get(trainingKey);
-    const trainingDetails = document.createElement("details");
-    trainingDetails.className = "library-folder";
-    trainingDetails.open = true;
-    const trainingSum = document.createElement("summary");
-    trainingSum.className = "library-folder-summary";
-    trainingSum.textContent = libraryGroupLabel(trainingKey);
-    trainingDetails.appendChild(trainingSum);
-
-    for (const locKey of sortLibraryGroupKeys([...byLoc.keys()])) {
-      const byMan = byLoc.get(locKey);
-      const locDetails = document.createElement("details");
-      locDetails.className = "library-subfolder";
-      locDetails.open = true;
-      const locSum = document.createElement("summary");
-      locSum.className = "library-subfolder-summary";
-      locSum.textContent = libraryGroupLabel(locKey);
-      locDetails.appendChild(locSum);
-
-      for (const manKey of sortLibraryGroupKeys([...byMan.keys()])) {
-        const groupItems = byMan.get(manKey);
-        const manDetails = document.createElement("details");
-        manDetails.className = "library-subfolder library-subfolder--third";
-        manDetails.open = true;
-        const manSum = document.createElement("summary");
-        manSum.className = "library-subfolder-summary";
-        manSum.textContent = libraryGroupLabel(manKey);
-        manDetails.appendChild(manSum);
-
-        const groupRows = document.createElement("div");
-        groupRows.className = "library-group-rows";
-        for (const it of groupItems) {
-          groupRows.appendChild(createLibraryRow(it));
-        }
-        manDetails.appendChild(groupRows);
-        locDetails.appendChild(manDetails);
-      }
-      trainingDetails.appendChild(locDetails);
-    }
-    list.appendChild(trainingDetails);
-  }
+  const groups = activeLibraryGrouping();
+  if (groups.length) appendLibraryGroupedLevel(list, visible, groups);
+  else appendLibraryRows(list, visible);
   if (list) list.scrollTop = prevScroll;
 }
 
@@ -3834,7 +4779,7 @@ async function loadWorkspace(stem, silent, criteriaOverride) {
     _evalTransientState.compareError = "";
   }
   lastWorkspaceStem = stem;
-  lastWorkspaceCriteriaRequested = ws.evaluation_criteria || ws.criteria?.active || null;
+  lastWorkspaceCriteriaRequested = ws.evaluation_criteria || ws.criteria?.bound || null;
 
   document.getElementById("workspace-empty").style.display = "none";
   document.getElementById("workspace").style.display = "flex";
@@ -3945,7 +4890,7 @@ async function loadWorkspace(stem, silent, criteriaOverride) {
   renderChecklistStaleBanner(ws);
   renderEvaluation(ws.evaluation, {
     hasTranscript: !!ws.transcript,
-    criteriaLabel: ws.evaluation_criteria || ws.criteria?.active || "",
+    criteriaLabel: ws.evaluation_criteria || ws.criteria?.bound || "",
     aiAvailable: !!ws.ai_evaluation_available,
     hiddenReason: ws.ai_hidden_reason || "",
   });
@@ -4852,15 +5797,15 @@ function updateEvalToolbar(ws) {
   const btn = document.getElementById("eval-refresh");
   if (!sel || !btn) return;
 
-  const crit = ws.criteria || { active: "criteria", files: [] };
-  const active = ws.evaluation_criteria || crit.bound || crit.active || "criteria";
+  const crit = ws.criteria || { bound: "", files: [] };
+  const bound = ws.evaluation_criteria || crit.bound || "";
   const permissions = workspacePermissions(ws);
 
   criteriaPopulate = true;
   sel.innerHTML = "";
   const o = document.createElement("option");
-  o.value = active;
-  o.textContent = active || "—";
+  o.value = bound;
+  o.textContent = bound || "—";
   o.selected = true;
   sel.appendChild(o);
   criteriaPopulate = false;
@@ -5068,12 +6013,6 @@ function setupCriteriaDialogs() {
         await showAppAlert(flattenApiDetail(data.detail) || "Не удалось создать чеклист");
         return;
       }
-      const created = data.filename || fn;
-      await apiFetch(`${API}/api/criteria/active`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ file: created }),
-      });
       newDlg.close();
       newName.value = "";
       if (selectedStem) await loadWorkspace(selectedStem, true);
@@ -5596,6 +6535,13 @@ function renderHumanEvalForm(ws) {
 
     const commentInput = document.createElement("textarea");
     row.appendChild(head);
+    const description = String(c.description || "").trim();
+    if (description) {
+      const descriptionEl = document.createElement("div");
+      descriptionEl.className = "human-eval-crit-description";
+      descriptionEl.textContent = description;
+      row.appendChild(descriptionEl);
+    }
     if (locked) {
       const commentText = document.createElement("div");
       commentText.className = "human-eval-comment-text crit-comment-text";
@@ -6567,6 +7513,13 @@ async function initAuthUi() {
           await openProfileDialog();
         };
       }
+      const feedbackBtn = bar.querySelector("#auth-feedback-button");
+      if (feedbackBtn) {
+        feedbackBtn.onclick = async () => {
+          await openFeedbackDialog();
+        };
+      }
+      void refreshFeedbackBadge();
       syncLibraryForeignToggle();
       const logoutBtn = bar.querySelector(".auth-logout");
       if (logoutBtn) {
@@ -6715,7 +7668,8 @@ function setupWorkspacePipelineRestart() {
 }
 
 async function bootstrapApp() {
-  await Promise.all([initAuthUi(), loadLibrary()]);
+  await initAuthUi();
+  await loadLibrary();
   syncOnboardingReplayUi();
   await maybeAutoStartOnboardingTour();
 }
@@ -6731,6 +7685,7 @@ document.addEventListener("DOMContentLoaded", () => {
   setupMetaPanel();
   setupTrainingTypeDialog();
   setupProfileDialog();
+  setupFeedbackDialog();
   setupUploadWizard();
   setupDropzone();
   setupWorkspaceJobCancel();

@@ -10,6 +10,7 @@ import io
 import json
 import os
 import re
+import secrets
 import sys
 import uuid
 from datetime import datetime, timedelta, timezone
@@ -55,6 +56,7 @@ from src.local_auth import (
     hash_local_password,
     normalize_local_username,
     validate_local_password_strength,
+    validate_local_username,
     verify_local_user_password,
 )
 from src.paths import (
@@ -82,10 +84,15 @@ from src.pipeline import (
 from src.database import (
     AUTH_SOURCE_AD,
     AUTH_SOURCE_LOCAL,
+    CORPORATE_EMAIL_DOMAIN,
     DB,
+    USER_APPROVAL_APPROVED,
+    USER_APPROVAL_PENDING,
+    USER_APPROVAL_REJECTED,
     USER_ROLE_ADMIN,
     USER_ROLE_USER,
     _normalize_auth_source,
+    corporate_email_for_username,
     init_db,
     migrate_checklists_from_config,
 )
@@ -96,6 +103,39 @@ DEPARTMENT_LABELS = {
     "ОО": "Отдел оценки",
     "ОП": "Отдел продаж",
 }
+
+FEEDBACK_TYPES = {
+    "bug": "Ошибка или сбой",
+    "checklist_change": "Корректировка чеклиста",
+    "missing_functionality": "Запрос недостающей функции",
+    "ai_quality": "Качество оценки ИИ",
+    "transcription_quality": "Качество транскрибации",
+    "ux_improvement": "Улучшение интерфейса",
+    "performance": "Производительность и стабильность",
+    "data_reference": "Справочники и данные",
+    "other": "Другое предложение",
+}
+FEEDBACK_TARGET_CHECKLIST = "checklist"
+FEEDBACK_TARGET_VIDEO = "video"
+FEEDBACK_TARGET_REFERENCE = "reference"
+FEEDBACK_REFERENCE_TARGETS = {
+    "locations": "Локации",
+    "managers": "Менеджеры",
+    "training_types": "Типы тренировок",
+    "users": "Пользователи",
+    "checklists": "Чеклисты",
+    "glossary": "Глоссарий",
+    "settings": "Настройки",
+}
+FEEDBACK_STATUS_LABELS = {
+    "new": "Новая",
+    "in_progress": "В работе",
+    "rejected": "Отклонена",
+    "review": "На проверке",
+    "returned": "Возвращена",
+    "done": "Готово",
+}
+FEEDBACK_FINAL_STATUSES = frozenset({"done", "rejected"})
 
 _MEDIA_MIME = {
     ".mp4": "video/mp4",
@@ -171,16 +211,37 @@ class _AuthEnforcementMiddleware(BaseHTTPMiddleware):
         if path in public_api:
             return await call_next(request)
         if path.startswith("/api/"):
+            api_actor = _api_key_actor_from_request(request)
+            if api_actor:
+                if request.method.upper() not in {"GET", "HEAD", "OPTIONS"}:
+                    return JSONResponse(
+                        {"detail": "API-ключи доступны только для чтения"},
+                        status_code=403,
+                    )
+                request.state.api_key_actor = api_actor
+                return await call_next(request)
             if not request.session.get("user"):
                 return JSONResponse(
                     {"detail": "Требуется вход в систему"},
                     status_code=401,
                 )
+            user_row = _db.get_user(str(request.session.get("user") or ""))
+            if not user_row or not int(user_row.get("is_active") or 0):
+                message = _inactive_user_access_message(user_row)
+                request.session.clear()
+                return JSONResponse(
+                    {"detail": message},
+                    status_code=403,
+                )
             return await call_next(request)
-        if path == "/login.html":
+        if path in ("/login.html", "/pending-approval.html"):
             return await call_next(request)
         if path in ("/", "/dashboard", "/admin"):
             if not request.session.get("user"):
+                return RedirectResponse(url="/login.html", status_code=302)
+            user_row = _db.get_user(str(request.session.get("user") or ""))
+            if not user_row or not int(user_row.get("is_active") or 0):
+                request.session.clear()
                 return RedirectResponse(url="/login.html", status_code=302)
             return await call_next(request)
         return await call_next(request)
@@ -200,9 +261,40 @@ app.add_middleware(
 import concurrent.futures
 import threading
 
-_ACTIVE_CRITERIA_MARKER = CONFIG_DIR / ".active_criteria"
-
 _db = DB()
+
+
+def _api_key_hash(raw_key: str) -> str:
+    return hashlib.sha256(raw_key.encode("utf-8")).hexdigest()
+
+
+def _extract_api_key(request: Request) -> str | None:
+    header_key = str(request.headers.get("x-api-key") or "").strip()
+    if header_key:
+        return header_key
+    auth_header = str(request.headers.get("authorization") or "").strip()
+    if auth_header.lower().startswith("bearer "):
+        token = auth_header[7:].strip()
+        if token:
+            return token
+    query_key = str(request.query_params.get("api_key") or "").strip()
+    return query_key or None
+
+
+def _api_key_actor_from_request(request: Request) -> dict[str, Any] | None:
+    raw_key = _extract_api_key(request)
+    if not raw_key:
+        return None
+    item = _db.get_active_api_key_by_hash(_api_key_hash(raw_key))
+    if not item:
+        return None
+    _db.mark_api_key_used(str(item.get("id") or ""))
+    return item
+
+
+def _request_api_key_actor(request: Request) -> dict[str, Any] | None:
+    actor = getattr(request.state, "api_key_actor", None)
+    return actor if isinstance(actor, dict) else None
 
 
 def _coerce_bool(value: Any, default: bool = False) -> bool:
@@ -305,7 +397,11 @@ def _audit_log(
 ) -> dict[str, Any]:
     actor = None
     if request is not None:
-        actor = str(request.session.get("user") or "").strip() or None
+        api_actor = _request_api_key_actor(request)
+        if api_actor:
+            actor = f"api-key:{api_actor.get('name') or api_actor.get('id')}"
+        else:
+            actor = str(request.session.get("user") or "").strip() or None
     return _db.add_audit_event(
         actor=actor,
         action=action,
@@ -406,7 +502,6 @@ def _migrate_yaml_to_db() -> None:
     migrate_checklists_from_config(
         _db,
         config_dir=CONFIG_DIR,
-        active_marker=_ACTIVE_CRITERIA_MARKER,
         delete_source_files=True,
     )
     _seed_builtin_locations()
@@ -500,6 +595,9 @@ def _effective_user_role(username: str | None, role_hint: str | None = None) -> 
 def _session_is_admin(request: Request) -> bool:
     if not auth_enabled():
         return True
+    api_actor = _request_api_key_actor(request)
+    if api_actor:
+        return str(api_actor.get("role") or "").strip().lower() == USER_ROLE_ADMIN
     return str(request.session.get("role") or "").strip().lower() == USER_ROLE_ADMIN
 
 
@@ -556,6 +654,16 @@ def _session_user_display_name(user_row: dict[str, Any] | None, fallback: str | 
     return fb or None
 
 
+def _inactive_user_access_message(user_row: dict[str, Any] | None) -> str:
+    status = str((user_row or {}).get("approval_status") or "").strip().lower()
+    if status == USER_APPROVAL_PENDING:
+        return "Доступ пока не открыт: ожидайте подтверждения регистрации администратором"
+    if status == USER_APPROVAL_REJECTED:
+        reason = str((user_row or {}).get("rejection_reason") or "").strip()
+        return reason or "В регистрации отказано. Обратитесь к администратору."
+    return "Пользователь отключён"
+
+
 def _session_auth_payload(request: Request) -> dict[str, Any]:
     if not auth_enabled():
         return {
@@ -571,8 +679,51 @@ def _session_auth_payload(request: Request) -> dict[str, Any]:
             "onboarding_current_version": _ONBOARDING_TOUR_VERSION,
             "onboarding_completed": False,
         }
+    api_actor = _request_api_key_actor(request)
+    if api_actor:
+        return {
+            "auth_enabled": auth_enabled(),
+            "auth_type": "api_key",
+            "user": f"api-key:{api_actor.get('id')}",
+            "corporate_email": None,
+            "display_name": str(api_actor.get("name") or "API key"),
+            "full_name": str(api_actor.get("name") or "API key"),
+            "location": None,
+            "location_id": None,
+            "department": None,
+            "department_label": None,
+            "profile_complete": True,
+            "approval_status": USER_APPROVAL_APPROVED,
+            "role": str(api_actor.get("role") or USER_ROLE_ADMIN),
+            "is_admin": str(api_actor.get("role") or "").strip().lower() == USER_ROLE_ADMIN,
+            "onboarding_seen_version": _ONBOARDING_TOUR_VERSION,
+            "onboarding_current_version": _ONBOARDING_TOUR_VERSION,
+            "onboarding_completed": True,
+        }
     user = request.session.get("user")
     user_row = _session_user_row(request)
+    if user and (not user_row or not int(user_row.get("is_active") or 0)):
+        message = _inactive_user_access_message(user_row)
+        request.session.clear()
+        return {
+            "auth_enabled": auth_enabled(),
+            "auth_type": auth_mode(),
+            "user": None,
+            "display_name": None,
+            "full_name": None,
+            "location": None,
+            "location_id": None,
+            "department": None,
+            "department_label": None,
+            "profile_complete": False,
+            "role": None,
+            "is_admin": False,
+            "approval_status": (user_row or {}).get("approval_status"),
+            "access_message": message,
+            "onboarding_seen_version": 0,
+            "onboarding_current_version": _ONBOARDING_TOUR_VERSION,
+            "onboarding_completed": False,
+        }
     role = _effective_user_role(user, (user_row or {}).get("role") or request.session.get("role"))
     location = _user_location_payload(user_row)
     display_name = _session_user_display_name(user_row, request.session.get("display_name"))
@@ -582,6 +733,7 @@ def _session_auth_payload(request: Request) -> dict[str, Any]:
         "auth_enabled": auth_enabled(),
         "auth_type": auth_mode(),
         "user": user,
+        "corporate_email": (user_row or {}).get("corporate_email"),
         "display_name": display_name,
         "full_name": str((user_row or {}).get("full_name") or display_name or "").strip() or None,
         "location": location,
@@ -589,6 +741,7 @@ def _session_auth_payload(request: Request) -> dict[str, Any]:
         "department": department,
         "department_label": _department_label(department),
         "profile_complete": bool(user and _user_profile_complete(user_row)),
+        "approval_status": (user_row or {}).get("approval_status"),
         "role": role if user else None,
         "is_admin": bool(user and role == USER_ROLE_ADMIN),
         "onboarding_seen_version": onboarding_seen_version,
@@ -603,9 +756,22 @@ def _require_admin(request: Request) -> None:
 
 
 def _require_authenticated_user(request: Request) -> dict[str, Any]:
+    api_actor = _request_api_key_actor(request)
+    if api_actor:
+        return {
+            "username": f"api-key:{api_actor.get('id')}",
+            "display_name": api_actor.get("name"),
+            "full_name": api_actor.get("name"),
+            "role": api_actor.get("role") or USER_ROLE_ADMIN,
+            "is_active": 1,
+            "approval_status": USER_APPROVAL_APPROVED,
+        }
     user_row = _session_user_row(request)
     if not user_row:
         raise HTTPException(401, "Требуется вход в систему")
+    if not int(user_row.get("is_active") or 0):
+        request.session.clear()
+        raise HTTPException(403, _inactive_user_access_message(user_row))
     return user_row
 
 
@@ -616,6 +782,174 @@ def _require_completed_profile(request: Request) -> dict[str, Any]:
     return user_row
 
 
+def _feedback_type_options() -> list[dict[str, str]]:
+    return [{"value": key, "label": label} for key, label in FEEDBACK_TYPES.items()]
+
+
+def _feedback_status_options() -> list[dict[str, str]]:
+    return [{"value": key, "label": label} for key, label in FEEDBACK_STATUS_LABELS.items()]
+
+
+def _normalize_feedback_type(value: Any) -> str:
+    key = str(value or "").strip()
+    if key not in FEEDBACK_TYPES:
+        raise HTTPException(400, "Выберите корректный тип обратной связи")
+    return key
+
+
+def _normalize_feedback_rating(value: Any) -> int:
+    try:
+        rating = int(value)
+    except (TypeError, ValueError):
+        raise HTTPException(400, "Оценка должна быть от 1 до 5") from None
+    if rating < 1 or rating > 5:
+        raise HTTPException(400, "Оценка должна быть от 1 до 5")
+    return rating
+
+
+def _require_feedback_comment(value: Any, message: str = "Укажите комментарий") -> str:
+    comment = str(value or "").strip()
+    if not comment:
+        raise HTTPException(400, message)
+    return comment
+
+
+def _feedback_actor_from_request(request: Request) -> tuple[str, str | None]:
+    if not auth_enabled():
+        return "system", "Система"
+    user_row = _require_authenticated_user(request)
+    username = str(user_row.get("username") or request.session.get("user") or "").strip()
+    if not username:
+        raise HTTPException(401, "Требуется вход в систему")
+    return username, _session_user_display_name(user_row, username)
+
+
+def _feedback_ticket_payload(item: dict[str, Any]) -> dict[str, Any]:
+    out = dict(item)
+    feedback_type = str(out.get("feedback_type") or "")
+    status = str(out.get("status") or "")
+    out["feedback_type_label"] = FEEDBACK_TYPES.get(feedback_type, feedback_type or "—")
+    out["status_label"] = FEEDBACK_STATUS_LABELS.get(status, status or "—")
+    out["can_user_confirm"] = status == "review"
+    out["can_user_return"] = status == "review"
+    out["can_admin_start"] = status in {"new", "returned"}
+    out["can_admin_reject"] = status not in FEEDBACK_FINAL_STATUSES
+    out["can_admin_send_for_review"] = status in {"in_progress", "returned"}
+    out["can_admin_complete"] = status not in FEEDBACK_FINAL_STATUSES
+    return out
+
+
+def _feedback_checklist_options() -> list[dict[str, str]]:
+    return [
+        {
+            "value": str(row.get("name") or ""),
+            "label": str(row.get("display_name") or row.get("name") or ""),
+            "department": str(row.get("department") or ""),
+            "department_label": _department_label(row.get("department")) or str(row.get("department") or ""),
+        }
+        for row in _db.list_checklist_files()
+    ]
+
+
+def _feedback_video_options(request: Request) -> list[dict[str, str]]:
+    return [
+        {
+            "value": str(row.get("stem") or ""),
+            "label": str(row.get("display_title") or row.get("video_file") or row.get("stem") or ""),
+        }
+        for row in api_library(request, include_deleted=False, include_foreign=False)
+        if str(row.get("stem") or "").strip()
+    ]
+
+
+def _feedback_list_payload(items: list[dict[str, Any]]) -> dict[str, Any]:
+    return {
+        "items": [_feedback_ticket_payload(item) for item in items],
+        "types": _feedback_type_options(),
+        "statuses": _feedback_status_options(),
+    }
+
+
+def _feedback_reference_payload(request: Request) -> dict[str, Any]:
+    return {
+        "checklists": _feedback_checklist_options(),
+        "videos": _feedback_video_options(request),
+        "departments": [
+            {"value": key, "label": label}
+            for key, label in DEPARTMENT_LABELS.items()
+        ],
+        "reference_targets": [
+            {"value": key, "label": label}
+            for key, label in FEEDBACK_REFERENCE_TARGETS.items()
+        ],
+    }
+
+
+def _feedback_target_from_body(
+    request: Request,
+    feedback_type: str,
+    target_id: str | None,
+    target_department: str | None = None,
+) -> tuple[str | None, str | None, str | None]:
+    raw_target = str(target_id or "").strip()
+    if feedback_type == "checklist_change":
+        department = _require_department_code(target_department, error_message="Выберите отдел для чеклиста")
+        if not raw_target:
+            raise HTTPException(400, "Выберите чеклист для корректировки")
+        checklist_slug = _safe_criteria_filename(raw_target)
+        checklist = _db.get_checklist_meta(checklist_slug)
+        if not checklist:
+            raise HTTPException(404, "Чеклист не найден")
+        checklist_department = _normalize_department_code(checklist.get("department"))
+        if checklist_department and checklist_department != department:
+            raise HTTPException(400, "Выберите чеклист из выбранного отдела")
+        department_label = _department_label(department) or department
+        checklist_label = str(checklist.get("display_name") or checklist.get("slug") or checklist_slug)
+        return (
+            FEEDBACK_TARGET_CHECKLIST,
+            checklist_slug,
+            f"{department_label} · {checklist_label}",
+        )
+    if feedback_type == "transcription_quality":
+        if not raw_target:
+            raise HTTPException(400, "Выберите видео для проверки транскрибации")
+        stem_key = _stem_from_path_param(raw_target)
+        for row in api_library(request, include_deleted=False, include_foreign=False):
+            if str(row.get("stem") or "") == stem_key:
+                return (
+                    FEEDBACK_TARGET_VIDEO,
+                    stem_key,
+                    str(row.get("display_title") or row.get("video_file") or row.get("stem") or stem_key),
+                )
+        raise HTTPException(404, "Видео не найдено или недоступно")
+    if feedback_type == "data_reference":
+        if not raw_target:
+            raise HTTPException(400, "Выберите справочник")
+        if raw_target not in FEEDBACK_REFERENCE_TARGETS:
+            raise HTTPException(400, "Выберите корректный справочник")
+        return (
+            FEEDBACK_TARGET_REFERENCE,
+            raw_target,
+            FEEDBACK_REFERENCE_TARGETS[raw_target],
+        )
+    return None, None, None
+
+
+def _require_feedback_ticket_owner(ticket: dict[str, Any] | None, username: str) -> dict[str, Any]:
+    if not ticket:
+        raise HTTPException(404, "Заявка обратной связи не найдена")
+    if auth_enabled() and str(ticket.get("user_username") or "").strip().lower() != username.lower():
+        raise HTTPException(403, "Можно работать только со своими заявками")
+    return ticket
+
+
+def _require_feedback_transition(ticket: dict[str, Any], allowed: set[str], action_label: str) -> None:
+    current = str(ticket.get("status") or "").strip()
+    if current not in allowed:
+        label = FEEDBACK_STATUS_LABELS.get(current, current or "неизвестный")
+        raise HTTPException(400, f"Нельзя выполнить действие «{action_label}» для статуса «{label}»")
+
+
 def _request_access_context(request: Request) -> dict[str, Any]:
     if not auth_enabled():
         return {
@@ -623,6 +957,14 @@ def _request_access_context(request: Request) -> dict[str, Any]:
             "location_id": None,
             "department": None,
             "is_admin": True,
+        }
+    api_actor = _request_api_key_actor(request)
+    if api_actor:
+        return {
+            "user": f"api-key:{api_actor.get('id')}",
+            "location_id": None,
+            "department": None,
+            "is_admin": str(api_actor.get("role") or "").strip().lower() == USER_ROLE_ADMIN,
         }
     user_row = _require_authenticated_user(request)
     username = str(user_row.get("username") or request.session.get("user") or "").strip() or None
@@ -877,12 +1219,14 @@ def _set_auth_session(request: Request, user_row: dict[str, Any]) -> dict[str, A
     return {
         "ok": True,
         "user": username,
+        "corporate_email": user_row.get("corporate_email"),
         "display_name": display_name,
         "full_name": str(user_row.get("full_name") or display_name or "").strip() or None,
         "role": role,
         "auth_type": str(user_row.get("auth_source") or auth_mode()),
         "is_admin": role == USER_ROLE_ADMIN,
         "profile_complete": _user_profile_complete(user_row),
+        "approval_status": user_row.get("approval_status"),
         "location": _user_location_payload(user_row),
         "department": department,
         "department_label": _department_label(department),
@@ -893,17 +1237,21 @@ def _set_auth_session(request: Request, user_row: dict[str, Any]) -> dict[str, A
 
 
 def _resolve_criteria_query_param(raw: str | None, stem: str | None = None) -> str:
-    """Slug чеклиста из query; при пустом/некорректном — связанный с тренировкой или активный."""
-    fallback = _db.resolve_checklist_slug_for_video(stem) if stem else _db.get_active_checklist_slug()
+    """Slug чеклиста из query; если query пустой — чеклист, привязанный к записи."""
     if not raw or not str(raw).strip():
-        return fallback
+        if not stem:
+            raise HTTPException(400, "Выберите чеклист")
+        try:
+            return _db.resolve_checklist_slug_for_video(stem)
+        except ValueError as e:
+            raise HTTPException(400, str(e)) from e
     try:
         name = _safe_criteria_filename(str(raw).strip())
     except HTTPException:
-        return fallback
+        raise HTTPException(400, "Некорректное имя чеклиста") from None
     if _db.checklist_exists(name):
         return name
-    return fallback
+    raise HTTPException(404, "Чеклист не найден")
 
 
 def _get_training_type_or_none(slug: str | None) -> dict[str, Any] | None:
@@ -950,10 +1298,6 @@ def _resolve_checklist_content(stem: str, criteria_name: str) -> dict[str, Any]:
     data = _db.get_checklist_content(criteria_name)
     if data:
         return data
-    fallback_slug = _db.resolve_checklist_slug_for_video(stem)
-    fallback = _db.get_checklist_content(fallback_slug)
-    if fallback:
-        return fallback
     raise HTTPException(404, "Чеклист не найден")
 
 
@@ -1830,6 +2174,7 @@ def auth_status() -> dict[str, Any]:
         "ad_auth_enabled": ad_auth_enabled(),
         "local_auth_enabled": local_auth_enabled(),
         "registration_allowed": _registration_allowed(),
+        "corporate_email_domain": CORPORATE_EMAIL_DOMAIN,
         "is_admin": not auth_enabled(),
     }
 
@@ -1910,10 +2255,27 @@ async def auth_login(request: Request, body: _LoginBody) -> JSONResponse:
             is_active=bool((existing or {}).get("is_active", 1)),
         )
         if not int(user_row.get("is_active") or 0):
-            raise HTTPException(403, "Пользователь отключён")
+            raise HTTPException(403, _inactive_user_access_message(user_row))
     elif mode == "local":
+        if "@" in username:
+            raise HTTPException(400, "Введите логин без @: первую часть корпоративной почты")
         user, err = verify_local_user_password(_db, username, password)
         if not user:
+            existing = _db.get_user(normalize_local_username(username))
+            approval_status = str((existing or {}).get("approval_status") or "").strip().lower()
+            if approval_status in (USER_APPROVAL_PENDING, USER_APPROVAL_REJECTED):
+                reason = _inactive_user_access_message(existing)
+                return JSONResponse(
+                    {
+                        "detail": reason,
+                        "approval_status": approval_status,
+                        "rejection_reason": (existing or {}).get("rejection_reason"),
+                        "user": (existing or {}).get("username") or normalize_local_username(username),
+                        "corporate_email": (existing or {}).get("corporate_email")
+                        or corporate_email_for_username(normalize_local_username(username)),
+                    },
+                    status_code=403,
+                )
             raise HTTPException(401, err or "Ошибка входа")
         user_row = user
     else:
@@ -1928,8 +2290,9 @@ async def auth_register(request: Request, body: _RegisterBody) -> JSONResponse:
     if not _registration_allowed():
         raise HTTPException(403, "Регистрация доступна только в локальном режиме")
     username = normalize_local_username(body.username)
-    if not username:
-        raise HTTPException(400, "Укажите логин")
+    username_error = validate_local_username(username)
+    if username_error:
+        raise HTTPException(400, username_error)
     password_error = validate_local_password_strength(body.password)
     if password_error:
         raise HTTPException(400, password_error)
@@ -1942,20 +2305,32 @@ async def auth_register(request: Request, body: _RegisterBody) -> JSONResponse:
     full_name = str(body.full_name or "").strip()
     if not full_name:
         raise HTTPException(400, "Укажите ФИО")
+    corporate_email = corporate_email_for_username(username)
     user_row = _db.upsert_user(
         username,
         password_hash=hash_local_password(body.password),
         display_name=full_name,
         full_name=full_name,
+        corporate_email=corporate_email,
         auth_source=AUTH_SOURCE_LOCAL,
         location_id=location_id,
         department=department,
         profile_completed_at=_utc_now(),
         role=USER_ROLE_USER,
-        is_active=True,
+        approval_status=USER_APPROVAL_PENDING,
+        approved_at=None,
+        approved_by=None,
+        is_active=False,
     )
-    payload = _set_auth_session(request, user_row)
-    return JSONResponse(payload)
+    return JSONResponse(
+        {
+            "ok": True,
+            "pending_approval": True,
+            "user": user_row.get("username"),
+            "corporate_email": user_row.get("corporate_email") or corporate_email,
+            "message": "Регистрация отправлена. Дождитесь подтверждения администратора.",
+        }
+    )
 
 
 @app.put("/api/auth/profile")
@@ -2021,6 +2396,106 @@ async def auth_change_password(request: Request, body: _ChangePasswordBody) -> J
     if not changed:
         raise HTTPException(404, "Пользователь не найден")
     return JSONResponse({"ok": True})
+
+
+class FeedbackCreateBody(BaseModel):
+    feedback_type: str
+    rating: int
+    description: str
+    target_id: str | None = None
+    target_department: str | None = None
+
+
+class FeedbackActionBody(BaseModel):
+    comment: str | None = None
+
+
+@app.get("/api/feedback")
+def api_feedback_list(request: Request) -> dict[str, Any]:
+    username, _display_name = _feedback_actor_from_request(request)
+    items = _db.list_feedback_tickets(user_username=username, include_events=True)
+    payload = _feedback_list_payload(items)
+    payload["references"] = _feedback_reference_payload(request)
+    return payload
+
+
+@app.post("/api/feedback")
+def api_feedback_create(request: Request, body: FeedbackCreateBody) -> dict[str, Any]:
+    username, display_name = _feedback_actor_from_request(request)
+    feedback_type = _normalize_feedback_type(body.feedback_type)
+    rating = _normalize_feedback_rating(body.rating)
+    description = str(body.description or "").strip()
+    if not description:
+        raise HTTPException(400, "Подробно опишите обратную связь")
+    if len(description) > 5000:
+        raise HTTPException(400, "Описание не должно превышать 5000 символов")
+    target_type, target_id, target_label = _feedback_target_from_body(
+        request,
+        feedback_type,
+        body.target_id,
+        body.target_department,
+    )
+    item = _db.create_feedback_ticket(
+        user_username=username,
+        user_display_name=display_name,
+        feedback_type=feedback_type,
+        rating=rating,
+        description=description,
+        target_type=target_type,
+        target_id=target_id,
+        target_label=target_label,
+    )
+    _audit_log(
+        request,
+        action="feedback.create",
+        target_type="feedback_ticket",
+        target_id=str(item.get("id") or ""),
+        details={"feedback_type": feedback_type, "rating": rating, "feedback_target": target_id},
+    )
+    return {"ok": True, "ticket": _feedback_ticket_payload(item), **_feedback_list_payload([item])}
+
+
+@app.post("/api/feedback/{ticket_id}/confirm")
+def api_feedback_confirm(request: Request, ticket_id: str, body: FeedbackActionBody = FeedbackActionBody()) -> dict[str, Any]:
+    username, _display_name = _feedback_actor_from_request(request)
+    ticket = _require_feedback_ticket_owner(_db.get_feedback_ticket(ticket_id), username)
+    _require_feedback_transition(ticket, {"review"}, "подтвердить готовность")
+    comment = str(body.comment or "").strip() or "Пользователь подтвердил готовность"
+    updated = _db.update_feedback_ticket_status(
+        ticket_id,
+        status="done",
+        actor=username,
+        actor_role="user",
+        action="user_confirm",
+        comment=comment,
+    )
+    _audit_log(request, action="feedback.user.confirm", target_type="feedback_ticket", target_id=ticket_id)
+    return {"ok": True, "ticket": _feedback_ticket_payload(updated or {})}
+
+
+@app.post("/api/feedback/{ticket_id}/return")
+def api_feedback_return(request: Request, ticket_id: str, body: FeedbackActionBody) -> dict[str, Any]:
+    username, _display_name = _feedback_actor_from_request(request)
+    ticket = _require_feedback_ticket_owner(_db.get_feedback_ticket(ticket_id), username)
+    _require_feedback_transition(ticket, {"review"}, "вернуть на доработку")
+    comment = _require_feedback_comment(body.comment, "Укажите, что именно работает не так")
+    updated = _db.update_feedback_ticket_status(
+        ticket_id,
+        status="returned",
+        actor=username,
+        actor_role="user",
+        action="user_return",
+        comment=comment,
+        user_review_comment=comment,
+    )
+    _audit_log(
+        request,
+        action="feedback.user.return",
+        target_type="feedback_ticket",
+        target_id=ticket_id,
+        details={"comment": comment},
+    )
+    return {"ok": True, "ticket": _feedback_ticket_payload(updated or {})}
 
 
 @app.post("/api/auth/logout")
@@ -2284,6 +2759,7 @@ def _library_row(
         "training_type_slug": meta.get("training_type_slug"),
         "training_type_name": (training_type or {}).get("name"),
         "checklist_slug_snapshot": meta.get("checklist_slug_snapshot"),
+        "checklist_display_name_snapshot": meta.get("checklist_display_name_snapshot"),
         "checklist_version_snapshot": meta.get("checklist_version_snapshot"),
         "delete_requested_at": meta.get("delete_requested_at"),
         "delete_requested_by": meta.get("delete_requested_by"),
@@ -2462,7 +2938,11 @@ def api_workspace(stem: str, request: Request, criteria: str | None = None) -> d
     comparison_runtime = _comparison_runtime_payload(stem_key, crit_name)
     is_admin = _session_is_admin(request)
     ai_available = evaluation is not None
-    can_view_ai = is_admin or bool((comparison_state or {}).get("updated_at") or human_state.get("compared_at"))
+    can_view_ai = is_admin or bool(
+        human_state.get("published_at")
+        or human_state.get("compared_at")
+        or (comparison_state or {}).get("updated_at")
+    )
     visible_ai = evaluation if can_view_ai else None
 
     jobs_by = _jobs_latest_by_stem()
@@ -2480,7 +2960,7 @@ def api_workspace(stem: str, request: Request, criteria: str | None = None) -> d
         "tone_load_error": tone_load_error,
         "evaluation": visible_ai,
         "ai_evaluation_available": ai_available,
-        "ai_hidden_reason": None if can_view_ai or not ai_available else "ИИ-оценка скрыта до публикации ручного чеклиста и сравнения.",
+        "ai_hidden_reason": None if can_view_ai or not ai_available else "ИИ-оценка скрыта до публикации ручного чеклиста.",
         "human_evaluation": human_evaluation,
         "human_eval_state": human_state,
         "comparison_state": comparison_state,
@@ -2488,7 +2968,6 @@ def api_workspace(stem: str, request: Request, criteria: str | None = None) -> d
         "evaluation_criteria": crit_name,
         "criteria_resolution_error": criteria_resolution_error,
         "criteria": {
-            "active": _db.get_active_checklist_slug(),
             "files": _db.list_checklist_files(),
             "bound": crit_name,
             "can_manage": is_admin,
@@ -3008,10 +3487,6 @@ def api_training_types_delete(slug: str, request: Request) -> dict:
     return {"ok": True}
 
 
-class CriteriaActiveBody(BaseModel):
-    file: str
-
-
 class CriterionItem(BaseModel):
     id: str
     name: str
@@ -3050,9 +3525,8 @@ def _normalize_new_criteria_filename(raw: str) -> str:
 
 @app.get("/api/criteria")
 def api_criteria_list() -> dict:
-    """Список чеклистов в БД и текущий активный slug."""
+    """Список чеклистов в БД."""
     return {
-        "active": _db.get_active_checklist_slug(),
         "files": _db.list_checklist_files(),
     }
 
@@ -3101,21 +3575,6 @@ def api_criteria_post_create(request: Request, body: CriteriaCreateBody) -> dict
         details={"copy_from": body.copy_from},
     )
     return result
-
-
-@app.post("/api/criteria/active")
-def api_criteria_set_active(request: Request, body: CriteriaActiveBody) -> dict:
-    """Сохранить активный чеклист (новые загрузки и «Обновить оценку» используют его)."""
-    _require_admin(request)
-    name = _safe_criteria_filename(body.file)
-    if not _db.checklist_exists(name):
-        raise HTTPException(404, "Чеклист не найден")
-    try:
-        _db.set_active_checklist_slug(name)
-    except ValueError as e:
-        raise HTTPException(400, str(e)) from e
-    _audit_log(request, action="checklist.set_active", target_type="checklist", target_id=name)
-    return {"ok": True, "active": name}
 
 
 @app.get("/api/criteria/content/{name}")
@@ -3201,8 +3660,6 @@ def api_criteria_delete(name: str, request: Request) -> dict:
         raise HTTPException(400, str(e)) from e
     if not deleted:
         raise HTTPException(500, "Не удалось удалить")
-    if _db.checklist_count():
-        _db.get_active_checklist_slug()
     _audit_log(request, action="checklist.delete", target_type="checklist", target_id=fn)
     return {"ok": True}
 
@@ -3246,7 +3703,10 @@ def api_workspace_re_evaluate(
         except ValueError as e:
             raise HTTPException(400, str(e)) from e
     else:
-        cname = _db.get_current_checklist_slug_for_video(stem_key)
+        try:
+            cname = _db.get_current_checklist_slug_for_video(stem_key)
+        except ValueError as e:
+            raise HTTPException(400, str(e)) from e
     current_meta = _db.get_checklist_meta(cname)
     meta = _db.get_video_meta(stem_key)
     if current_meta and meta:
@@ -3447,7 +3907,12 @@ def _collect_all_evaluations() -> list[dict[str, Any]]:
         else:
             stem_part = p.stem
         meta = _db.get_video_meta(stem_part)
-        criteria_slug = str(data.get("criteria_file") or _db.resolve_checklist_slug_for_video(stem_part))
+        criteria_slug = str(data.get("criteria_file") or "")
+        if not criteria_slug:
+            try:
+                criteria_slug = _db.resolve_checklist_slug_for_video(stem_part)
+            except ValueError:
+                criteria_slug = ""
         checklist_content = _db.get_checklist_content(criteria_slug) or {"criteria": []}
         normalized = normalize_loaded_evaluation(data, list(checklist_content.get("criteria") or [])) or data
         training_type = _get_training_type_or_none(meta.get("training_type_slug"))
@@ -3471,6 +3936,226 @@ def _collect_all_evaluations() -> list[dict[str, Any]]:
             "criteria": normalized.get("criteria") or [],
         }
         rows.append(row)
+    return rows
+
+
+def _report_criteria_rows(
+    criteria_content: dict[str, Any],
+    ai_eval: dict[str, Any] | None,
+    human_eval: dict[str, Any] | None,
+    comparison_payload: dict[str, Any] | None,
+) -> list[dict[str, Any]]:
+    by_id: dict[str, dict[str, Any]] = {}
+
+    def add_row(raw: dict[str, Any], *, source: str) -> None:
+        cid = str(raw.get("id") or "").strip()
+        if not cid:
+            return
+        row = by_id.setdefault(
+            cid,
+            {
+                "id": cid,
+                "name": raw.get("name") or cid,
+                "description": raw.get("description") or "",
+                "weight": raw.get("weight"),
+                "sources": set(),
+            },
+        )
+        row["sources"].add(source)
+        if raw.get("name") and not row.get("name"):
+            row["name"] = raw.get("name")
+        if raw.get("description") and not row.get("description"):
+            row["description"] = raw.get("description")
+        if raw.get("weight") is not None:
+            row["weight"] = raw.get("weight")
+
+    for raw in criteria_content.get("criteria") or []:
+        if isinstance(raw, dict):
+            add_row(raw, source="checklist")
+    for raw in (ai_eval or {}).get("criteria") or []:
+        if isinstance(raw, dict):
+            add_row(raw, source="ai")
+    for raw in (human_eval or {}).get("criteria") or []:
+        if isinstance(raw, dict):
+            add_row(raw, source="human")
+    for raw in (comparison_payload or {}).get("rows") or []:
+        if isinstance(raw, dict):
+            add_row(raw, source="comparison")
+
+    out = list(by_id.values())
+    for row in out:
+        row["sources"] = sorted(row.get("sources") or [])
+    return out
+
+
+def _criterion_map(evaluation: dict[str, Any] | None) -> dict[str, dict[str, Any]]:
+    return {
+        str(row.get("id") or "").strip(): row
+        for row in (evaluation or {}).get("criteria") or []
+        if isinstance(row, dict) and str(row.get("id") or "").strip()
+    }
+
+
+def _comparison_map(payload: dict[str, Any] | None) -> dict[str, dict[str, Any]]:
+    return {
+        str(row.get("id") or "").strip(): row
+        for row in (payload or {}).get("rows") or []
+        if isinstance(row, dict) and str(row.get("id") or "").strip()
+    }
+
+
+def _flat_report_rows(
+    request: Request,
+    *,
+    include_deleted: bool = False,
+    manager_id: str | None = None,
+    location_id: str | None = None,
+    training_type_slug: str | None = None,
+    checklist_slug: str | None = None,
+) -> list[dict[str, Any]]:
+    videos = api_library(request, include_deleted=include_deleted, include_foreign=True)
+    rows: list[dict[str, Any]] = []
+    generated_at = _utc_now()
+
+    for video in videos:
+        stem = str(video.get("stem") or "").strip()
+        if not stem:
+            continue
+        if manager_id and str(video.get("manager_id") or "") != manager_id:
+            continue
+        if location_id and str(video.get("location_id") or "") != location_id:
+            continue
+        if training_type_slug and str(video.get("training_type_slug") or "") != training_type_slug:
+            continue
+
+        meta = _db.get_video_meta(stem)
+        try:
+            crit_name = _resolve_bound_checklist_slug_or_raise(stem, checklist_slug)
+        except ValueError:
+            crit_name = str(checklist_slug or video.get("checklist_slug_snapshot") or "").strip()
+        if checklist_slug and crit_name != checklist_slug:
+            continue
+
+        criteria_content = _db.get_checklist_content(crit_name) if crit_name else None
+        criteria_content = criteria_content or {"criteria": []}
+        ai_eval = _normalized_ai_eval(stem, crit_name, criteria_content) if crit_name else None
+        human_eval = _normalized_human_eval(stem, crit_name, criteria_content) if crit_name else None
+        human_state = _db.get_human_eval_state(stem, crit_name) if crit_name else {}
+        comparison_state = _db.get_evaluation_comparison(stem, crit_name) if crit_name else None
+        comparison_payload = (comparison_state or {}).get("payload")
+        if not comparison_payload and ai_eval and human_eval:
+            comparison_payload = _build_compare_eval_payload(ai_eval, human_eval)
+
+        criteria_rows = _report_criteria_rows(criteria_content, ai_eval, human_eval, comparison_payload)
+        if not criteria_rows:
+            criteria_rows = [{"id": None, "name": None, "description": None, "weight": None, "sources": []}]
+
+        ai_by_id = _criterion_map(ai_eval)
+        human_by_id = _criterion_map(human_eval)
+        comparison_by_id = _comparison_map(comparison_payload)
+        job = video.get("job") or {}
+        tags = video.get("tags") or []
+
+        base = {
+            "report_generated_at": generated_at,
+            "stem": stem,
+            "video_file": video.get("video_file"),
+            "filename": video.get("filename") or meta.get("filename"),
+            "display_title": video.get("display_title"),
+            "has_video_file": bool(video.get("has_video_file")),
+            "has_transcript": bool(video.get("has_transcript")),
+            "has_tone": bool(video.get("has_tone")),
+            "has_evaluation": bool(video.get("has_evaluation")),
+            "video_status": video.get("status"),
+            "video_status_code": (video.get("status_summary") or {}).get("code"),
+            "video_status_tooltip": (video.get("status_summary") or {}).get("tooltip"),
+            "file_size_bytes": meta.get("file_size_bytes") or video.get("size_bytes"),
+            "file_sha256": meta.get("file_sha256"),
+            "uploaded_at": video.get("added_at") or meta.get("uploaded_at"),
+            "uploaded_by": video.get("uploaded_by"),
+            "uploaded_by_name": video.get("uploaded_by_name"),
+            "manager_id": video.get("manager_id"),
+            "manager_name": video.get("manager_name"),
+            "location_id": video.get("location_id"),
+            "location_name": video.get("location_name"),
+            "department": video.get("department"),
+            "department_label": video.get("department_label"),
+            "interaction_date": video.get("interaction_date"),
+            "training_type_slug": video.get("training_type_slug"),
+            "training_type_name": video.get("training_type_name"),
+            "tags": ", ".join(str(tag) for tag in tags),
+            "delete_requested_at": video.get("delete_requested_at"),
+            "deleted_at": video.get("deleted_at"),
+            "job_id": job.get("id"),
+            "job_status": job.get("status"),
+            "job_stage": job.get("stage"),
+            "job_kind": job.get("kind"),
+            "job_error": job.get("error"),
+            "checklist_slug": crit_name or None,
+            "checklist_display_name": (criteria_content or {}).get("display_name") or video.get("checklist_display_name_snapshot"),
+            "checklist_version": (criteria_content or {}).get("version") or video.get("checklist_version_snapshot"),
+            "checklist_department": (criteria_content or {}).get("department"),
+            "ai_exists": ai_eval is not None,
+            "ai_evaluated_at": (ai_eval or {}).get("evaluated_at"),
+            "ai_model": (ai_eval or {}).get("model"),
+            "ai_earned_score": (ai_eval or {}).get("earned_score"),
+            "ai_max_score": (ai_eval or {}).get("max_score"),
+            "ai_overall_average": (ai_eval or {}).get("overall_average"),
+            "human_exists": human_eval is not None,
+            "human_evaluated_at": (human_eval or {}).get("evaluated_at"),
+            "human_earned_score": (human_eval or {}).get("earned_score"),
+            "human_max_score": (human_eval or {}).get("max_score"),
+            "human_overall_average": (human_eval or {}).get("overall_average"),
+            "human_draft_saved_at": human_state.get("draft_saved_at"),
+            "human_published_at": human_state.get("published_at"),
+            "human_published_by": human_state.get("published_by"),
+            "comparison_exists": comparison_payload is not None,
+            "comparison_state_created_at": (comparison_state or {}).get("created_at"),
+            "comparison_state_updated_at": (comparison_state or {}).get("updated_at"),
+            "comparison_ai_overall": (comparison_payload or {}).get("ai_overall"),
+            "comparison_human_overall": (comparison_payload or {}).get("human_overall"),
+            "comparison_ai_percent": (comparison_payload or {}).get("ai_percent"),
+            "comparison_human_percent": (comparison_payload or {}).get("human_percent"),
+            "comparison_overall_diff": (comparison_payload or {}).get("overall_diff"),
+            "comparison_mismatch_count": (comparison_payload or {}).get("mismatch_count"),
+            "comparison_compared_count": (comparison_payload or {}).get("compared_count"),
+            "comparison_status_color": (comparison_payload or {}).get("status_color"),
+        }
+
+        for index, criterion in enumerate(criteria_rows, start=1):
+            cid = str(criterion.get("id") or "").strip()
+            ai_criterion = ai_by_id.get(cid, {})
+            human_criterion = human_by_id.get(cid, {})
+            comparison_criterion = comparison_by_id.get(cid, {})
+            rows.append(
+                {
+                    **base,
+                    "row_grain": "video_criterion" if cid else "video",
+                    "criterion_sort_order": index,
+                    "criterion_id": cid or None,
+                    "criterion_name": criterion.get("name"),
+                    "criterion_description": criterion.get("description"),
+                    "criterion_weight": criterion.get("weight"),
+                    "criterion_sources": ", ".join(str(x) for x in (criterion.get("sources") or [])),
+                    "ai_criterion_exists": bool(ai_criterion),
+                    "ai_criterion_passed": ai_criterion.get("passed"),
+                    "ai_criterion_awarded_weight": ai_criterion.get("awarded_weight"),
+                    "ai_criterion_comment": ai_criterion.get("comment"),
+                    "human_criterion_exists": bool(human_criterion),
+                    "human_criterion_passed": human_criterion.get("passed"),
+                    "human_criterion_awarded_weight": human_criterion.get("awarded_weight"),
+                    "human_criterion_comment": human_criterion.get("comment"),
+                    "comparison_criterion_exists": bool(comparison_criterion),
+                    "comparison_criterion_same": comparison_criterion.get("same"),
+                    "comparison_criterion_ai_passed": comparison_criterion.get("ai_passed"),
+                    "comparison_criterion_human_passed": comparison_criterion.get("human_passed"),
+                    "comparison_criterion_ai_awarded_weight": comparison_criterion.get("ai_awarded_weight"),
+                    "comparison_criterion_human_awarded_weight": comparison_criterion.get("human_awarded_weight"),
+                    "comparison_criterion_ai_comment": comparison_criterion.get("ai_comment"),
+                    "comparison_criterion_human_comment": comparison_criterion.get("human_comment"),
+                }
+            )
+
     return rows
 
 
@@ -3562,6 +4247,33 @@ def api_dashboard(
 
 # ── Export API ───────────────────────────────────────────────────────
 
+@app.get("/api/export/report")
+def api_export_report(
+    request: Request,
+    include_deleted: bool = False,
+    manager_id: str | None = None,
+    location_id: str | None = None,
+    training_type_slug: str | None = None,
+    checklist_slug: str | None = None,
+) -> dict[str, Any]:
+    """Flat denormalized BI table: one row per video + checklist criterion."""
+    _require_admin(request)
+    rows = _flat_report_rows(
+        request,
+        include_deleted=include_deleted,
+        manager_id=manager_id,
+        location_id=location_id,
+        training_type_slug=training_type_slug,
+        checklist_slug=checklist_slug,
+    )
+    return {
+        "generated_at": _utc_now(),
+        "grain": "video_criterion",
+        "count": len(rows),
+        "items": rows,
+    }
+
+
 @app.get("/api/export/csv")
 def api_export_csv(
     request: Request,
@@ -3648,6 +4360,10 @@ class AdminUserPasswordBody(BaseModel):
     new_password: str
 
 
+class AdminUserRejectBody(BaseModel):
+    reason: str
+
+
 class AdminJobRetryBody(BaseModel):
     mode: str = "resume"
     criteria: str | None = None
@@ -3666,6 +4382,11 @@ class AdminSettingsBody(BaseModel):
     default_daily_upload_limit: int | None = None
     default_max_queued_jobs: int | None = None
     default_max_running_jobs: int | None = None
+
+
+class AdminApiKeyCreateBody(BaseModel):
+    name: str
+    role: str = USER_ROLE_ADMIN
 
 
 class AdminGlossaryEntryBody(BaseModel):
@@ -3691,6 +4412,11 @@ def _admin_user_payload(
     location = _db.get_location(location_id) if location_id else None
     stored_role = str(row.get("role") or USER_ROLE_USER).strip().lower()
     effective_role = _effective_user_role(username, stored_role)
+    approval_status = str(row.get("approval_status") or USER_APPROVAL_APPROVED).strip().lower()
+    is_pending = approval_status == USER_APPROVAL_PENDING
+    is_rejected = approval_status == USER_APPROVAL_REJECTED
+    is_active = bool(row.get("is_active"))
+    access_status = "pending" if is_pending else "rejected" if is_rejected else "active" if is_active else "inactive"
     limits = _effective_user_queue_limits(row)
     usage = (usage_map or {}).get(
         username.lower(),
@@ -3699,6 +4425,7 @@ def _admin_user_payload(
     daily_limit = int(limits["daily_upload_limit"])
     return {
         "username": username,
+        "corporate_email": row.get("corporate_email") or corporate_email_for_username(username),
         "display_name": row.get("display_name"),
         "full_name": row.get("full_name"),
         "auth_source": row.get("auth_source"),
@@ -3712,6 +4439,13 @@ def _admin_user_payload(
         "effective_role": effective_role,
         "forced_admin": username.lower() in _admin_users(),
         "is_admin": effective_role == USER_ROLE_ADMIN,
+        "approval_status": approval_status,
+        "access_status": access_status,
+        "is_pending_approval": is_pending,
+        "is_rejected": is_rejected,
+        "approved_at": row.get("approved_at"),
+        "approved_by": row.get("approved_by"),
+        "rejection_reason": row.get("rejection_reason"),
         "daily_upload_limit": row.get("daily_upload_limit"),
         "max_queued_jobs": row.get("max_queued_jobs"),
         "max_running_jobs": row.get("max_running_jobs"),
@@ -3723,7 +4457,7 @@ def _admin_user_payload(
         "daily_remaining": max(0, daily_limit - int(usage.get("daily_uploaded_count") or 0)),
         "queued_count": int(usage.get("queued_count") or 0),
         "running_count": int(usage.get("running_count") or 0),
-        "is_active": bool(row.get("is_active")),
+        "is_active": is_active,
         "created_at": row.get("created_at"),
         "updated_at": row.get("updated_at"),
     }
@@ -3876,6 +4610,25 @@ def _admin_reference_data() -> dict[str, Any]:
     }
 
 
+def _api_key_payload(item: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "id": item.get("id"),
+        "name": item.get("name"),
+        "key_prefix": item.get("key_prefix"),
+        "role": item.get("role"),
+        "is_active": bool(item.get("is_active")),
+        "created_at": item.get("created_at"),
+        "created_by": item.get("created_by"),
+        "last_used_at": item.get("last_used_at"),
+        "revoked_at": item.get("revoked_at"),
+        "revoked_by": item.get("revoked_by"),
+    }
+
+
+def _api_keys_payload() -> dict[str, Any]:
+    return {"items": [_api_key_payload(item) for item in _db.list_api_keys(include_revoked=True)]}
+
+
 def _admin_overview_payload(request: Request) -> dict[str, Any]:
     videos = api_library(request, include_deleted=True, include_foreign=True)
     jobs = _db.list_jobs(limit=20)
@@ -3911,6 +4664,8 @@ def _admin_overview_payload(request: Request) -> dict[str, Any]:
         "total": len(users),
         "active": sum(1 for row in users if row.get("is_active")),
         "inactive": sum(1 for row in users if not row.get("is_active")),
+        "pending_approval": sum(1 for row in users if row.get("is_pending_approval")),
+        "rejected": sum(1 for row in users if row.get("is_rejected")),
         "admins": sum(1 for row in users if row.get("is_admin")),
         "profile_complete": sum(1 for row in users if row.get("profile_complete")),
     }
@@ -3956,6 +4711,7 @@ def _filter_admin_videos(rows: list[dict[str, Any]], q: str | None, status: str 
                     str(row.get("location_name") or ""),
                     str(row.get("training_type_name") or ""),
                     str(row.get("checklist_slug_snapshot") or ""),
+                    str(row.get("checklist_display_name_snapshot") or ""),
                     str(row.get("uploaded_by") or ""),
                     str(row.get("uploaded_by_name") or ""),
                     " ".join(str(tag) for tag in (row.get("tags") or [])),
@@ -4082,7 +4838,10 @@ def api_admin_job_retry(request: Request, job_id: str, body: AdminJobRetryBody =
             if not _db.checklist_exists(criteria_name):
                 raise HTTPException(404, "Чеклист не найден")
         else:
-            criteria_name = _db.resolve_checklist_slug_for_video(stem_key)
+            try:
+                criteria_name = _db.resolve_checklist_slug_for_video(stem_key)
+            except ValueError as e:
+                raise HTTPException(400, str(e)) from e
         new_job_id = _enqueue_eval_only_job(stem_key, criteria_name)
     _audit_log(
         request,
@@ -4118,6 +4877,10 @@ def api_admin_users_create(request: Request, body: AdminUserCreateBody) -> dict[
     )
     if not username:
         raise HTTPException(400, "Укажите логин пользователя")
+    if auth_source == AUTH_SOURCE_LOCAL:
+        username_error = validate_local_username(username)
+        if username_error:
+            raise HTTPException(400, username_error)
     if _db.get_user(username):
         raise HTTPException(409, "Пользователь уже существует")
     location_id = str(body.location_id or "").strip() or None
@@ -4139,6 +4902,7 @@ def api_admin_users_create(request: Request, body: AdminUserCreateBody) -> dict[
         password_hash=password_hash,
         display_name=full_name or username,
         full_name=full_name,
+        corporate_email=corporate_email_for_username(username) if auth_source == AUTH_SOURCE_LOCAL else None,
         auth_source=auth_source,
         location_id=location_id,
         department=department,
@@ -4147,6 +4911,9 @@ def api_admin_users_create(request: Request, body: AdminUserCreateBody) -> dict[
         daily_upload_limit=body.daily_upload_limit,
         max_queued_jobs=body.max_queued_jobs,
         max_running_jobs=body.max_running_jobs,
+        approval_status=USER_APPROVAL_APPROVED,
+        approved_at=_utc_now(),
+        approved_by=str(request.session.get("user") or "").strip() or None,
         is_active=body.is_active,
     )
     payload = _admin_user_payload(item)
@@ -4158,6 +4925,7 @@ def api_admin_users_create(request: Request, body: AdminUserCreateBody) -> dict[
         details={
             "auth_source": auth_source,
             "role": payload["effective_role"],
+            "corporate_email": payload["corporate_email"],
             "daily_upload_limit": payload["daily_upload_limit"],
             "max_queued_jobs": payload["max_queued_jobs"],
             "max_running_jobs": payload["max_running_jobs"],
@@ -4188,6 +4956,14 @@ def api_admin_users_update(request: Request, username: str, body: AdminUserUpdat
         if body.full_name is not None
         else str(existing.get("full_name") or "").strip()
     )
+    next_is_active = bool(existing.get("is_active")) if body.is_active is None else body.is_active
+    approval_status = str(existing.get("approval_status") or USER_APPROVAL_APPROVED).strip().lower()
+    approved_at = existing.get("approved_at")
+    approved_by = existing.get("approved_by")
+    if body.is_active is not None and approval_status in (USER_APPROVAL_PENDING, USER_APPROVAL_REJECTED):
+        approval_status = USER_APPROVAL_APPROVED
+        approved_at = _utc_now()
+        approved_by = str(request.session.get("user") or "").strip() or None
     item = _db.upsert_user(
         username,
         password_hash=None,
@@ -4213,7 +4989,10 @@ def api_admin_users_update(request: Request, username: str, body: AdminUserUpdat
             if "max_running_jobs" in body_fields_set
             else existing.get("max_running_jobs")
         ),
-        is_active=bool(existing.get("is_active")) if body.is_active is None else body.is_active,
+        approval_status=approval_status,
+        approved_at=approved_at,
+        approved_by=approved_by,
+        is_active=next_is_active,
     )
     payload = _admin_user_payload(item)
     _audit_log(
@@ -4235,11 +5014,59 @@ def api_admin_users_update(request: Request, username: str, body: AdminUserUpdat
 @app.post("/api/admin/users/{username}/activate")
 def api_admin_users_activate(request: Request, username: str) -> dict[str, Any]:
     _require_admin(request)
+    existing = _db.get_user(username)
+    if not existing:
+        raise HTTPException(404, "Пользователь не найден")
+    if str(existing.get("approval_status") or "").strip().lower() == USER_APPROVAL_PENDING:
+        item = _db.approve_user_registration(username, str(request.session.get("user") or "").strip() or None)
+        if not item:
+            raise HTTPException(404, "Пользователь не найден")
+        _audit_log(request, action="admin.user.approve", target_type="user", target_id=username)
+        return {"ok": True, "user": _admin_user_payload(item)}
     if not _db.set_user_active(username, True):
         raise HTTPException(404, "Пользователь не найден")
     item = _db.get_user(username)
     _audit_log(request, action="admin.user.activate", target_type="user", target_id=username)
     return {"ok": True, "user": _admin_user_payload(item or {"username": username})}
+
+
+@app.post("/api/admin/users/{username}/approve")
+def api_admin_users_approve(request: Request, username: str) -> dict[str, Any]:
+    _require_admin(request)
+    item = _db.approve_user_registration(username, str(request.session.get("user") or "").strip() or None)
+    if not item:
+        raise HTTPException(404, "Пользователь не найден")
+    _audit_log(
+        request,
+        action="admin.user.approve",
+        target_type="user",
+        target_id=username,
+        details={"corporate_email": item.get("corporate_email")},
+    )
+    return {"ok": True, "user": _admin_user_payload(item)}
+
+
+@app.post("/api/admin/users/{username}/reject")
+def api_admin_users_reject(request: Request, username: str, body: AdminUserRejectBody) -> dict[str, Any]:
+    _require_admin(request)
+    reason = str(body.reason or "").strip()
+    if not reason:
+        raise HTTPException(400, "Укажите причину отказа")
+    item = _db.reject_user_registration(
+        username,
+        reason,
+        str(request.session.get("user") or "").strip() or None,
+    )
+    if not item:
+        raise HTTPException(404, "Пользователь не найден")
+    _audit_log(
+        request,
+        action="admin.user.reject",
+        target_type="user",
+        target_id=username,
+        details={"reason": reason, "corporate_email": item.get("corporate_email")},
+    )
+    return {"ok": True, "user": _admin_user_payload(item)}
 
 
 @app.post("/api/admin/users/{username}/deactivate")
@@ -4253,6 +5080,35 @@ def api_admin_users_deactivate(request: Request, username: str) -> dict[str, Any
     item = _db.get_user(username)
     _audit_log(request, action="admin.user.deactivate", target_type="user", target_id=username)
     return {"ok": True, "user": _admin_user_payload(item or {"username": username})}
+
+
+@app.delete("/api/admin/users/{username}")
+def api_admin_users_delete(request: Request, username: str) -> dict[str, Any]:
+    _require_admin(request)
+    existing = _db.get_user(username)
+    if not existing:
+        raise HTTPException(404, "Пользователь не найден")
+    current_user = str(request.session.get("user") or "").strip().lower()
+    target_user = str(username or "").strip().lower()
+    if current_user and current_user == target_user:
+        raise HTTPException(400, "Нельзя удалить текущую активную сессию администратора")
+    if target_user in _admin_users():
+        raise HTTPException(400, "Нельзя удалить администратора из ADMIN_USERS")
+    payload = _admin_user_payload(existing)
+    if not _db.delete_user(username):
+        raise HTTPException(404, "Пользователь не найден")
+    _audit_log(
+        request,
+        action="admin.user.delete",
+        target_type="user",
+        target_id=username,
+        details={
+            "auth_source": payload["auth_source"],
+            "role": payload["effective_role"],
+            "corporate_email": payload["corporate_email"],
+        },
+    )
+    return {"ok": True}
 
 
 @app.post("/api/admin/users/{username}/reset-password")
@@ -4332,6 +5188,132 @@ def api_admin_video_delete(request: Request, stem: str) -> dict[str, Any]:
     return api_library_delete(request, stem)
 
 
+@app.get("/api/admin/feedback")
+def api_admin_feedback(
+    request: Request,
+    limit: int = 500,
+    status: str | None = None,
+    feedback_type: str | None = None,
+    q: str | None = None,
+) -> dict[str, Any]:
+    _require_admin(request)
+    safe_status = str(status or "").strip()
+    if safe_status and safe_status not in FEEDBACK_STATUS_LABELS:
+        raise HTTPException(400, "Некорректный статус заявки")
+    safe_type = str(feedback_type or "").strip()
+    if safe_type and safe_type not in FEEDBACK_TYPES:
+        raise HTTPException(400, "Некорректный тип обратной связи")
+    items = _db.list_feedback_tickets(
+        status=safe_status or None,
+        feedback_type=safe_type or None,
+        query=q,
+        limit=limit,
+        include_events=True,
+    )
+    counts: dict[str, int] = {key: 0 for key in FEEDBACK_STATUS_LABELS}
+    for item in _db.list_feedback_tickets(limit=1000):
+        key = str(item.get("status") or "")
+        if key in counts:
+            counts[key] += 1
+    return {
+        **_feedback_list_payload(items),
+        "counts": counts,
+    }
+
+
+def _admin_feedback_update(
+    request: Request,
+    ticket_id: str,
+    *,
+    body: FeedbackActionBody,
+    status: str,
+    allowed: set[str],
+    action: str,
+    audit_action: str,
+    comment_message: str,
+) -> dict[str, Any]:
+    _require_admin(request)
+    ticket = _db.get_feedback_ticket(ticket_id)
+    if not ticket:
+        raise HTTPException(404, "Заявка обратной связи не найдена")
+    _require_feedback_transition(ticket, allowed, FEEDBACK_STATUS_LABELS.get(status, status))
+    comment = _require_feedback_comment(body.comment, comment_message)
+    actor = str(request.session.get("user") or "admin").strip() or "admin"
+    updated = _db.update_feedback_ticket_status(
+        ticket_id,
+        status=status,
+        actor=actor,
+        actor_role="admin",
+        action=action,
+        comment=comment,
+        admin_comment=comment,
+    )
+    _audit_log(
+        request,
+        action=audit_action,
+        target_type="feedback_ticket",
+        target_id=ticket_id,
+        details={"status": status, "comment": comment},
+    )
+    return {"ok": True, "ticket": _feedback_ticket_payload(updated or {})}
+
+
+@app.post("/api/admin/feedback/{ticket_id}/reject")
+def api_admin_feedback_reject(request: Request, ticket_id: str, body: FeedbackActionBody) -> dict[str, Any]:
+    return _admin_feedback_update(
+        request,
+        ticket_id,
+        body=body,
+        status="rejected",
+        allowed={"new", "in_progress", "review", "returned"},
+        action="admin_reject",
+        audit_action="admin.feedback.reject",
+        comment_message="Укажите причину отказа",
+    )
+
+
+@app.post("/api/admin/feedback/{ticket_id}/start")
+def api_admin_feedback_start(request: Request, ticket_id: str, body: FeedbackActionBody) -> dict[str, Any]:
+    return _admin_feedback_update(
+        request,
+        ticket_id,
+        body=body,
+        status="in_progress",
+        allowed={"new", "returned"},
+        action="admin_start",
+        audit_action="admin.feedback.start",
+        comment_message="Укажите комментарий для взятия заявки в работу",
+    )
+
+
+@app.post("/api/admin/feedback/{ticket_id}/send-for-review")
+def api_admin_feedback_send_for_review(request: Request, ticket_id: str, body: FeedbackActionBody) -> dict[str, Any]:
+    return _admin_feedback_update(
+        request,
+        ticket_id,
+        body=body,
+        status="review",
+        allowed={"in_progress", "returned"},
+        action="admin_send_for_review",
+        audit_action="admin.feedback.send_for_review",
+        comment_message="Опишите, что сделано и что нужно проверить пользователю",
+    )
+
+
+@app.post("/api/admin/feedback/{ticket_id}/complete")
+def api_admin_feedback_complete(request: Request, ticket_id: str, body: FeedbackActionBody) -> dict[str, Any]:
+    return _admin_feedback_update(
+        request,
+        ticket_id,
+        body=body,
+        status="done",
+        allowed={"new", "in_progress", "review", "returned"},
+        action="admin_complete",
+        audit_action="admin.feedback.complete",
+        comment_message="Укажите итоговый комментарий по заявке",
+    )
+
+
 @app.get("/api/admin/checklists")
 def api_admin_checklists(request: Request) -> dict[str, Any]:
     _require_admin(request)
@@ -4351,12 +5333,6 @@ def api_admin_checklist_content(request: Request, name: str) -> dict[str, Any]:
 def api_admin_checklist_create(request: Request, body: CriteriaCreateBody) -> dict[str, Any]:
     _require_admin(request)
     return api_criteria_post_create(request, body)
-
-
-@app.post("/api/admin/checklists/active")
-def api_admin_checklist_set_active(request: Request, body: CriteriaActiveBody) -> dict[str, Any]:
-    _require_admin(request)
-    return api_criteria_set_active(request, body)
 
 
 @app.put("/api/admin/checklists/{name}")
@@ -4457,6 +5433,59 @@ def api_admin_settings(request: Request) -> dict[str, Any]:
     return _admin_settings_payload()
 
 
+@app.get("/api/admin/api-keys")
+def api_admin_api_keys(request: Request) -> dict[str, Any]:
+    _require_admin(request)
+    return _api_keys_payload()
+
+
+@app.post("/api/admin/api-keys")
+def api_admin_api_keys_create(request: Request, body: AdminApiKeyCreateBody) -> dict[str, Any]:
+    _require_admin(request)
+    name = str(body.name or "").strip()
+    if not name:
+        raise HTTPException(400, "Укажите название API-ключа")
+    raw_key = f"fa_{secrets.token_urlsafe(32)}"
+    key_id = f"ak_{uuid.uuid4().hex}"
+    item = _db.create_api_key(
+        key_id=key_id,
+        name=name,
+        key_hash=_api_key_hash(raw_key),
+        key_prefix=raw_key[:12],
+        role=USER_ROLE_ADMIN if str(body.role or "").strip().lower() == USER_ROLE_ADMIN else USER_ROLE_USER,
+        created_by=str(request.session.get("user") or "").strip() or None,
+    )
+    _audit_log(
+        request,
+        action="admin.api_key.create",
+        target_type="api_key",
+        target_id=key_id,
+        details={"name": name, "key_prefix": item.get("key_prefix"), "role": item.get("role")},
+    )
+    payload = _api_key_payload(item)
+    payload["api_key"] = raw_key
+    return {"ok": True, "key": payload}
+
+
+@app.delete("/api/admin/api-keys/{key_id}")
+def api_admin_api_keys_revoke(request: Request, key_id: str) -> dict[str, Any]:
+    _require_admin(request)
+    item = _db.revoke_api_key(
+        key_id,
+        revoked_by=str(request.session.get("user") or "").strip() or None,
+    )
+    if not item:
+        raise HTTPException(404, "API-ключ не найден")
+    _audit_log(
+        request,
+        action="admin.api_key.revoke",
+        target_type="api_key",
+        target_id=key_id,
+        details={"name": item.get("name"), "key_prefix": item.get("key_prefix")},
+    )
+    return {"ok": True, "key": _api_key_payload(item)}
+
+
 @app.put("/api/admin/settings")
 def api_admin_settings_update(request: Request, body: AdminSettingsBody) -> dict[str, Any]:
     _require_admin(request)
@@ -4536,6 +5565,14 @@ def login_page() -> FileResponse:
     f = STATIC_DIR / "login.html"
     if not f.is_file():
         raise HTTPException(404, "login.html не найден")
+    return FileResponse(f, media_type="text/html; charset=utf-8")
+
+
+@app.get("/pending-approval.html")
+def pending_approval_page() -> FileResponse:
+    f = STATIC_DIR / "pending-approval.html"
+    if not f.is_file():
+        raise HTTPException(404, "pending-approval.html не найден")
     return FileResponse(f, media_type="text/html; charset=utf-8")
 
 
