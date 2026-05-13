@@ -1154,6 +1154,19 @@ def _whisper_chunk_length_kw() -> dict[str, Any]:
     return {}
 
 
+def _whisper_condition_on_previous_text() -> bool:
+    """
+    Не переносим предыдущий ASR-текст в следующее окно по умолчанию: на длинных
+    звонках Whisper иначе может зациклить уверенно распознанную фразу до конца аудио.
+    """
+    raw = os.environ.get("WHISPER_CONDITION_ON_PREVIOUS_TEXT", "").strip().lower()
+    if raw in ("1", "true", "yes", "on"):
+        return True
+    if raw in ("0", "false", "no", "off"):
+        return False
+    return False
+
+
 def _fw_transcribe_worker(
     wav_path_str: str,
     model_name: str,
@@ -1337,6 +1350,7 @@ def transcribe_video_to_structure(
         transcribe_kw: dict[str, Any] = {
             "word_timestamps": True,
             "vad_filter": True,
+            "condition_on_previous_text": _whisper_condition_on_previous_text(),
         }
         transcribe_kw.update(_whisper_chunk_length_kw())
         if lang:
@@ -1554,6 +1568,9 @@ def transcribe_video_to_structure(
             "whisper_device": device,
             "whisper_compute_type": compute_type,
             "whisper_initial_prompt_source": _initial_prompt_source(),
+            "whisper_condition_on_previous_text": transcribe_kw.get(
+                "condition_on_previous_text"
+            ),
             "language": detected_lang,
             "diarization": diar_method
             in ("nemo_sortformer", "pyannote", "mfcc_kmeans", "mfcc_word_kmeans"),

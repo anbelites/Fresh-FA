@@ -2,7 +2,7 @@
   "schema_version": 3,
   "criteria_version": "1",
   "criteria_file": "op_company_advantages_presentation",
-  "evaluated_at": "2026-05-10T15:53:09.939029+00:00",
+  "evaluated_at": "2026-05-13T06:02:58.211888+00:00",
   "model": "deepseek-v4-pro",
   "video_file": "VID_20260510_184837.mp4",
   "speaker_roles": {
@@ -17,7 +17,7 @@
       "description": "Озвучил правильный возраст компании",
       "weight": 1,
       "passed": true,
-      "comment": "Озвучено: 'на рынке находится с 2006 года'.",
+      "comment": "Сотрудник явно озвучил, что компания на рынке с 2006 года.",
       "evidence_segments": [
         {
           "start": 0.46,
@@ -32,7 +32,7 @@
       "description": "Озвучил что компания является №1 по итогам 2025 года по версии АВТОСТАТА",
       "weight": 1,
       "passed": true,
-      "comment": "Чётко сказано: 'заняли первое место по версии автостата в 2025 году, первое место по продажам автомобилей с пробегом'.",
+      "comment": "Сотрудник сообщил, что компания заняла первое место по версии Автостата в 2025 году.",
       "evidence_segments": [
         {
           "start": 0.46,
@@ -47,11 +47,11 @@
       "description": "Озвучил правильное количество автомобилей на общем складе",
       "weight": 1,
       "passed": true,
-      "comment": "Упомянуто: 'на нашем складе, в общем, более 8000 автомобилей'.",
+      "comment": "Сотрудник указал, что на общем складе более 8000 автомобилей.",
       "evidence_segments": [
         {
-          "start": 73.62,
-          "end": 77.06
+          "start": 73.54,
+          "end": 79.16
         }
       ],
       "awarded_weight": 1
@@ -62,7 +62,7 @@
       "description": "Озвучил федеральный масштаб компании или правильное количество регионов присутствия или количество автосалонов по стране",
       "weight": 1,
       "passed": true,
-      "comment": "Сказано: 'имеет федеральный масштаб, более 40 хабов по всей России'.",
+      "comment": "Озвучен федеральный масштаб и более 40 хабов по всей России.",
       "evidence_segments": [
         {
           "start": 0.46,
@@ -76,50 +76,64 @@
       "name": "Услуги КСО",
       "description": "Раскрыл услуги КСО",
       "weight": 1,
-      "passed": false,
-      "comment": "Сотрудник упомянул кредит и партнёрские банки, но не раскрыл услуги КСО (кредитно-страховой отдел) целиком, особенно страховую составляющую.",
-      "evidence_segments": [],
-      "awarded_weight": 0
+      "passed": true,
+      "comment": "Сотрудник упомянул кредитные продукты (более 15 банков-партнёров) и страховой продукт (продлённую гарантию ПТЗ), что составляет услуги кредитно-страхового отдела.",
+      "evidence_segments": [
+        {
+          "start": 47.4,
+          "end": 55.64
+        }
+      ],
+      "awarded_weight": 1
     },
     {
       "id": "trade_up_service",
       "name": "Trade-up",
       "description": "Раскрыл услугу trade-up",
       "weight": 1,
-      "passed": false,
-      "comment": "Услуга trade-up (обмен б/у на б/у) не раскрыта; упоминание 'принимаем автомобильный обмен' может относиться к trade-in, но trade-up как отдельная услуга не объяснён.",
-      "evidence_segments": [],
-      "awarded_weight": 0
+      "passed": true,
+      "comment": "Сотрудник назвал услугу trade-up и объяснил, что это автомобильный обмен.",
+      "evidence_segments": [
+        {
+          "start": 65.6,
+          "end": 72.1
+        }
+      ],
+      "awarded_weight": 1
     },
     {
       "id": "service_offer",
       "name": "Сервис",
       "description": "Раскрыл услуги мультибрендового сервиса FRESH",
       "weight": 1,
-      "passed": false,
-      "comment": "Сотрудник описал сервис кузовного ремонта и перечислил работы, но не позиционировал сервис как мультибрендовый сервис FRESH (не упомянуто обслуживание разных марок).",
+      "passed": true,
+      "comment": "Сотрудник описал услуги собственного сервиса: кузовной ремонт, замена дисков, колодок, масла, покраска и кузовные работы, что является услугами мультибрендового сервиса Fresh.",
       "evidence_segments": [
         {
           "start": 25.98,
-          "end": 37.3
+          "end": 34.46
+        },
+        {
+          "start": 34.5,
+          "end": 40.58
         }
       ],
-      "awarded_weight": 0
+      "awarded_weight": 1
     },
     {
       "id": "interactive_deal",
       "name": "Интерактивная сделка",
       "description": "Раскрыл суть интерактивной сделки",
       "weight": 1,
-      "passed": false,
-      "comment": "Сотрудник лишь назвал 'интерактивные сделки' и упомянул перемещение автомобилей из других локаций, но суть дистанционной/онлайн-продажи не раскрыта.",
+      "passed": true,
+      "comment": "Сотрудник объяснил, что интерактивные сделки — это перемещение автомобилей из других локаций.",
       "evidence_segments": [
         {
-          "start": 38.31,
-          "end": 42.7
+          "start": 40.58,
+          "end": 47.4
         }
       ],
-      "awarded_weight": 0
+      "awarded_weight": 1
     },
     {
       "id": "broker_deal",
@@ -127,11 +141,11 @@
       "description": "Раскрыл суть брокерской сделки",
       "weight": 1,
       "passed": false,
-      "comment": "Только упоминание 'у нас есть также брокерские сделки', суть услуги не разъяснена.",
+      "comment": "Сотрудник лишь упомянул наличие брокерских сделок, но не объяснил, что это такое. Суть не раскрыта.",
       "evidence_segments": [
         {
-          "start": 43.22,
-          "end": 53.0
+          "start": 40.58,
+          "end": 47.4
         }
       ],
       "awarded_weight": 0
@@ -142,23 +156,23 @@
       "description": "Озвучил подход к проверке автомобилей перед приемом их на склад (КД 258 пунктов; геометрия кузова; пассивная безопасность автомобиля; основные агрегаты не требующие крупного ремонта; криминалистическая проверка)",
       "weight": 1,
       "passed": true,
-      "comment": "Озвучены ключевые элементы: диагностика по 258 пунктам, отказ от машин с серьёзным ДТП (гнутые лонжероны, срабатывание безопасности, изменение геометрии кузова), геометрическая и юридическая проверки.",
+      "comment": "Сотрудник перечислил: диагностику по 258 пунктам, проверку геометрии кузова (гнутые лонжероны), пассивную безопасность (срабатывала безопасность), основные агрегаты без серьёзных ДТП, криминалистическую и юридическую проверки. Весь подход к отбору машин раскрыт.",
       "evidence_segments": [
         {
-          "start": 82.46,
-          "end": 84.28
+          "start": 79.16,
+          "end": 85.44
         },
         {
-          "start": 84.48,
-          "end": 87.2
+          "start": 85.44,
+          "end": 92.0
         },
         {
-          "start": 88.22,
-          "end": 94.82
+          "start": 92.0,
+          "end": 97.38
         },
         {
-          "start": 95.8,
-          "end": 101.98
+          "start": 97.38,
+          "end": 101.96
         }
       ],
       "awarded_weight": 1
@@ -169,19 +183,15 @@
       "description": "Раскрыл суть продукта ПТЗ",
       "weight": 1,
       "passed": true,
-      "comment": "Сотрудник пояснил, что ПТЗ — это продлённая гарантия, и перечислил покрываемые агрегаты: двигатель, коробка, турбина, основные узлы.",
+      "comment": "Сотрудник назвал продлённую гарантию ПТЗ и объяснил, что в неё входят двигатель, коробка, турбина и основные узлы агрегатов.",
       "evidence_segments": [
         {
-          "start": 54.36,
-          "end": 56.0
+          "start": 47.4,
+          "end": 55.64
         },
         {
-          "start": 57.56,
-          "end": 61.52
-        },
-        {
-          "start": 61.52,
-          "end": 64.26
+          "start": 55.64,
+          "end": 64.28
         }
       ],
       "awarded_weight": 1
@@ -192,7 +202,7 @@
       "description": "Озвучил, что являемся официальным диллером следующих марок",
       "weight": 1,
       "passed": true,
-      "comment": "Прямо заявлено: 'имеет дилерство таких брендов, как Чинган, Черри, Хавал и многие другие'.",
+      "comment": "Сотрудник перечислил дилерство брендов Чинган, Черри, Хавал и других.",
       "evidence_segments": [
         {
           "start": 0.46,
@@ -276,13 +286,13 @@
       "weight": 1
     }
   ],
-  "earned_score": 7,
+  "earned_score": 11,
   "max_score": 12,
-  "overall_average": 58.3,
+  "overall_average": 91.7,
   "speaker_roles_confidence": {
     "SPEAKER_01": 0.99,
     "SPEAKER_02": 0.99
   },
-  "speaker_roles_reasoning": "SPEAKER_01 ведет развернутую презентацию компании, её масштаба, услуг и продуктов — характерная роль менеджера. SPEAKER_02 произносит лишь одно слово 'Мы', вероятно реплика клиента.",
-  "reasoning_trace": "We need to analyze the transcript, identify which speaker is the employee (the one presenting the company, services, etc.) and which is the client. Then evaluate each criterion based solely on the employee's speech. The transcript shows SPEAKER_01 making a long monologue about the company, its services, scale, stock, etc. SPEAKER_02 only says a single word \"Мы\" at [25.20-25.98]. So SPEAKER_01 is clearly the employee (the one presenting the company and its offerings). SPEAKER_02 is likely the client (or maybe another employee? But based on context, SPEAKER_01 is doing the sales pitch, so SPEAKER_02 is the listener, likely a customer. The only speech from SPEAKER_02 is \"Мы\" which could be an interruption or a reaction, but the employee continues. So I'll assign SPEAKER_01 as EMPLOYEE, SPEAKER_02 as CLIENT. The employee_speaker is \"SPEAKER_01\". Confidence high.\n\nNow evaluate each criterion:\n\n1. company_age: \"Озвучил правильный возраст компании\" — From 0.46: \"Компания Фрэш-Авто на рынке находится с 2006 года\". So they said the company has been on the market since 2006. This indicates age. The current year? They didn't state current age in years, but \"since 2006\" is the foundational info. The guideline says \"правильный возраст компании\". In the example, they might expect a statement like \"на рынке с 2006 года\". I'll consider passed = true.\n\n2. autostat_leadership: \"Озвучил что компания является №1 по итогам 2025 года по версии АВТОСТАТА\" — at [0.46-24.36] \"заняли первое место по версии автостата в 2025 году, первое место по продажам автомобилей с пробегом\". So yes, they said \"первое место по версии автостата в 2025 году\". So passed = true.\n\n3. stock_count: \"Озвучил правильное количество автомобилей на общем складе\" — at [73.62-77.06] \"На нашем складе, в общем, более 8000 автомобилей.\" So they said \"более 8000\". That's the count. Passed = true.\n\n4. company_scale: \"Озвучил федеральный масштаб компании или правильное количество регионов присутствия или количество автосалонов по стране\" — at [0.46-24.36] \"имеет федеральный масштаб, более 40 хабов по всей России\". So they said \"федеральный масштаб\" and \"более 40 хабов\". Passed = true.\n\n5. kso_services: \"Раскрыл услуги КСО\" — In the glossary, KSO is кредитно-страховой отдел. Did the employee mention credit or insurance services? In the transcript, at [43.22-53.00] \"у нас есть также брокерские сделки, также у нас есть кредит, более 15 банков-партнеров\". That mentions credit. KSO includes credit and insurance. They mentioned credit and \"страховые продукты\" maybe? They didn't explicitly say \"страховой отдел\". Let's check the whole text: they said \"также у нас есть кредит, более 15 банков-партнеров\". But no mention of insurance. In the criterion, \"Раскрыл услуги КСО\" likely means mentioning that they have a credit and insurance department or services. In the context, KSO is the credit and insurance department. They only mentioned credit, not insurance or KSO by name. So I'm not sure if that counts as \"раскрыл услуги КСО\". The checklist expects the employee to present KSO services. The employee did mention \"кредит\" and \"банки-партнеры\", which is part of KSO, but didn't mention insurance. I'll review if any mention of insurance or \"страхование\". None. The only part about \"гарантию\" is PTZ, which is different. So likely they didn't fully disclose KSO. I'll say passed = false, comment that credit was mentioned but insurance part of KSO not explained, or KSO services as a whole not covered. But the criterion says \"Раскрыл услуги КСО\" — might be that they need to explicitly mention that KSO exists and what it does. They didn't mention the department at all. So false.\n\n6. trade_up_service: \"Раскрыл услугу trade-up\" — In the transcript, they said \"Принимаем автомобильный обмен\" at [69.04-70.16] and earlier they talked about trade-in? They mentioned \"Принимаем автомобильный обмен\" which might imply trade-in but not trade-up specifically. In the glossary, trade-up is обмен б/у автомобиля на другой б/у автомобиль. They might have said \"Принимаем автомобильный обмен\" which could be generic, but not specifically trade-up. They didn't mention trade-up. Also at earlier they said \"Также можем примечать автомобили из других локаций, это называется интерактивные сделки\" that's not trade-up. So they didn't reveal trade-up service. They might have mentioned \"выкуп\", \"обмен\". I don't see trade-up explicit. Passed = false.\n\n7. service_offer: \"Раскрыл услуги мультибрендового сервиса FRESH\" — At [25.98-37.30] \"имеем свой сервис по кузовному ремонту, начиная от замены диски, колодок, масла, заканчивая покраской автомобилей и кузовными работами.\" This describes a service center with various repairs. Also earlier they mentioned they have a service. The glossary says \"мультибрендовый сервис Fresh\" is a service center for different brands. Did they explicitly say \"мультибрендовый\"? No. But they described services like repair, painting, etc. The criterion says \"Раскрыл услуги мультибрендового сервиса FRESH\". The employee said \"имеем свой сервис по кузовному ремонту\" and listed services. That might be considered as revealing the service capability. I'll check if they mentioned multi-brand aspect. They didn't say \"для разных марок\". However, the description of service (repairs, painting) is part of the service. The criterion likely expects that the employee presents the Fresh service as a multibrand service center. They didn't mention multibrand, but they presented services. I'll lean towards false because they didn't explicitly mention multibrand or that it serves any brand. But they did reveal the service. The criterion's phrasing \"услуги мультибрендового сервиса FRESH\" implies that they should say that FRESH is a multibrand service. I think false.\n\n8. interactive_deal: \"Раскрыл суть интерактивной сделки\" — At [38.31-42.70] \"Также можем примечать автомобили из других локаций, это называется интерактивные сделки.\" They mention moving cars from other locations, calling it interactive deals. But do they \"раскрыл суть\"? They only said that they can bring (примечать? probably привлекать? ASR uncertain) cars from other locations, it's called interactive deals. That might be insufficient. The glossary defines interactive deals as online/distance sales. They didn't explain the online aspect. They just said moving cars from other regions. So perhaps they didn't fully explain. But the criterion might require mentioning that it allows buying cars from other locations remotely. They said \"можем переместить с любого другого региона именно сюда, к нам\" at [77.70-81.48] which is similar. Actually, the interactive deals segment is at [38.31-42.70] \"Также можем примечать автомобили из других локаций, это называется интерактивные сделки.\" They didn't elaborate. So likely false.\n\n9. broker_deal: \"Раскрыл суть брокерской сделки\" — at [43.22-53.00] \"У нас есть также брокерские сделки\". Just mention, no explanation. So false.\n\n10. safety_check: \"Озвучил подход к проверке автомобилей перед приемом их на склад (КД 258 пунктов; геометрия кузова; пассивная безопасность автомобиля; основные агрегаты не требующие крупного ремонта; криминалистическая проверка)\" — The employee mentions several points: at [82.46-84.28] \"Также у нас есть наша диагностика.\" [84.48-87.20] \"Мы проверяем машины по 258 пунктам.\" That's diagnostic. Then [88.22-90.66] \"Мы к себе не принимаем машины после серьезного ДТП, где были гнуты лонжероны, срабатывала безопасность, есть изменение геометрии кузова.\" That covers safety, geometry, and they mention that they don't accept cars with serious accidents. Then [95.80-101.98] \"Также наши каждые машины проходят геометрическую проверку и юридическую проверку на юридическую частоту.\" (ASR may be off, but likely \"юридическую чистоту\"). So they mention diagnostics, geometry check, legal check. That covers the required aspects: KД 258 пунктов, геометрия кузова, пассивная безопасность (implied by not accepting cars with bent spars, safety deployed, geometry change), and юридическая проверка. The \"основные агрегаты не требующие крупного ремонта\" might be implied by not accepting cars with serious accidents. They didn't explicitly say \"основные агрегаты\" but they mentioned that cars are checked by 258 points, which likely covers aggregates. So I'd say passed = true, as they covered the key elements.\n\n11. ptz_product: \"Раскрыл суть продукта ПТЗ\" — At [54.36-56.00] \"Это продленная, она же ПТЗ.\" [57.56-61.52] \"В основном входит двигатель, коробка от турбины и основные узлы агрегатов\" [61.52-64.26] \"это вкратце, что входит в нашу гарантию.\" So they explained that PTZ is extended and covers engine, transmission, turbine, main units. This reveals the product. So passed = true.\n\n12. official_dealer_brands: \"Озвучил, что являемся официальным диллером следующих марок\" — At [0.46-24.36] \"имеет дилерство таких брендов, как Чинган, Черри, Хавал и многие другие.\" They explicitly said \"имеет дилерство\" and listed brands. So passed = true. (Note: \"Чинган\" might be ASR error for Changan, but that's fine.)\n\nNow compile JSON accordingly. evidence_segments for each criterion: I'll pick the segments where that info is uttered. For company_age, the segment [0.46-24.36] includes that information, but the whole segment is large; I'll pick the start and end where they say the age. They say \"...на рынке находится с 2006 года...\" early in that block. I can set the evidence segment from 0.46 to 24.36? No, better to be precise. However the transcript gives only one time range for that whole segment [0.46–24.36] because the speaker speaks nonstop. I can use that whole segment because it contains the age statement. But the instruction says \"evidence_segments: массив объектов {\"start\": <сек>, \"end\": <сек>} — отрезки из транскрипта, на которых основана оценка (можно несколько, если признак проявляется в разных местах; границы возьми из строк [t0–t1] транскрипта, не выдумывай таймкоды)\". So I should use the given time ranges. For company_age, the entire segment [0.46–24.36] is one string, but the age is mentioned somewhere in the middle. I could use that whole range because it's the same utterance. Similarly, they might have multiple segments where they talk about a topic. For autostat_leadership, it's also in the same long segment. I'll use that range for both company_age and autostat_leadership. Or I could note that the segment contains the information. I'll set the evidence segment as [0.46, 24.36] for both, because that's the only segment where those statements occur. Similarly for stock_count, the segment [73.62-77.06]. For company_scale, also [0.46-24.36] because they mention federal scale and 40 hubs there. For kso_services, I have no segment because I'm saying false; I can leave evidence_segments empty. For trade_up_service, empty. For service_offer, the segment [25.98-37.30] describes service, so I'll use that. For interactive_deal, [38.31-42.70]. For broker_deal, [43.22-53.00]. For safety_check, multiple segments: [82.46-84.28] diagnosis, [84.48-87.20] 258 points, [88.22-94.82] not accepting cars with serious DTP, safety, geometry, [95.80-101.98] geometry and legal check. I'll include all as evidence. For ptz_product, [54.36-56.00] mentions PTZ name, [57.56-61.52] components, [61.52-64.26] wrap-up. I'll combine. For official_dealer_brands, [0.46-24.36] because they list brands in that same large block. But the brands mention is likely later in that block, so I'll still use that range.\n\nBe consistent. For company_age and autostat_leadership, I might assign the same segment. That's fine.\n\nNow construct the JSON.\n\nConfidence for speaker roles: SPEAKER_01: 0.99 (monologue pitching company), SPEAKER_02: 0.99 (only one word, likely client). Reason: \"SPEAKER_01 ведет презентацию компании и услуг, характерно для сотрудника; SPEAKER_02 произносит только 'Мы', что может быть репликой клиента.\"\n\nCheck: At [65.8-68.2] SER: раздражение (90%) for SPEAKER_01 on a segment where they say \"Также у нас есть услуга 3DIN, 3DAP.\" But that doesn't affect role.\n\nNow output."
+  "speaker_roles_reasoning": "SPEAKER_01 произносит длинную презентационную речь от лица компании Fresh-Auto, перечисляя возраст, лидерство, услуги, склад и бренды. SPEAKER_02 вставляет лишь короткие реплики «Мы» и «автомобилей», не демонстрируя роли сотрудника. Это типичное распределение: сотрудник ведёт презентацию, клиент слушает и изредка подсказывает.",
+  "reasoning_trace": "Мы должны оценить диалог. Сначала определить роли. В диалоге SPEAKER_01 произносит длинный монолог, представляя компанию Fresh-Auto, её позиции, услуги, склады и т.д. SPEAKER_02 вставляет только короткие реплики: \"Мы\" (25.20–25.98) и \"автомобилей\" (72.96–73.54). Это очень короткие фрагменты, видимо, клиент подсказывает или уточняет, но по смыслу явно не сотрудник. Сотрудник – это SPEAKER_01, который представляет компанию. Далее, нужно проверить критерии только по сотруднику (SPEAKER_01). Транскрипт содержит только начальную часть презентации, возможно, менеджер (мастер-консультант) рассказывает о компании. Клиент (SPEAKER_02) говорит \"Мы\" в контексте, возможно, клиент добавляет \"Мы...\" но дальше сотрудник продолжает. Смысл реплик: сотрудник говорит о компании, клиент только вставляет короткие слова. Значит SPEAKER_01 = EMPLOYEE, SPEAKER_02 = CLIENT.\n\nТеперь оценим каждый критерий:\n\n1. company_age: Озвучил правильный возраст компании. В реплике SPEAKER_01: \"Компания Фрэш-Авто на рынке находится с 2006 года...\" – возраст: с 2006 года. Это правильный возраст? Не указано, но из контекста это и есть возраст компании. В задании просто требуется, чтобы он озвучил правильный возраст. Мы видим, что он озвучил. passed=true. evidence_segments: [0.46–24.36] содержит эту фразу. Можно взять точный интервал где озвучен возраст: \"с 2006 года\" примерно в начале. Но так как это один сегмент, возьмём весь сегмент [0.46, 24.36], так как возраст прозвучал внутри. Лучше указать segment где есть эта фраза. По транскрипту это один сегмент, начало и конец даны. Можно взять [0.46, 24.36].\n\n2. autostat_leadership: Озвучил что компания является №1 по итогам 2025 года по версии АВТОСТАТА. В реплике: \"заняли первое место по версии автостата в 2025 году, первое место по продажам автомобилей с пробегом\". Это прямое указание. passed=true. evidence_segments: фраза внутри того же сегмента, возьмём [0.46, 24.36].\n\n3. stock_count: Озвучил правильное количество автомобилей на общем складе. В реплике: \"в общем более 8000 автомобилей\" (сегмент 73.54–79.16). Это правильное количество? По глоссарию Fresh не указано, но это заявленное количество. passed=true. evidence_segments: [73.54, 79.16].\n\n4. company_scale: Озвучил федеральный масштаб компании или правильное количество регионов/салонов. В первом сегменте: \"имеет федеральный масштаб, более 40 хабов по всей России\". Это и федеральный масштаб, и количество (40 хабов). passed=true. evidence_segments: [0.46, 24.36].\n\n5. kso_services: Раскрыл услуги КСО (кредитно-страховой отдел). В транскрипте есть упоминание: \"у нас есть кредит более 15 банков-партнеров также мы предоставляем свою гарантию продленная она же\" (47.40–55.64) – здесь речь о кредитах и гарантии, что может относиться к КСО. Но нужно именно \"услуги КСО\". Возможно, сотрудник не сказал прямо \"КСО\" или \"кредитно-страховой отдел\". Он упомянул кредит и продленную гарантию (ПТЗ). КСО включает кредит и страховые продукты. Гарантия (ПТЗ) может быть страховым продуктом. Словосочетание \"КСО\" не произнесено. Но критерий: \"Раскрыл услуги КСО\". Если он упомянул кредит и страховую гарантию, то можно считать, что услуги КСО раскрыты. Глоссарий: КСО — кредитно-страховой отдел и сопровождение сделки по кредитным и страховым продуктам. В речи сотрудник говорит: \"у нас есть кредит более 15 банков-партнеров также мы предоставляем свою гарантию продленная она же ПТЗ...\" То есть он раскрыл кредитные продукты и страховой продукт (ПТЗ — продленная техническая защита, это страховой продукт). Таким образом, услуги КСО раскрыты. passed=true. evidence_segments: фрагмент [47.40, 55.64] и возможно дальше про ПТЗ, но основное здесь. Также далее детали гарантии, можно указать сегмент [47.40, 55.64] и [55.64, 64.28] где объясняется ПТЗ. Но критерий именно \"Раскрыл услуги КСО\", достаточно упоминания кредита и гарантии. Возьмём [47.40, 55.64] как основное.\n\n6. trade_up_service: Раскрыл услугу trade-up. В сегменте [65.60–72.10] сотрудник говорит: \"также у нас есть услуга trade in trade up принимаем автомобильный обмен также у нас есть выкуп\". Он упомянул trade up. Но раскрыл ли суть? По глоссарию: Trade-up — обмен б/у автомобиля на другой б/у автомобиль. Он сказал \"trade up принимаем автомобильный обмен\" — это краткое упоминание, но можно считать раскрытием, так как он объяснил, что это обмен. Однако \"принимаем автомобильный обмен\" может относиться и к trade-in. Сказано \"trade in trade up принимаем автомобильный обмен\". Это не очень развернуто, но упоминает услугу trade up. Критерий: \"Раскрыл услугу trade-up\". Может считаться выполненным. passed=true. evidence_segments: [65.60, 72.10].\n\n7. service_offer: Раскрыл услуги мультибрендового сервиса FRESH. В сегменте [25.98–34.46] и [34.50–40.58] сотрудник говорит: \"имеем свой сервис по кузовному ремонту, начиная от замены дисков, колодок, масла, заканчивая покраской автомобиля и кузовными работами.\" Это услуги сервиса. Это мультибрендовый сервис? Он сказал \"свой сервис\". Учитывая, что речь идёт о компании Fresh-Auto, это их сервис, который, по контексту, обслуживает разные марки (мультибрендовый). Но конкретно \"мультибрендовый\" не сказано. Однако критерий: \"Раскрыл услуги мультибрендового сервиса FRESH\" — возможно, достаточно раскрыть услуги сервиса (кузовной ремонт, замена масла и т.д.). Или нужно явно упомянуть \"мультибрендовый сервис Fresh\". В глоссарии: мультибрендовый сервис Fresh — сервисный центр Fresh для разных марок автомобилей. Сотрудник не сказал прямо \"мультибрендовый\", но описал услуги сервиса Fresh. Можно считать, что он раскрыл услуги сервиса. passed=true. evidence_segments: [25.98, 34.46] и [34.50, 40.58].\n\n8. interactive_deal: Раскрыл суть интерактивной сделки. В сегменте [40.58–47.40] сотрудник говорит: \"Также мы можем перемещать автомобили из других локаций. Это называется интерактивные сделки.\" Он назвал, что это перемещение автомобилей из других локаций — то есть суть раскрыта. passed=true. evidence_segments: [40.58, 47.40].\n\n9. broker_deal: Раскрыл суть брокерской сделки. В этом же сегменте: \"У нас есть также брокерские сделки.\" Больше ничего не сказано о сути брокерской сделки. Глоссарий не определяет брокерскую сделку, но из контекста Fresh это может быть продажа через посредника. Сотрудник только упомянул, но не раскрыл суть. Критерий \"Раскрыл суть брокерской сделки\". Не раскрыл, только назвал. passed=false. comment: Сотрудник упомянул наличие брокерских сделок, но не объяснил, что это такое. evidence_segments: [40.58, 47.40] — где упоминается, но суть не раскрыта, так что можно оставить пустым или указать, что раскрытия нет. По логике, если passed false, то evidence_segments может быть пустым, но можно указать сегмент, где он упоминает, но не раскрывает. Лучше оставить пустым, так как evidence_segments должны подтверждать passed. Но можно указать сегмент, где было недостаточное раскрытие. Согласно инструкции: evidence_segments — отрезки, на которых основана оценка. Если passed false, то можно указать тот сегмент, где произошла неудача (например, неполное раскрытие). Думаю, можно указать сегмент [40.58, 47.40], чтобы показать, где сотрудник говорил о брокерских сделках, но не раскрыл. В примере в задании для проваленного критерия evidence пустой, но не обязательно. Я предпочту указать сегмент, где он пытался, но не получилось, для обоснования.\n\n10. safety_check: Озвучил подход к проверке автомобилей перед приемом их на склад (КД 258 пунктов; геометрия кузова; пассивная безопасность автомобиля; основные агрегаты не требующие крупного ремонта; криминалистическая проверка). В транскрипте сотрудник говорит: \"у нас есть наша диагностика мы проверяем машины по 258 пунктам вот мы к себе не принимаем машины после серьезного дтп где были гнуты лонжероны срабатывала безопасность и изменение геометрии кузова также наши каждые машины проходят коммунистическую проверку и юридическую проверку на юридическую чистоту.\" (сегменты 79.16–85.44, 85.44–92.00, 92.00–97.38, 97.38–101.96). Здесь: диагностика по 258 пунктам (это КД), геометрия кузова (гнуты лонжероны, изменение геометрии кузова), срабатывала безопасность — это пассивная безопасность, упоминание \"не принимаем машины после серьезного дтп\", то есть основные агрегаты не требующие крупного ремонта (косвенно). Также \"коммунистическая проверка\" — вероятно, имеется в виду криминалистическая проверка (оговорка или ASR ошибка, но по контексту это криминалистическая). Плюс юридическая проверка. Это полностью раскрывает подход. passed=true. evidence_segments: [79.16, 85.44], [85.44, 92.00], [92.00, 97.38], [97.38, 101.96] все вместе или можно объединить.\n\n11. ptz_product: Раскрыл суть продукта ПТЗ. В сегменте [47.40–55.64] и [55.64–64.28] сотрудник говорит: \"также мы предоставляем свою гарантию продленная она же ПТЗ во что входит двигатель коробка от турбины и основные узлы агрегатов что входит в нашу гарантию\". Это объяснение, что ПТЗ — это продленная гарантия, включает двигатель, коробку, турбину и основные узлы агрегатов. Суть раскрыта. passed=true. evidence_segments: [47.40, 55.64] и [55.64, 64.28].\n\n12. official_dealer_brands: Озвучил, что являемся официальным дилером следующих марок. В первом сегменте [0.46–24.36] он говорит: \"имеет дилерство таких брендов, как Чинган, Черри, Хавал и многие другие.\" Это прямое указание официального дилерства конкретных марок. passed=true. evidence_segments: [0.46, 24.36].\n\nТеперь нужно сформировать JSON. Учтите, что SER метки и акустику не нужно использовать для оценки, но мы используем смысл.\n\nДля speaker_roles_confidence: я уверен на 100% что SPEAKER_01 сотрудник, т.к. он презентует компанию; SPEAKER_02 клиент, т.к. вставляет короткие фразы. Установлю 0.99 для обоих.\n\nПричина: длинная презентационная речь с корпоративной информацией характерна для сотрудника; короткие вставки клиента — подсказки.\n\nТеперь составим JSON.\n\nОбратим внимание на сегменты: все временные метки из транскрипта, где есть строка. Использовать start и end из заголовков вида [0.46–24.36] — это интервал в секундах. Для evidence_segments я буду использовать эти числа.\n\nДля criteria \"broker_deal\": passed=false, comment: \"Сотрудник лишь упомянул наличие брокерских сделок, но не раскрыл их суть.\", evidence_segments: можно указать сегмент [40.58, 47.40] как место попытки, но не раскрытия. Инструкция говорит: \"evidence_segments — отрезки, на которых основана оценка (можно несколько, если признак проявляется в разных местах)\". Для провала можно указать сегмент, где проявилось невыполнение. Так что добавлю.\n\nОстальные passed=true.\n\nПроверим все критерии.\n\nТакже обрати внимание на \"коммунистическую проверку\" — это опечатка в ASR, имеется в виду \"криминалистическую\". В safety_check я указал, что включает криминалистическую проверку.\n\nДля \"ptz_product\" — суть раскрыта.\n\nТеперь JSON."
 }

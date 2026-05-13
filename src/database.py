@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import json
 import sqlite3
+import threading
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -337,10 +338,11 @@ def _normalize_onboarding_version(value: Any) -> int:
 
 
 def get_connection() -> sqlite3.Connection:
-    conn = sqlite3.connect(str(DB_PATH), check_same_thread=False)
+    conn = sqlite3.connect(str(DB_PATH), check_same_thread=False, timeout=30.0)
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA journal_mode=WAL")
     conn.execute("PRAGMA foreign_keys=ON")
+    conn.execute("PRAGMA busy_timeout=30000")
     return conn
 
 
@@ -669,19 +671,33 @@ class DB:
     """Thin synchronous wrapper around SQLite for use from server threads."""
 
     def __init__(self) -> None:
-        self._conn = get_connection()
-        _run_schema_migrations(self._conn)
+        self._local = threading.local()
+        self._migration_lock = threading.Lock()
+        self._conn()
+
+    def _conn(self) -> sqlite3.Connection:
+        # FastAPI runs sync endpoints in a threadpool; each thread must use its own SQLite connection.
+        conn = getattr(self._local, "conn", None)
+        if conn is None:
+            conn = get_connection()
+            with self._migration_lock:
+                _run_schema_migrations(conn)
+            self._local.conn = conn
+        return conn
 
     def close(self) -> None:
-        self._conn.close()
+        conn = getattr(self._local, "conn", None)
+        if conn is not None:
+            conn.close()
+            self._local.conn = None
 
     # --- managers ---
     def list_managers(self) -> list[dict[str, str]]:
-        rows = self._conn.execute("SELECT id, name FROM managers ORDER BY name").fetchall()
+        rows = self._conn().execute("SELECT id, name FROM managers ORDER BY name").fetchall()
         return [dict(r) for r in rows]
 
     def add_manager(self, mid: str, name: str) -> None:
-        self._conn.execute(
+        self._conn().execute(
             """
             INSERT INTO managers (id, name)
             VALUES (?, ?)
@@ -689,16 +705,16 @@ class DB:
             """,
             (mid, name),
         )
-        self._conn.commit()
+        self._conn().commit()
 
     def delete_manager(self, mid: str) -> bool:
-        cur = self._conn.execute("DELETE FROM managers WHERE id = ?", (mid,))
-        self._conn.commit()
+        cur = self._conn().execute("DELETE FROM managers WHERE id = ?", (mid,))
+        self._conn().commit()
         return cur.rowcount > 0
 
     # --- locations ---
     def list_locations(self) -> list[dict[str, str]]:
-        rows = self._conn.execute(
+        rows = self._conn().execute(
             """
             SELECT id, name, crm_name, crm_id, is_active
             FROM locations
@@ -708,7 +724,7 @@ class DB:
         return [dict(r) for r in rows]
 
     def get_location(self, lid: str) -> dict[str, Any] | None:
-        row = self._conn.execute(
+        row = self._conn().execute(
             "SELECT id, name, crm_name, crm_id, is_active FROM locations WHERE id = ?",
             (lid,),
         ).fetchone()
@@ -723,7 +739,7 @@ class DB:
         crm_id: str | None = None,
         is_active: bool = True,
     ) -> dict[str, Any]:
-        existing = self._conn.execute(
+        existing = self._conn().execute(
             """
             SELECT id
             FROM locations
@@ -735,7 +751,7 @@ class DB:
             (lid, crm_id, crm_id, name),
         ).fetchone()
         target_id = str(existing["id"]) if existing else lid
-        self._conn.execute(
+        self._conn().execute(
             """
             INSERT INTO locations (id, name, crm_name, crm_id, is_active)
             VALUES (?, ?, ?, ?, ?)
@@ -753,20 +769,20 @@ class DB:
                 1 if is_active else 0,
             ),
         )
-        self._conn.commit()
+        self._conn().commit()
         item = self.get_location(target_id)
         if item is None:
             raise RuntimeError(f"Не удалось сохранить локацию: {target_id}")
         return item
 
     def delete_location(self, lid: str) -> bool:
-        cur = self._conn.execute("DELETE FROM locations WHERE id = ?", (lid,))
-        self._conn.commit()
+        cur = self._conn().execute("DELETE FROM locations WHERE id = ?", (lid,))
+        self._conn().commit()
         return cur.rowcount > 0
 
     # --- training types ---
     def list_training_types(self) -> list[dict[str, Any]]:
-        rows = self._conn.execute(
+        rows = self._conn().execute(
             """
             SELECT
                 tt.slug,
@@ -787,14 +803,14 @@ class DB:
         return [dict(r) for r in rows]
 
     def training_type_exists(self, slug: str) -> bool:
-        row = self._conn.execute(
+        row = self._conn().execute(
             "SELECT 1 FROM training_types WHERE slug = ? LIMIT 1",
             (slug,),
         ).fetchone()
         return row is not None
 
     def get_training_type(self, slug: str) -> dict[str, Any] | None:
-        row = self._conn.execute(
+        row = self._conn().execute(
             """
             SELECT
                 tt.slug,
@@ -816,7 +832,7 @@ class DB:
         return dict(row) if row else None
 
     def _next_training_type_sort_order(self) -> int:
-        row = self._conn.execute("SELECT COALESCE(MAX(sort_order), -1) FROM training_types").fetchone()
+        row = self._conn().execute("SELECT COALESCE(MAX(sort_order), -1) FROM training_types").fetchone()
         return int(row[0]) + 1 if row else 0
 
     def upsert_training_type(
@@ -833,7 +849,7 @@ class DB:
         order = sort_order if sort_order is not None else (
             existing.get("sort_order") if existing else self._next_training_type_sort_order()
         )
-        self._conn.execute(
+        self._conn().execute(
             """
             INSERT INTO training_types (slug, name, department, checklist_slug, sort_order, created_at, updated_at)
             VALUES (?, ?, ?, ?, ?, ?, ?)
@@ -854,23 +870,23 @@ class DB:
                 now,
             ),
         )
-        self._conn.commit()
+        self._conn().commit()
         item = self.get_training_type(slug)
         if item is None:
             raise RuntimeError(f"Не удалось сохранить тип тренировки: {slug}")
         return item
 
     def delete_training_type(self, slug: str) -> bool:
-        self._conn.execute(
+        self._conn().execute(
             "UPDATE videos SET training_type_slug = NULL WHERE training_type_slug = ?",
             (slug,),
         )
-        cur = self._conn.execute("DELETE FROM training_types WHERE slug = ?", (slug,))
-        self._conn.commit()
+        cur = self._conn().execute("DELETE FROM training_types WHERE slug = ?", (slug,))
+        self._conn().commit()
         return cur.rowcount > 0
 
     def count_training_types_for_checklist(self, checklist_slug: str) -> int:
-        row = self._conn.execute(
+        row = self._conn().execute(
             "SELECT COUNT(*) FROM training_types WHERE checklist_slug = ?",
             (checklist_slug,),
         ).fetchone()
@@ -878,7 +894,7 @@ class DB:
 
     # --- local users ---
     def list_users(self) -> list[dict[str, Any]]:
-        rows = self._conn.execute(
+        rows = self._conn().execute(
             """
             SELECT
                 username,
@@ -909,7 +925,7 @@ class DB:
         return [dict(r) for r in rows]
 
     def get_user(self, username: str) -> dict[str, Any] | None:
-        row = self._conn.execute(
+        row = self._conn().execute(
             """
             SELECT
                 username,
@@ -1053,7 +1069,7 @@ class DB:
         elif not final_approved_at:
             final_approved_at = now
             final_rejection_reason = None
-        self._conn.execute(
+        self._conn().execute(
             """
             INSERT INTO users (
                 username,
@@ -1127,7 +1143,7 @@ class DB:
                 now,
             ),
         )
-        self._conn.commit()
+        self._conn().commit()
         final_name = final_full_name or final_display_name or username
         self.add_manager(username, final_name)
         item = self.get_user(username)
@@ -1170,7 +1186,7 @@ class DB:
         existing = self.get_user(normalized)
         if not existing:
             raise ValueError(f"Пользователь не найден: {normalized}")
-        self._conn.execute(
+        self._conn().execute(
             """
             UPDATE users
             SET onboarding_version = ?, updated_at = ?
@@ -1178,7 +1194,7 @@ class DB:
             """,
             (_normalize_onboarding_version(version), _utc_now(), normalized),
         )
-        self._conn.commit()
+        self._conn().commit()
         item = self.get_user(normalized)
         if item is None:
             raise RuntimeError(f"Не удалось обновить onboarding_version: {normalized}")
@@ -1194,7 +1210,7 @@ class DB:
         normalized = str(username or "").strip()
         if not normalized:
             return 0
-        row = self._conn.execute(
+        row = self._conn().execute(
             """
             SELECT COUNT(*)
             FROM videos
@@ -1228,12 +1244,12 @@ class DB:
             marks = ", ".join(["?"] * len(statuses))
             sql.append(f"AND j.status IN ({marks})")
             params.extend(list(statuses))
-        row = self._conn.execute("\n".join(sql), params).fetchone()
+        row = self._conn().execute("\n".join(sql), params).fetchone()
         return int(row[0]) if row else 0
 
     def list_user_quota_usage(self, *, start_at: str, end_at: str) -> dict[str, dict[str, int]]:
         out: dict[str, dict[str, int]] = {}
-        uploaded_rows = self._conn.execute(
+        uploaded_rows = self._conn().execute(
             """
             SELECT lower(COALESCE(uploaded_by, '')) AS username_key, COUNT(*) AS uploaded_count
             FROM videos
@@ -1253,7 +1269,7 @@ class DB:
                 {"daily_uploaded_count": 0, "queued_count": 0, "running_count": 0},
             )
             item["daily_uploaded_count"] = int(row["uploaded_count"] or 0)
-        job_rows = self._conn.execute(
+        job_rows = self._conn().execute(
             """
             SELECT
                 lower(COALESCE(v.uploaded_by, '')) AS username_key,
@@ -1279,7 +1295,7 @@ class DB:
         return out
 
     def count_running_jobs_by_user(self) -> dict[str, int]:
-        rows = self._conn.execute(
+        rows = self._conn().execute(
             """
             SELECT lower(COALESCE(v.uploaded_by, '')) AS username_key, COUNT(*) AS running_count
             FROM jobs j
@@ -1296,7 +1312,7 @@ class DB:
         }
 
     def set_user_password_hash(self, username: str, password_hash: str) -> bool:
-        cur = self._conn.execute(
+        cur = self._conn().execute(
             """
             UPDATE users
             SET password_hash = ?, updated_at = ?
@@ -1304,7 +1320,7 @@ class DB:
             """,
             (password_hash, _utc_now(), username),
         )
-        self._conn.commit()
+        self._conn().commit()
         return cur.rowcount > 0
 
     def set_user_active(self, username: str, is_active: bool) -> bool:
@@ -1317,7 +1333,7 @@ class DB:
             approval_status = USER_APPROVAL_APPROVED
             approved_at = approved_at or now
             rejection_reason = None
-        cur = self._conn.execute(
+        cur = self._conn().execute(
             """
             UPDATE users
             SET is_active = ?,
@@ -1338,12 +1354,12 @@ class DB:
                 username,
             ),
         )
-        self._conn.commit()
+        self._conn().commit()
         return cur.rowcount > 0
 
     def approve_user_registration(self, username: str, approved_by: str | None = None) -> dict[str, Any] | None:
         now = _utc_now()
-        cur = self._conn.execute(
+        cur = self._conn().execute(
             """
             UPDATE users
             SET is_active = 1,
@@ -1364,7 +1380,7 @@ class DB:
                 username,
             ),
         )
-        self._conn.commit()
+        self._conn().commit()
         if cur.rowcount <= 0:
             return None
         return self.get_user(username)
@@ -1376,7 +1392,7 @@ class DB:
         rejected_by: str | None = None,
     ) -> dict[str, Any] | None:
         now = _utc_now()
-        cur = self._conn.execute(
+        cur = self._conn().execute(
             """
             UPDATE users
             SET is_active = 0,
@@ -1397,14 +1413,14 @@ class DB:
                 username,
             ),
         )
-        self._conn.commit()
+        self._conn().commit()
         if cur.rowcount <= 0:
             return None
         return self.get_user(username)
 
     def delete_user(self, username: str) -> bool:
-        cur = self._conn.execute("DELETE FROM users WHERE username = ?", (username,))
-        self._conn.commit()
+        cur = self._conn().execute("DELETE FROM users WHERE username = ?", (username,))
+        self._conn().commit()
         return cur.rowcount > 0
 
     # --- audit log ---
@@ -1420,15 +1436,15 @@ class DB:
     ) -> dict[str, Any]:
         created_at = _utc_now()
         payload = json.dumps(details or {}, ensure_ascii=False)
-        cur = self._conn.execute(
+        cur = self._conn().execute(
             """
             INSERT INTO audit_log (actor, action, target_type, target_id, status, details_json, created_at)
             VALUES (?, ?, ?, ?, ?, ?, ?)
             """,
             (actor, action, target_type, target_id, status, payload, created_at),
         )
-        self._conn.commit()
-        row = self._conn.execute(
+        self._conn().commit()
+        row = self._conn().execute(
             """
             SELECT id, actor, action, target_type, target_id, status, details_json, created_at
             FROM audit_log
@@ -1469,7 +1485,7 @@ class DB:
             params.append(action)
         sql.append("ORDER BY created_at DESC, id DESC LIMIT ?")
         params.append(safe_limit)
-        rows = self._conn.execute("\n".join(sql), params).fetchall()
+        rows = self._conn().execute("\n".join(sql), params).fetchall()
         out: list[dict[str, Any]] = []
         for row in rows:
             item = dict(row)
@@ -1496,7 +1512,7 @@ class DB:
         if not clean_name:
             raise ValueError("Укажите название ключа")
         safe_role = USER_ROLE_ADMIN if str(role or "").strip().lower() == USER_ROLE_ADMIN else USER_ROLE_USER
-        self._conn.execute(
+        self._conn().execute(
             """
             INSERT INTO api_keys (
                 id,
@@ -1520,14 +1536,14 @@ class DB:
                 created_by,
             ),
         )
-        self._conn.commit()
+        self._conn().commit()
         item = self.get_api_key_by_id(key_id)
         if item is None:
             raise RuntimeError("Не удалось создать API-ключ")
         return item
 
     def get_api_key_by_id(self, key_id: str) -> dict[str, Any] | None:
-        row = self._conn.execute(
+        row = self._conn().execute(
             """
             SELECT id, name, key_prefix, role, is_active, created_at, created_by, last_used_at, revoked_at, revoked_by
             FROM api_keys
@@ -1538,7 +1554,7 @@ class DB:
         return dict(row) if row else None
 
     def get_active_api_key_by_hash(self, key_hash: str) -> dict[str, Any] | None:
-        row = self._conn.execute(
+        row = self._conn().execute(
             """
             SELECT id, name, key_prefix, role, is_active, created_at, created_by, last_used_at, revoked_at, revoked_by
             FROM api_keys
@@ -1559,18 +1575,18 @@ class DB:
         if not include_revoked:
             sql += " WHERE is_active = 1 AND revoked_at IS NULL"
         sql += " ORDER BY created_at DESC, name COLLATE NOCASE"
-        return [dict(row) for row in self._conn.execute(sql).fetchall()]
+        return [dict(row) for row in self._conn().execute(sql).fetchall()]
 
     def mark_api_key_used(self, key_id: str) -> None:
-        self._conn.execute(
+        self._conn().execute(
             "UPDATE api_keys SET last_used_at = ? WHERE id = ?",
             (_utc_now(), key_id),
         )
-        self._conn.commit()
+        self._conn().commit()
 
     def revoke_api_key(self, key_id: str, revoked_by: str | None) -> dict[str, Any] | None:
         now = _utc_now()
-        cur = self._conn.execute(
+        cur = self._conn().execute(
             """
             UPDATE api_keys
             SET is_active = 0,
@@ -1580,7 +1596,7 @@ class DB:
             """,
             (now, revoked_by, key_id),
         )
-        self._conn.commit()
+        self._conn().commit()
         if cur.rowcount <= 0:
             return None
         return self.get_api_key_by_id(key_id)
@@ -1589,7 +1605,7 @@ class DB:
     def _next_feedback_ticket_id(self, now: str | None = None) -> str:
         date_part = datetime.now(timezone.utc).strftime("%Y%m%d")
         prefix = f"FB-{date_part}-"
-        row = self._conn.execute(
+        row = self._conn().execute(
             """
             SELECT id
             FROM feedback_tickets
@@ -1629,7 +1645,7 @@ class DB:
         comment: str | None = None,
     ) -> dict[str, Any]:
         created_at = _utc_now()
-        cur = self._conn.execute(
+        cur = self._conn().execute(
             """
             INSERT INTO feedback_events (
                 ticket_id,
@@ -1654,7 +1670,7 @@ class DB:
                 created_at,
             ),
         )
-        row = self._conn.execute(
+        row = self._conn().execute(
             """
             SELECT id, ticket_id, actor, actor_role, action, status_from, status_to, comment, created_at
             FROM feedback_events
@@ -1667,7 +1683,7 @@ class DB:
         return dict(row)
 
     def list_feedback_events(self, ticket_id: str) -> list[dict[str, Any]]:
-        rows = self._conn.execute(
+        rows = self._conn().execute(
             """
             SELECT id, ticket_id, actor, actor_role, action, status_from, status_to, comment, created_at
             FROM feedback_events
@@ -1679,7 +1695,7 @@ class DB:
         return [dict(row) for row in rows]
 
     def get_feedback_ticket(self, ticket_id: str, *, include_events: bool = True) -> dict[str, Any] | None:
-        row = self._conn.execute(
+        row = self._conn().execute(
             "SELECT * FROM feedback_tickets WHERE id = ?",
             (ticket_id,),
         ).fetchone()
@@ -1707,7 +1723,7 @@ class DB:
         for attempt in range(20):
             candidate_id = ticket_id if attempt == 0 else f"{ticket_id}-{attempt + 1}"
             try:
-                self._conn.execute(
+                self._conn().execute(
                     """
                     INSERT INTO feedback_tickets (
                         id,
@@ -1750,7 +1766,7 @@ class DB:
                 status_to="new",
                 comment=description,
             )
-            self._conn.commit()
+            self._conn().commit()
             item = self.get_feedback_ticket(candidate_id)
             if item is None:
                 raise RuntimeError("Не удалось сохранить заявку обратной связи")
@@ -1798,7 +1814,7 @@ class DB:
             params.append(needle)
         sql.append("ORDER BY updated_at DESC, created_at DESC LIMIT ?")
         params.append(safe_limit)
-        rows = self._conn.execute("\n".join(sql), params).fetchall()
+        rows = self._conn().execute("\n".join(sql), params).fetchall()
         out = [self._feedback_row_to_dict(row) for row in rows]
         if include_events:
             for item in out:
@@ -1833,7 +1849,7 @@ class DB:
             updates.extend(["user_review_comment = ?", "user_reviewed_at = ?"])
             params.extend([user_review_comment, now])
         params.append(ticket_id)
-        self._conn.execute(
+        self._conn().execute(
             f"""
             UPDATE feedback_tickets
             SET {", ".join(updates)}
@@ -1850,12 +1866,12 @@ class DB:
             status_to=status,
             comment=comment,
         )
-        self._conn.commit()
+        self._conn().commit()
         return self.get_feedback_ticket(ticket_id)
 
     # --- video meta ---
     def get_video_meta(self, stem: str) -> dict[str, Any]:
-        row = self._conn.execute("SELECT * FROM videos WHERE stem = ?", (stem,)).fetchone()
+        row = self._conn().execute("SELECT * FROM videos WHERE stem = ?", (stem,)).fetchone()
         if not row:
             return {}
         data = dict(row)
@@ -1899,7 +1915,7 @@ class DB:
         deleted_at = kw.get("deleted_at", existing.get("deleted_at"))
         deleted_by = kw.get("deleted_by", existing.get("deleted_by"))
 
-        self._conn.execute(
+        self._conn().execute(
             """
             INSERT INTO videos (
                 stem,
@@ -1997,7 +2013,7 @@ class DB:
                 deleted_by,
             ),
         )
-        self._conn.commit()
+        self._conn().commit()
         return self.get_video_meta(stem)
 
     def request_video_deletion(self, stem: str, username: str | None) -> dict[str, Any]:
@@ -2033,7 +2049,7 @@ class DB:
         if not include_deleted:
             sql += " AND deleted_at IS NULL"
         sql += " ORDER BY uploaded_at DESC LIMIT 1"
-        row = self._conn.execute(sql, params).fetchone()
+        row = self._conn().execute(sql, params).fetchone()
         if not row:
             return None
         data = dict(row)
@@ -2041,7 +2057,7 @@ class DB:
         return data
 
     def get_latest_human_eval_state_for_stem(self, stem: str) -> dict[str, Any] | None:
-        row = self._conn.execute(
+        row = self._conn().execute(
             """
             SELECT stem, criteria_slug, draft_saved_at, published_at, published_by, compared_at, compared_by
             FROM human_eval_states
@@ -2054,11 +2070,11 @@ class DB:
         return dict(row) if row else None
 
     def delete_video(self, stem: str) -> bool:
-        cur = self._conn.execute("DELETE FROM videos WHERE stem = ?", (stem,))
-        self._conn.execute("DELETE FROM jobs WHERE stem = ?", (stem,))
-        self._conn.execute("DELETE FROM human_eval_states WHERE stem = ?", (stem,))
-        self._conn.execute("DELETE FROM evaluation_comparisons WHERE stem = ?", (stem,))
-        self._conn.commit()
+        cur = self._conn().execute("DELETE FROM videos WHERE stem = ?", (stem,))
+        self._conn().execute("DELETE FROM jobs WHERE stem = ?", (stem,))
+        self._conn().execute("DELETE FROM human_eval_states WHERE stem = ?", (stem,))
+        self._conn().execute("DELETE FROM evaluation_comparisons WHERE stem = ?", (stem,))
+        self._conn().commit()
         return cur.rowcount > 0
 
     def resolve_checklist_slug_for_video(self, stem: str) -> str:
@@ -2087,7 +2103,7 @@ class DB:
 
     # --- human eval state ---
     def get_human_eval_state(self, stem: str, criteria_slug: str) -> dict[str, Any]:
-        row = self._conn.execute(
+        row = self._conn().execute(
             """
             SELECT stem, criteria_slug, draft_saved_at, published_at, published_by, compared_at, compared_by
             FROM human_eval_states
@@ -2109,7 +2125,7 @@ class DB:
         compared_by: str | None = None,
     ) -> dict[str, Any]:
         existing = self.get_human_eval_state(stem, criteria_slug)
-        self._conn.execute(
+        self._conn().execute(
             """
             INSERT INTO human_eval_states (
                 stem,
@@ -2138,7 +2154,7 @@ class DB:
                 compared_by,
             ),
         )
-        self._conn.commit()
+        self._conn().commit()
         return self.get_human_eval_state(stem, criteria_slug)
 
     def mark_human_eval_draft_saved(self, stem: str, criteria_slug: str) -> dict[str, Any]:
@@ -2177,7 +2193,7 @@ class DB:
     ) -> dict[str, Any]:
         now = _utc_now()
         existing = self.get_evaluation_comparison(stem, criteria_slug)
-        self._conn.execute(
+        self._conn().execute(
             """
             INSERT INTO evaluation_comparisons (
                 stem,
@@ -2211,14 +2227,14 @@ class DB:
                 now,
             ),
         )
-        self._conn.commit()
+        self._conn().commit()
         item = self.get_evaluation_comparison(stem, criteria_slug)
         if item is None:
             raise RuntimeError("Не удалось сохранить сравнение оценок")
         return item
 
     def get_evaluation_comparison(self, stem: str, criteria_slug: str) -> dict[str, Any] | None:
-        row = self._conn.execute(
+        row = self._conn().execute(
             """
             SELECT stem, criteria_slug, ai_overall, human_overall, diff_percent, status_color, payload_json, created_at, updated_at
             FROM evaluation_comparisons
@@ -2236,7 +2252,7 @@ class DB:
         return data
 
     def get_latest_evaluation_comparison_for_stem(self, stem: str) -> dict[str, Any] | None:
-        row = self._conn.execute(
+        row = self._conn().execute(
             """
             SELECT stem, criteria_slug, ai_overall, human_overall, diff_percent, status_color, payload_json, created_at, updated_at
             FROM evaluation_comparisons
@@ -2257,7 +2273,7 @@ class DB:
 
     # --- jobs ---
     def upsert_job(self, job_id: str, **kw: Any) -> None:
-        existing = self._conn.execute("SELECT * FROM jobs WHERE id = ?", (job_id,)).fetchone()
+        existing = self._conn().execute("SELECT * FROM jobs WHERE id = ?", (job_id,)).fetchone()
         if existing:
             sets = []
             vals = []
@@ -2269,20 +2285,20 @@ class DB:
                 sets.append("updated_at = ?")
                 vals.append(_utc_now())
                 vals.append(job_id)
-                self._conn.execute(f"UPDATE jobs SET {', '.join(sets)} WHERE id = ?", vals)
+                self._conn().execute(f"UPDATE jobs SET {', '.join(sets)} WHERE id = ?", vals)
         else:
             kw.setdefault("created_at", _utc_now())
             kw.setdefault("updated_at", _utc_now())
             cols = ["id"] + list(kw.keys())
             placeholders = ", ".join(["?"] * len(cols))
-            self._conn.execute(
+            self._conn().execute(
                 f"INSERT INTO jobs ({', '.join(cols)}) VALUES ({placeholders})",
                 [job_id] + list(kw.values()),
             )
-        self._conn.commit()
+        self._conn().commit()
 
     def get_job(self, job_id: str) -> dict[str, Any] | None:
-        row = self._conn.execute("SELECT * FROM jobs WHERE id = ?", (job_id,)).fetchone()
+        row = self._conn().execute("SELECT * FROM jobs WHERE id = ?", (job_id,)).fetchone()
         return dict(row) if row else None
 
     def list_jobs(
@@ -2340,22 +2356,22 @@ class DB:
             params.extend([like, like, like, like, like, like, like, like])
         sql.append("ORDER BY COALESCE(j.updated_at, j.created_at) DESC, j.created_at DESC, j.id DESC LIMIT ?")
         params.append(safe_limit)
-        rows = self._conn.execute("\n".join(sql), params).fetchall()
+        rows = self._conn().execute("\n".join(sql), params).fetchall()
         return [dict(r) for r in rows]
 
     def count_jobs(self, *, statuses: tuple[str, ...] | None = None) -> int:
         if statuses:
             marks = ", ".join(["?"] * len(statuses))
-            row = self._conn.execute(
+            row = self._conn().execute(
                 f"SELECT COUNT(*) FROM jobs WHERE status IN ({marks})",
                 list(statuses),
             ).fetchone()
         else:
-            row = self._conn.execute("SELECT COUNT(*) FROM jobs").fetchone()
+            row = self._conn().execute("SELECT COUNT(*) FROM jobs").fetchone()
         return int(row[0]) if row else 0
 
     def latest_job_by_stem(self) -> dict[str, dict[str, Any]]:
-        rows = self._conn.execute(
+        rows = self._conn().execute(
             """
             SELECT *
             FROM (
@@ -2376,7 +2392,7 @@ class DB:
 
     def list_dispatchable_jobs(self, *, limit: int = 500) -> list[dict[str, Any]]:
         safe_limit = max(1, min(int(limit), 5000))
-        rows = self._conn.execute(
+        rows = self._conn().execute(
             """
             SELECT
                 j.*,
@@ -2398,7 +2414,7 @@ class DB:
         if not from_statuses:
             return 0
         marks = ", ".join(["?"] * len(from_statuses))
-        cur = self._conn.execute(
+        cur = self._conn().execute(
             f"""
             UPDATE jobs
             SET status = 'queued', stage = ?, updated_at = ?
@@ -2406,12 +2422,12 @@ class DB:
             """,
             [stage, _utc_now(), *list(from_statuses)],
         )
-        self._conn.commit()
+        self._conn().commit()
         return int(cur.rowcount or 0)
 
     def delete_jobs_for_stem(self, stem: str) -> None:
-        self._conn.execute("DELETE FROM jobs WHERE stem = ?", (stem,))
-        self._conn.commit()
+        self._conn().execute("DELETE FROM jobs WHERE stem = ?", (stem,))
+        self._conn().commit()
 
     # --- glossary ---
     @staticmethod
@@ -2437,11 +2453,11 @@ class DB:
         if not include_inactive:
             sql += " WHERE is_active = 1"
         sql += " ORDER BY sort_order, category COLLATE NOCASE, term COLLATE NOCASE, id COLLATE NOCASE"
-        rows = self._conn.execute(sql, params).fetchall()
+        rows = self._conn().execute(sql, params).fetchall()
         return [self._glossary_row_to_dict(r) for r in rows]
 
     def get_glossary_entry(self, entry_id: str) -> dict[str, Any] | None:
-        row = self._conn.execute(
+        row = self._conn().execute(
             "SELECT * FROM glossary_entries WHERE id = ?",
             (entry_id,),
         ).fetchone()
@@ -2469,10 +2485,10 @@ class DB:
             if existing:
                 sort_order = int(existing.get("sort_order") or 0)
             else:
-                row = self._conn.execute("SELECT COALESCE(MAX(sort_order), -1) FROM glossary_entries").fetchone()
+                row = self._conn().execute("SELECT COALESCE(MAX(sort_order), -1) FROM glossary_entries").fetchone()
                 sort_order = int(row[0] or -1) + 1 if row else 0
         clean_variants = [str(v).strip() for v in (variants or []) if str(v or "").strip()]
-        self._conn.execute(
+        self._conn().execute(
             """
             INSERT INTO glossary_entries (
                 id,
@@ -2522,7 +2538,7 @@ class DB:
                 updated_by,
             ),
         )
-        self._conn.commit()
+        self._conn().commit()
         item = self.get_glossary_entry(entry_id)
         if item is None:
             raise RuntimeError(f"Не удалось сохранить термин глоссария: {entry_id}")
@@ -2535,7 +2551,7 @@ class DB:
         *,
         updated_by: str | None = None,
     ) -> dict[str, Any] | None:
-        self._conn.execute(
+        self._conn().execute(
             """
             UPDATE glossary_entries
             SET is_active = ?, updated_at = ?, updated_by = ?
@@ -2543,16 +2559,16 @@ class DB:
             """,
             (1 if is_active else 0, _utc_now(), updated_by, entry_id),
         )
-        self._conn.commit()
+        self._conn().commit()
         return self.get_glossary_entry(entry_id)
 
     # --- checklists ---
     def checklist_count(self) -> int:
-        row = self._conn.execute("SELECT COUNT(*) FROM checklists").fetchone()
+        row = self._conn().execute("SELECT COUNT(*) FROM checklists").fetchone()
         return int(row[0]) if row else 0
 
     def list_checklist_files(self) -> list[dict[str, str]]:
-        rows = self._conn.execute(
+        rows = self._conn().execute(
             """
             SELECT slug, COALESCE(NULLIF(trim(display_name), ''), slug) AS display_name, department, version
             FROM checklists
@@ -2570,19 +2586,19 @@ class DB:
         ]
 
     def checklist_exists(self, slug: str) -> bool:
-        row = self._conn.execute(
+        row = self._conn().execute(
             "SELECT 1 FROM checklists WHERE slug = ? LIMIT 1",
             (slug,),
         ).fetchone()
         return row is not None
 
     def get_setting(self, key: str) -> str | None:
-        row = self._conn.execute("SELECT value FROM app_settings WHERE key = ?", (key,)).fetchone()
+        row = self._conn().execute("SELECT value FROM app_settings WHERE key = ?", (key,)).fetchone()
         return str(row["value"]) if row else None
 
     def list_settings(self, prefix: str | None = None) -> list[dict[str, str]]:
         if prefix:
-            rows = self._conn.execute(
+            rows = self._conn().execute(
                 """
                 SELECT key, value
                 FROM app_settings
@@ -2592,7 +2608,7 @@ class DB:
                 (f"{prefix}%",),
             ).fetchall()
         else:
-            rows = self._conn.execute(
+            rows = self._conn().execute(
                 """
                 SELECT key, value
                 FROM app_settings
@@ -2602,7 +2618,7 @@ class DB:
         return [dict(r) for r in rows]
 
     def set_setting(self, key: str, value: str) -> None:
-        self._conn.execute(
+        self._conn().execute(
             """
             INSERT INTO app_settings (key, value)
             VALUES (?, ?)
@@ -2610,15 +2626,15 @@ class DB:
             """,
             (key, value),
         )
-        self._conn.commit()
+        self._conn().commit()
 
     def delete_setting(self, key: str) -> bool:
-        cur = self._conn.execute("DELETE FROM app_settings WHERE key = ?", (key,))
-        self._conn.commit()
+        cur = self._conn().execute("DELETE FROM app_settings WHERE key = ?", (key,))
+        self._conn().commit()
         return cur.rowcount > 0
 
     def get_checklist_meta(self, slug: str) -> dict[str, Any] | None:
-        row = self._conn.execute(
+        row = self._conn().execute(
             """
             SELECT slug, COALESCE(NULLIF(trim(display_name), ''), slug) AS display_name, department, version, updated_at
             FROM checklists
@@ -2629,7 +2645,7 @@ class DB:
         return dict(row) if row else None
 
     def get_checklist_content(self, slug: str) -> dict[str, Any] | None:
-        row = self._conn.execute(
+        row = self._conn().execute(
             """
             SELECT slug, COALESCE(NULLIF(trim(display_name), ''), slug) AS display_name, department, version
             FROM checklists
@@ -2639,7 +2655,7 @@ class DB:
         ).fetchone()
         if not row:
             return None
-        crit_rows = self._conn.execute(
+        crit_rows = self._conn().execute(
             """
             SELECT criterion_id, name, description, weight
             FROM checklist_criteria
@@ -2677,9 +2693,9 @@ class DB:
         department: str | None = None,
     ) -> None:
         now = _utc_now()
-        self._conn.execute("DELETE FROM checklist_criteria WHERE checklist_slug = ?", (slug,))
+        self._conn().execute("DELETE FROM checklist_criteria WHERE checklist_slug = ?", (slug,))
         existing = self.get_checklist_meta(slug) or {}
-        self._conn.execute(
+        self._conn().execute(
             """
             INSERT INTO checklists (slug, display_name, department, version, updated_at)
             VALUES (?, ?, ?, ?, ?)
@@ -2701,7 +2717,7 @@ class DB:
             cid = str(item.get("id", "")).strip()
             if not cid:
                 continue
-            self._conn.execute(
+            self._conn().execute(
                 """
                 INSERT INTO checklist_criteria (
                     checklist_slug,
@@ -2721,7 +2737,7 @@ class DB:
                     _normalize_weight(item.get("weight", 1)),
                 ),
             )
-        self._conn.commit()
+        self._conn().commit()
 
     def insert_checklist(
         self,
@@ -2735,7 +2751,7 @@ class DB:
         if self.checklist_exists(slug):
             raise ValueError(f"Чеклист уже есть: {slug}")
         now = _utc_now()
-        self._conn.execute(
+        self._conn().execute(
             "INSERT INTO checklists (slug, display_name, department, version, updated_at) VALUES (?, ?, ?, ?, ?)",
             (slug, display_name or slug, department, version, now),
         )
@@ -2743,7 +2759,7 @@ class DB:
             cid = str(item.get("id", "")).strip()
             if not cid:
                 continue
-            self._conn.execute(
+            self._conn().execute(
                 """
                 INSERT INTO checklist_criteria (
                     checklist_slug,
@@ -2763,7 +2779,7 @@ class DB:
                     _normalize_weight(item.get("weight", 1)),
                 ),
             )
-        self._conn.commit()
+        self._conn().commit()
 
     def ensure_seed_checklist(
         self,
@@ -2776,7 +2792,7 @@ class DB:
     ) -> None:
         if self.checklist_exists(slug):
             meta = self.get_checklist_meta(slug) or {}
-            self._conn.execute(
+            self._conn().execute(
                 """
                 UPDATE checklists
                 SET display_name = COALESCE(NULLIF(trim(display_name), ''), ?),
@@ -2785,7 +2801,7 @@ class DB:
                 """,
                 (display_name, department, slug),
             )
-            self._conn.commit()
+            self._conn().commit()
             return
         criteria = build_seed_criteria(criteria_texts)
         self.insert_checklist(
@@ -2799,8 +2815,8 @@ class DB:
     def delete_checklist(self, slug: str) -> bool:
         if self.count_training_types_for_checklist(slug) > 0:
             raise ValueError("Чеклист привязан к типу тренировки")
-        cur = self._conn.execute("DELETE FROM checklists WHERE slug = ?", (slug,))
-        self._conn.commit()
+        cur = self._conn().execute("DELETE FROM checklists WHERE slug = ?", (slug,))
+        self._conn().commit()
         return cur.rowcount > 0
 
     # --- migration: import from YAML config files ---
