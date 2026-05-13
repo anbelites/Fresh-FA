@@ -4,7 +4,10 @@ from __future__ import annotations
 import json
 import os
 import sys
+import tempfile
+import subprocess
 from collections import Counter
+from dataclasses import dataclass, field
 from datetime import datetime, timezone
 import multiprocessing
 import time
@@ -20,6 +23,11 @@ ensure_nvidia_pip_libs()
 from src.audio_extract import extract_wav_16k_mono
 from src.errors import PipelineCancelled
 from src.glossary import format_glossary_for_whisper
+from src.asr_quality import (
+    quality_summary_text,
+    rescue_windows_from_report,
+    transcript_quality_report,
+)
 from src.audio_tone import (
     aggregate_tone_by_speaker,
     audio_tone_summary_note,
@@ -1127,14 +1135,16 @@ def _use_transcribe_subprocess() -> bool:
     """
     Распознавание в отдельном процессе: при отмене задачи родитель делает terminate(),
     и загрузка CPU прекращается (иначе faster-whisper может долго не выходить в Python
-    между сегментами). По умолчанию вкл. на Windows; выкл.: FA_TRANSCRIBE_SUBPROCESS=0.
+    между сегментами). На Linux тоже включено по умолчанию: так модель Whisper и её
+    CUDA-память освобождаются после каждого ASR-прохода, а веб-сервер не копит VRAM.
+    Выкл.: FA_TRANSCRIBE_SUBPROCESS=0.
     """
     v = os.environ.get("FA_TRANSCRIBE_SUBPROCESS", "").strip().lower()
     if v in ("0", "false", "no"):
         return False
     if v in ("1", "true", "yes"):
         return True
-    return sys.platform == "win32"
+    return True
 
 
 def _whisper_chunk_length_kw() -> dict[str, Any]:
@@ -1165,6 +1175,528 @@ def _whisper_condition_on_previous_text() -> bool:
     if raw in ("0", "false", "no", "off"):
         return False
     return False
+
+
+@dataclass(frozen=True)
+class AsrProfile:
+    name: str
+    options: dict[str, Any] = field(default_factory=dict)
+    description: str = ""
+
+
+def _float_env(name: str, default: float) -> float:
+    raw = os.environ.get(name, "").strip()
+    if not raw:
+        return default
+    try:
+        return float(raw)
+    except ValueError:
+        return default
+
+
+def _int_env(name: str, default: int) -> int:
+    raw = os.environ.get(name, "").strip()
+    if not raw:
+        return default
+    try:
+        return int(raw)
+    except ValueError:
+        return default
+
+
+def _asr_profile_name() -> str:
+    raw = os.environ.get("FA_ASR_PROFILE", "balanced").strip().lower()
+    if raw in ("accurate", "rescue", "balanced"):
+        return raw
+    return "balanced"
+
+
+def _asr_profile(profile_name: str | None = None) -> AsrProfile:
+    name = (profile_name or _asr_profile_name()).strip().lower()
+    base: dict[str, Any] = {
+        "word_timestamps": True,
+        "vad_filter": True,
+        "condition_on_previous_text": _whisper_condition_on_previous_text(),
+    }
+    base.update(_whisper_chunk_length_kw())
+    if name == "accurate":
+        base.update(
+            {
+                "beam_size": _int_env("FA_ASR_ACCURATE_BEAM_SIZE", 3),
+                "best_of": _int_env("FA_ASR_ACCURATE_BEST_OF", 3),
+                "temperature": [0.0, 0.2, 0.4],
+                "compression_ratio_threshold": _float_env(
+                    "FA_ASR_ACCURATE_COMPRESSION_RATIO_THRESHOLD", 2.4
+                ),
+                "log_prob_threshold": _float_env("FA_ASR_ACCURATE_LOG_PROB_THRESHOLD", -1.0),
+                "no_speech_threshold": _float_env("FA_ASR_ACCURATE_NO_SPEECH_THRESHOLD", 0.6),
+                "hallucination_silence_threshold": _float_env(
+                    "FA_ASR_ACCURATE_HALLUCINATION_SILENCE_THRESHOLD", 2.0
+                ),
+                "vad_parameters": {
+                    "min_silence_duration_ms": _int_env(
+                        "FA_ASR_ACCURATE_VAD_MIN_SILENCE_MS", 450
+                    ),
+                    "speech_pad_ms": _int_env("FA_ASR_ACCURATE_VAD_SPEECH_PAD_MS", 500),
+                },
+            }
+        )
+        return AsrProfile(name="accurate", options=base, description="higher quality full pass")
+    if name == "rescue":
+        base.update(
+            {
+                "beam_size": _int_env("FA_ASR_RESCUE_BEAM_SIZE", 3),
+                "best_of": _int_env("FA_ASR_RESCUE_BEST_OF", 3),
+                "temperature": [0.0, 0.2],
+                "vad_filter": os.environ.get("FA_ASR_RESCUE_VAD_FILTER", "0").strip().lower()
+                in ("1", "true", "yes", "on"),
+                "compression_ratio_threshold": _float_env(
+                    "FA_ASR_RESCUE_COMPRESSION_RATIO_THRESHOLD", 2.8
+                ),
+                "log_prob_threshold": _float_env("FA_ASR_RESCUE_LOG_PROB_THRESHOLD", -1.6),
+                "no_speech_threshold": _float_env("FA_ASR_RESCUE_NO_SPEECH_THRESHOLD", 0.8),
+                "condition_on_previous_text": False,
+            }
+        )
+        return AsrProfile(name="rescue", options=base, description="short-window gap recovery")
+    return AsrProfile(name="balanced", options=base, description="stable default full pass")
+
+
+def _asr_profile_metadata(profile: AsrProfile, transcribe_kw: dict[str, Any]) -> dict[str, Any]:
+    stored = {
+        key: value
+        for key, value in transcribe_kw.items()
+        if key not in {"initial_prompt"}
+    }
+    if "initial_prompt" in transcribe_kw:
+        stored["initial_prompt_present"] = True
+    return {
+        "name": profile.name,
+        "description": profile.description,
+        "transcribe_options": stored,
+    }
+
+
+def _should_try_accurate_on_fail() -> bool:
+    raw = os.environ.get("FA_ASR_ACCURATE_RERUN_ON_FAIL", "1").strip().lower()
+    return raw not in ("0", "false", "no", "off")
+
+
+def _should_run_rescue() -> bool:
+    raw = os.environ.get("FA_ASR_RESCUE_ENABLED", "1").strip().lower()
+    return raw not in ("0", "false", "no", "off")
+
+
+def _rescue_min_mean_word_probability() -> float:
+    return _float_env("FA_ASR_RESCUE_MIN_MEAN_WORD_PROB", 0.35)
+
+
+def _gpu_guard_enabled() -> bool:
+    raw = os.environ.get("FA_ASR_GPU_GUARD", "1").strip().lower()
+    return raw not in ("0", "false", "no", "off")
+
+
+def _gpu_snapshot() -> tuple[int, int] | None:
+    try:
+        out = subprocess.check_output(
+            [
+                "nvidia-smi",
+                "--query-gpu=utilization.gpu,memory.used",
+                "--format=csv,noheader,nounits",
+            ],
+            text=True,
+            stderr=subprocess.DEVNULL,
+            timeout=5,
+        ).strip()
+    except Exception:
+        return None
+    first = out.splitlines()[0] if out else ""
+    parts = [p.strip() for p in first.split(",")]
+    if len(parts) < 2:
+        return None
+    try:
+        return int(float(parts[0])), int(float(parts[1]))
+    except ValueError:
+        return None
+
+
+def _wait_for_gpu_capacity(stage: str, *, device: str, cancel_check: Callable[[], None] | None) -> None:
+    if device != "cuda" or not _gpu_guard_enabled():
+        return
+    max_util = _int_env("FA_ASR_GPU_MAX_UTIL_BEFORE_START", 35)
+    max_mem = _int_env("FA_ASR_GPU_MAX_USED_MB_BEFORE_START", 6000)
+    wait_sec = _float_env("FA_ASR_GPU_WAIT_SEC", 300.0)
+    poll_sec = max(1.0, _float_env("FA_ASR_GPU_POLL_SEC", 5.0))
+    deadline = time.time() + max(0.0, wait_sec)
+    last: tuple[int, int] | None = None
+    while True:
+        if cancel_check:
+            cancel_check()
+        snap = _gpu_snapshot()
+        if snap is None:
+            return
+        last = snap
+        util, mem = snap
+        if util <= max_util and mem <= max_mem:
+            return
+        if time.time() >= deadline:
+            raise RuntimeError(
+                f"GPU busy before ASR {stage}: util={util}%, mem={mem} MiB "
+                f"(limits: util<={max_util}%, mem<={max_mem} MiB)."
+            )
+        time.sleep(poll_sec)
+
+
+def _segment_to_candidate(seg: Any, *, offset_sec: float, source_window: dict[str, float]) -> dict[str, Any]:
+    start = float(seg.start) + offset_sec
+    end = float(seg.end) + offset_sec
+    words_out: list[dict[str, Any]] = []
+    probs: list[float] = []
+    for w in getattr(seg, "words", None) or []:
+        p = float(getattr(w, "probability", 0.0) or 0.0)
+        probs.append(p)
+        words_out.append(
+            {
+                "start": round(float(w.start) + offset_sec, 3),
+                "end": round(float(w.end) + offset_sec, 3),
+                "word": str(getattr(w, "word", "") or ""),
+                "probability": round(p, 4),
+            }
+        )
+    text = str(getattr(seg, "text", "") or "").strip()
+    avg_logprob = float(getattr(seg, "avg_logprob", 0.0) or 0.0)
+    compression = float(getattr(seg, "compression_ratio", 0.0) or 0.0)
+    no_speech = float(getattr(seg, "no_speech_prob", 0.0) or 0.0)
+    mean_word_prob = sum(probs) / len(probs) if probs else None
+    return {
+        "start": round(start, 3),
+        "end": round(end, 3),
+        "text": text,
+        "words": words_out,
+        "avg_logprob": avg_logprob,
+        "compression_ratio": compression,
+        "no_speech_prob": no_speech,
+        "mean_word_probability": mean_word_prob,
+        "source_window": source_window,
+        "asr_source": "rescue",
+    }
+
+
+def _candidate_mean_prob(candidate: dict[str, Any]) -> float | None:
+    raw = candidate.get("mean_word_probability")
+    try:
+        return float(raw) if raw is not None else None
+    except (TypeError, ValueError):
+        return None
+
+
+def _candidate_overlaps_existing(
+    candidate: dict[str, Any],
+    existing: list[Any],
+    *,
+    max_overlap_sec: float = 0.7,
+) -> bool:
+    c0 = float(candidate.get("start", 0.0) or 0.0)
+    c1 = float(candidate.get("end", 0.0) or 0.0)
+    if c1 <= c0:
+        return True
+    for seg in existing:
+        if isinstance(seg, dict):
+            s0 = float(seg.get("start", 0.0) or 0.0)
+            s1 = float(seg.get("end", 0.0) or 0.0)
+        else:
+            s0 = float(getattr(seg, "start", 0.0) or 0.0)
+            s1 = float(getattr(seg, "end", 0.0) or 0.0)
+        overlap = max(0.0, min(c1, s1) - max(c0, s0))
+        if overlap > max_overlap_sec:
+            return True
+    return False
+
+
+def _candidate_passes_rescue_rules(candidate: dict[str, Any]) -> bool:
+    text = str(candidate.get("text") or "").strip()
+    if len(text) < 4:
+        return False
+    mean_prob = _candidate_mean_prob(candidate)
+    if mean_prob is not None and mean_prob < _rescue_min_mean_word_probability():
+        return False
+    try:
+        if float(candidate.get("compression_ratio") or 0.0) > _float_env(
+            "FA_ASR_RESCUE_MAX_COMPRESSION_RATIO", 3.0
+        ):
+            return False
+    except (TypeError, ValueError):
+        return False
+    return True
+
+
+def _write_rescue_clip(wav: Path, out_wav: Path, start: float, end: float) -> None:
+    from src.audio_extract import _ffmpeg_executable
+
+    out_wav.parent.mkdir(parents=True, exist_ok=True)
+    audio_filter = os.environ.get(
+        "FA_ASR_RESCUE_AUDIO_FILTER",
+        "highpass=f=120,lowpass=f=3800,dynaudnorm=f=150:g=20:p=0.95,volume=8dB",
+    ).strip()
+    cmd = [
+        _ffmpeg_executable(),
+        "-y",
+        "-hide_banner",
+        "-loglevel",
+        "error",
+        "-ss",
+        f"{start:.3f}",
+        "-t",
+        f"{max(0.1, end - start):.3f}",
+        "-i",
+        str(wav),
+    ]
+    if audio_filter and audio_filter.lower() not in ("0", "none", "off"):
+        cmd.extend(["-af", audio_filter])
+    cmd.extend(
+        [
+            "-ar",
+            "16000",
+            "-ac",
+            "1",
+            "-c:a",
+            "pcm_s16le",
+            str(out_wav),
+        ]
+    )
+    import subprocess
+
+    subprocess.run(cmd, check=True, capture_output=True, text=True)
+
+
+def _rescue_subwindows(window: dict[str, float]) -> list[dict[str, float]]:
+    gap_start = float(window.get("gap_start", window["start"]))
+    gap_end = float(window.get("gap_end", window["end"]))
+    if gap_end <= gap_start:
+        return [window]
+    right_pad = _float_env("FA_ASR_RESCUE_INNER_RIGHT_PAD_SEC", 0.5)
+    span = _float_env("FA_ASR_RESCUE_SLIDING_WINDOW_SEC", 28.0)
+    step = _float_env("FA_ASR_RESCUE_SLIDING_STEP_SEC", 18.0)
+    windows: list[dict[str, float]] = []
+
+    first = {"start": max(0.0, gap_start), "end": gap_end + right_pad}
+    windows.append(first)
+    if first["end"] - first["start"] > span:
+        cursor = max(0.0, gap_start)
+        while cursor < gap_end:
+            end = min(gap_end + right_pad, cursor + span)
+            windows.append({"start": cursor, "end": end})
+            if end >= gap_end + right_pad:
+                break
+            cursor += max(1.0, step)
+
+    out: list[dict[str, float]] = []
+    for item in windows:
+        start = max(0.0, float(item["start"]))
+        end = float(item["end"])
+        if end - start >= 1.0:
+            out.append(
+                {
+                    "start": round(start, 3),
+                    "end": round(end, 3),
+                    "parent_start": float(window["start"]),
+                    "parent_end": float(window["end"]),
+                    "gap_start": gap_start,
+                    "gap_end": gap_end,
+                }
+            )
+    return out
+
+
+def _run_whisper(
+    wav: Path,
+    *,
+    model_name: str,
+    device: str,
+    compute_type: str,
+    profile: AsrProfile,
+    lang: str | None,
+    prompt: str | None,
+    cancel_check: Callable[[], None] | None,
+    use_subprocess: bool | None = None,
+) -> tuple[list[Any], str, dict[str, Any]]:
+    _wait_for_gpu_capacity(profile.name, device=device, cancel_check=cancel_check)
+    transcribe_kw = dict(profile.options)
+    if lang:
+        transcribe_kw["language"] = lang
+    if prompt:
+        transcribe_kw["initial_prompt"] = prompt
+
+    if use_subprocess if use_subprocess is not None else _use_transcribe_subprocess():
+        seg_list, detected_lang = _transcribe_segments_subprocess(
+            wav, model_name, device, compute_type, transcribe_kw, cancel_check
+        )
+        return seg_list, detected_lang or lang or "ru", transcribe_kw
+
+    from faster_whisper import WhisperModel
+
+    model = WhisperModel(model_name, device=device, compute_type=compute_type)
+    segments_gen, info = model.transcribe(str(wav), **transcribe_kw)
+    detected_lang = (info.language or lang or "ru") if info else (lang or "ru")
+    seg_list = []
+    for seg in segments_gen:
+        if cancel_check:
+            cancel_check()
+        seg_list.append(seg)
+    return seg_list, detected_lang, transcribe_kw
+
+
+def _preview_transcript_for_quality(
+    seg_list: list[Any],
+    *,
+    duration_sec: float,
+    expected_speaker_count: int | None,
+) -> dict[str, Any]:
+    segments: list[dict[str, Any]] = []
+    for seg in seg_list:
+        word_probs: list[float] | None = None
+        words = getattr(seg, "words", None)
+        if words:
+            word_probs = [
+                float(getattr(word, "probability", 0.0) or 0.0)
+                for word in words
+            ]
+        text = str(getattr(seg, "text", "") or "").strip()
+        t0 = float(getattr(seg, "start", 0.0) or 0.0)
+        t1 = float(getattr(seg, "end", 0.0) or 0.0)
+        segments.append(
+            {
+                "start": round(t0, 3),
+                "end": round(t1, 3),
+                "speaker": "SPEAKER_01",
+                "text": text,
+                "words": [
+                    {
+                        "start": round(float(word.start), 3),
+                        "end": round(float(word.end), 3),
+                        "word": str(getattr(word, "word", "") or "").strip(),
+                        "probability": round(float(getattr(word, "probability", 0.0) or 0.0), 4),
+                    }
+                    for word in (words or [])
+                ],
+                "delivery": analyze_segment(
+                    text=text,
+                    t0=t0,
+                    t1=t1,
+                    avg_logprob=float(getattr(seg, "avg_logprob", 0.0) or 0.0),
+                    compression_ratio=float(getattr(seg, "compression_ratio", 0.0) or 0.0),
+                    no_speech_prob=float(getattr(seg, "no_speech_prob", 0.0) or 0.0),
+                    word_probs=word_probs,
+                ),
+            }
+        )
+    return transcript_quality_report(
+        {
+            "duration_sec": duration_sec,
+            "segments": segments,
+            "expected_speaker_count": expected_speaker_count,
+        },
+        expected_speaker_count=expected_speaker_count,
+        duration_sec=duration_sec,
+    )
+
+
+def _rescue_decode_windows(
+    wav: Path,
+    windows: list[dict[str, float]],
+    *,
+    model_name: str,
+    device: str,
+    compute_type: str,
+    lang: str | None,
+    prompt: str | None,
+    cancel_check: Callable[[], None] | None,
+    existing_segments: list[Any],
+) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+    if not windows:
+        return [], {"attempted": False, "windows": []}
+
+    profile = _asr_profile("rescue")
+    accepted: list[dict[str, Any]] = []
+    attempts: list[dict[str, Any]] = []
+    with tempfile.TemporaryDirectory(prefix="fa_asr_rescue_") as tmp:
+        tmpdir = Path(tmp)
+        expanded_windows: list[dict[str, float]] = []
+        for window in windows:
+            expanded_windows.extend(_rescue_subwindows(window))
+        for idx, window in enumerate(expanded_windows):
+            if cancel_check:
+                cancel_check()
+            start = float(window["start"])
+            end = float(window["end"])
+            clip = tmpdir / f"rescue_{idx:03d}.wav"
+            _write_rescue_clip(wav, clip, start, end)
+            seg_list, _detected, transcribe_kw = _run_whisper(
+                clip,
+                model_name=model_name,
+                device=device,
+                compute_type=compute_type,
+                profile=profile,
+                lang=lang,
+                prompt=prompt,
+                cancel_check=cancel_check,
+                use_subprocess=True,
+            )
+            window_candidates = [
+                _segment_to_candidate(seg, offset_sec=start, source_window=window)
+                for seg in seg_list
+            ]
+            accepted_for_window: list[dict[str, Any]] = []
+            for candidate in window_candidates:
+                if _candidate_overlaps_existing(candidate, existing_segments):
+                    continue
+                if _candidate_overlaps_existing(candidate, accepted):
+                    continue
+                if not _candidate_passes_rescue_rules(candidate):
+                    continue
+                accepted.append(candidate)
+                accepted_for_window.append(candidate)
+            attempts.append(
+                {
+                    "window": window,
+                    "profile": _asr_profile_metadata(profile, transcribe_kw),
+                    "candidates": len(window_candidates),
+                    "accepted": len(accepted_for_window),
+                    "accepted_ranges": [
+                        {"start": item["start"], "end": item["end"]}
+                        for item in accepted_for_window
+                    ],
+                }
+            )
+
+    return accepted, {
+        "attempted": True,
+        "profile": profile.name,
+        "source_windows": windows,
+        "windows": attempts,
+        "accepted_segments": len(accepted),
+    }
+
+
+class _RescuedSegment:
+    def __init__(self, candidate: dict[str, Any]) -> None:
+        self.start = float(candidate.get("start", 0.0) or 0.0)
+        self.end = float(candidate.get("end", 0.0) or 0.0)
+        self.text = str(candidate.get("text") or "")
+        self.avg_logprob = float(candidate.get("avg_logprob", 0.0) or 0.0)
+        self.compression_ratio = float(candidate.get("compression_ratio", 0.0) or 0.0)
+        self.no_speech_prob = float(candidate.get("no_speech_prob", 0.0) or 0.0)
+        self.words = [_RescuedWord(word) for word in (candidate.get("words") or [])]
+        self.asr_source = "rescue"
+        self.source_window = candidate.get("source_window")
+
+
+class _RescuedWord:
+    def __init__(self, word: dict[str, Any]) -> None:
+        self.start = float(word.get("start", 0.0) or 0.0)
+        self.end = float(word.get("end", 0.0) or 0.0)
+        self.word = str(word.get("word") or "")
+        self.probability = float(word.get("probability", 0.0) or 0.0)
 
 
 def _fw_transcribe_worker(
@@ -1265,8 +1797,6 @@ def transcribe_video_to_structure(
     model_name = _model_name()
     lang = _language()
 
-    import tempfile
-
     with tempfile.TemporaryDirectory(prefix="fa_transcribe_") as tmp:
         wav = Path(tmp) / "audio.wav"
         if cancel_check:
@@ -1277,6 +1807,7 @@ def transcribe_video_to_structure(
         import librosa
 
         y_audio, sr_audio = librosa.load(str(wav), sr=16000, mono=True)
+        audio_duration_sec = float(len(y_audio) / sr_audio) if sr_audio else 0.0
 
         hf = _hf_token()
         diar_rows: list[tuple[float, float, str]] = []
@@ -1347,38 +1878,122 @@ def transcribe_video_to_structure(
                 break
         diar_error = " | ".join(x for x in backend_failures if x)
 
-        transcribe_kw: dict[str, Any] = {
-            "word_timestamps": True,
-            "vad_filter": True,
-            "condition_on_previous_text": _whisper_condition_on_previous_text(),
-        }
-        transcribe_kw.update(_whisper_chunk_length_kw())
-        if lang:
-            transcribe_kw["language"] = lang
         prompt = _initial_prompt()
-        if prompt:
-            transcribe_kw["initial_prompt"] = prompt
+        primary_profile = _asr_profile()
+        ping("whisper_load")
+        ping("asr_whisper")
+        seg_list, detected_lang, transcribe_kw = _run_whisper(
+            wav,
+            model_name=model_name,
+            device=device,
+            compute_type=compute_type,
+            profile=primary_profile,
+            lang=lang,
+            prompt=prompt,
+            cancel_check=cancel_check,
+        )
+        detected_lang = detected_lang or lang or "ru"
+        asr_profile_history: list[dict[str, Any]] = [
+            _asr_profile_metadata(primary_profile, transcribe_kw)
+        ]
+        primary_quality = _preview_transcript_for_quality(
+            seg_list,
+            duration_sec=audio_duration_sec,
+            expected_speaker_count=expected_speaker_count,
+        )
+        asr_premerge_quality_history: list[dict[str, Any]] = [
+            {
+                "stage": "balanced",
+                "quality": primary_quality,
+                "summary": quality_summary_text(primary_quality),
+            }
+        ]
+        asr_rescue_report: dict[str, Any] = {"attempted": False, "windows": []}
+        asr_failures: list[dict[str, str]] = []
 
-        if _use_transcribe_subprocess():
-            ping("whisper_load")
+        if primary_quality.get("status") == "fail" and _should_try_accurate_on_fail():
+            accurate_profile = _asr_profile("accurate")
             ping("asr_whisper")
-            seg_list, detected_lang = _transcribe_segments_subprocess(
-                wav, model_name, device, compute_type, transcribe_kw, cancel_check
-            )
-            detected_lang = detected_lang or lang or "ru"
-        else:
-            from faster_whisper import WhisperModel
+            try:
+                accurate_segments, accurate_lang, accurate_kw = _run_whisper(
+                    wav,
+                    model_name=model_name,
+                    device=device,
+                    compute_type=compute_type,
+                    profile=accurate_profile,
+                    lang=detected_lang or lang,
+                    prompt=prompt,
+                    cancel_check=cancel_check,
+                )
+                accurate_quality = _preview_transcript_for_quality(
+                    accurate_segments,
+                    duration_sec=audio_duration_sec,
+                    expected_speaker_count=expected_speaker_count,
+                )
+                asr_profile_history.append(_asr_profile_metadata(accurate_profile, accurate_kw))
+                asr_premerge_quality_history.append(
+                    {
+                        "stage": "accurate",
+                        "quality": accurate_quality,
+                        "summary": quality_summary_text(accurate_quality),
+                    }
+                )
+                if float(accurate_quality.get("risk_score") or 0.0) <= float(
+                    primary_quality.get("risk_score") or 999.0
+                ):
+                    seg_list = accurate_segments
+                    detected_lang = accurate_lang or detected_lang
+                    transcribe_kw = accurate_kw
+                    primary_profile = accurate_profile
+                    primary_quality = accurate_quality
+            except Exception as exc:
+                asr_failures.append({"stage": "accurate", "error": str(exc)})
 
-            ping("whisper_load")
-            model = WhisperModel(model_name, device=device, compute_type=compute_type)
+        rescue_windows = rescue_windows_from_report(
+            primary_quality,
+            duration_sec=audio_duration_sec,
+        )
+        if rescue_windows and _should_run_rescue():
             ping("asr_whisper")
-            segments_gen, info = model.transcribe(str(wav), **transcribe_kw)
-            detected_lang = (info.language or lang or "ru") if info else (lang or "ru")
-            seg_list = []
-            for seg in segments_gen:
-                if cancel_check:
-                    cancel_check()
-                seg_list.append(seg)
+            try:
+                rescue_candidates, asr_rescue_report = _rescue_decode_windows(
+                    wav,
+                    rescue_windows,
+                    model_name=model_name,
+                    device=device,
+                    compute_type=compute_type,
+                    lang=detected_lang or lang,
+                    prompt=prompt,
+                    cancel_check=cancel_check,
+                    existing_segments=seg_list,
+                )
+                if rescue_candidates:
+                    seg_list = sorted(
+                        [*seg_list, *[_RescuedSegment(item) for item in rescue_candidates]],
+                        key=lambda seg: (float(seg.start), float(seg.end)),
+                    )
+                    rescued_quality = _preview_transcript_for_quality(
+                        seg_list,
+                        duration_sec=audio_duration_sec,
+                        expected_speaker_count=expected_speaker_count,
+                    )
+                    asr_premerge_quality_history.append(
+                        {
+                            "stage": "rescue_merged",
+                            "quality": rescued_quality,
+                            "summary": quality_summary_text(rescued_quality),
+                        }
+                    )
+                    primary_quality = rescued_quality
+            except Exception as exc:
+                asr_rescue_report = {
+                    "attempted": True,
+                    "source_windows": rescue_windows,
+                    "windows": [{"window": window} for window in rescue_windows],
+                    "accepted_segments": 0,
+                    "error": str(exc),
+                }
+                asr_failures.append({"stage": "rescue", "error": str(exc)})
         ping("segments_build")
         bounds = [(float(s.start), float(s.end)) for s in seg_list]
         skip_mfcc = os.environ.get("SKIP_MFCC_SPEAKERS", "").lower() in (
@@ -1498,6 +2113,10 @@ def transcribe_video_to_structure(
                     "speaker": spk,
                     "text": text,
                 }
+                if getattr(seg, "asr_source", "") == "rescue":
+                    item["asr_source"] = "rescue"
+                    if getattr(seg, "source_window", None):
+                        item["asr_source_window"] = getattr(seg, "source_window")
                 words = getattr(seg, "words", None)
                 word_probs = None
                 if words:
@@ -1549,6 +2168,15 @@ def transcribe_video_to_structure(
 
         duration = max((s["end"] for s in segments_out), default=0.0)
         speakers = sorted({s["speaker"] for s in segments_out})
+        final_asr_quality = transcript_quality_report(
+            {
+                "duration_sec": round(audio_duration_sec or float(duration), 3),
+                "segments": segments_out,
+                "expected_speaker_count": expected_speaker_count,
+            },
+            expected_speaker_count=expected_speaker_count,
+            duration_sec=audio_duration_sec or float(duration),
+        )
 
         flagged = sum(
             1
@@ -1567,6 +2195,14 @@ def transcribe_video_to_structure(
             "whisper_model": model_name,
             "whisper_device": device,
             "whisper_compute_type": compute_type,
+            "asr_profile": primary_profile.name,
+            "asr_profiles": asr_profile_history,
+            "asr_premerge_quality_history": asr_premerge_quality_history,
+            "asr_rescue_applied": bool(asr_rescue_report.get("accepted_segments")),
+            "asr_rescue": asr_rescue_report,
+            "asr_failures": asr_failures,
+            "asr_quality": final_asr_quality,
+            "asr_quality_summary": quality_summary_text(final_asr_quality),
             "whisper_initial_prompt_source": _initial_prompt_source(),
             "whisper_condition_on_previous_text": transcribe_kw.get(
                 "condition_on_previous_text"

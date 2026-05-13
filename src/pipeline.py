@@ -30,6 +30,7 @@ def _pipeline_log(phase: str) -> None:
 
 from src.artifacts import delete_derived_artifacts_for_stem
 from src.atomic_json import try_load_transcript
+from src.asr_quality import quality_summary_text, transcript_quality_report
 from src.evaluate import evaluate_transcript, write_evaluation_json
 from src.audio_extract import extract_wav_16k_mono
 from src.database import DB
@@ -161,6 +162,42 @@ def find_video_for_stem(stem: str, video_dir: Path | None = None) -> Path | None
     return None
 
 
+def _quality_gate_enabled() -> bool:
+    import os
+
+    raw = os.environ.get("ASR_QUALITY_GATE_ENABLED", "1").strip().lower()
+    return raw not in ("0", "false", "no", "off")
+
+
+def _quality_gate_raise_on_fail() -> bool:
+    import os
+
+    raw = os.environ.get("ASR_QUALITY_GATE_RAISE_ON_FAIL", "1").strip().lower()
+    return raw not in ("0", "false", "no", "off")
+
+
+def _ensure_transcript_quality(data: dict[str, object], transcript_path: Path) -> None:
+    if not _quality_gate_enabled():
+        return
+    quality = transcript_quality_report(data)  # type: ignore[arg-type]
+    data["asr_quality"] = quality
+    data["asr_quality_summary"] = quality_summary_text(quality)
+    write_transcript_json(data, transcript_path)  # type: ignore[arg-type]
+
+    if quality.get("status") != "fail":
+        return
+
+    data["transcript_needs_review"] = True
+    data["transcript_review_reason"] = quality_summary_text(quality)
+    write_transcript_json(data, transcript_path)  # type: ignore[arg-type]
+    if _quality_gate_raise_on_fail():
+        raise RuntimeError(
+            "ASR quality gate blocked evaluation: "
+            f"{data['transcript_review_reason']}. "
+            f"Transcript marked transcript_needs_review in {transcript_path.name}."
+        )
+
+
 def emotion_only_from_transcript(
     transcript_path: Path,
     *,
@@ -264,6 +301,7 @@ def process_one_video(
         ping("done")
         return transcript_path, None, tone_path
 
+    _ensure_transcript_quality(data, transcript_path)
     ping("evaluating")
     ev = evaluate_transcript(
         data,
@@ -358,6 +396,7 @@ def process_one_video_resume(
         ping("done")
         return transcript_path, eval_path, tone_path if tone_path.is_file() else None
 
+    _ensure_transcript_quality(data, transcript_path)
     ping("evaluating")
     ev = evaluate_transcript(
         data,
@@ -390,6 +429,7 @@ def evaluate_only_from_transcript(
     stem = transcript_path.stem
     crit = criteria_path or Path(DEFAULT_CHECKLIST_SLUG)
     eval_path = evaluation_json_path(stem, crit)
+    _ensure_transcript_quality(data, transcript_path)
     ev = evaluate_transcript(
         data,
         criteria_path=crit,
