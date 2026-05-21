@@ -1,0 +1,273 @@
+{
+  "schema_version": 3,
+  "criteria_version": "1",
+  "criteria_file": "oo_outgoing_commission_call",
+  "evaluated_at": "2026-05-20T10:31:31.552076+00:00",
+  "model": "deepseek-v4-pro",
+  "video_file": "VID_20260520_132618.mp4",
+  "speaker_roles": {
+    "SPEAKER_01": "CLIENT",
+    "SPEAKER_02": "EMPLOYEE"
+  },
+  "employee_speaker": "SPEAKER_02",
+  "criteria": [
+    {
+      "id": "call_preparation",
+      "name": "Подготовка",
+      "description": "Подготовился к звонку (выписал инфо по обращениям; определил позицию авто в рынке; определил сумму для понижения)",
+      "weight": 1,
+      "passed": true,
+      "comment": "Сотрудник демонстрирует подготовку: знает о 4 обращениях с Авито, подготовке авто за неделю, позиционирует машину на рынке и предлагает конкретную сумму снижения (разницу «в руки»).",
+      "evidence_segments": [
+        {
+          "start": 18.91,
+          "end": 28.35
+        },
+        {
+          "start": 118.45,
+          "end": 131.65
+        }
+      ],
+      "awarded_weight": 1
+    },
+    {
+      "id": "greeting",
+      "name": "Приветствие",
+      "description": "Поприветствовал клиента, представился по имени, назвал свою должность",
+      "weight": 1,
+      "passed": true,
+      "comment": "Сотрудник поздоровался, обратился по имени (Роман), представился по имени, назвал должность и компанию.",
+      "evidence_segments": [
+        {
+          "start": 9.63,
+          "end": 16.23
+        }
+      ],
+      "awarded_weight": 1
+    },
+    {
+      "id": "talking_convenience",
+      "name": "Удобство разговора",
+      "description": "Уточнил удобно ли разговаривать",
+      "weight": 1,
+      "passed": true,
+      "comment": "В приветствии сразу уточнил, удобно ли клиенту говорить.",
+      "evidence_segments": [
+        {
+          "start": 9.63,
+          "end": 16.23
+        }
+      ],
+      "awarded_weight": 1
+    },
+    {
+      "id": "weekly_actions",
+      "name": "Работа по авто",
+      "description": "Рассказал о проведенных мероприятиях с автомобилями за прошедшую неделю",
+      "weight": 1,
+      "passed": true,
+      "comment": "Сообщил, что машина неделю в рекламе, подготовлена, было 4 обращения с Авито и один приезд с осмотром, что соответствует критерию.",
+      "evidence_segments": [
+        {
+          "start": 18.91,
+          "end": 35.35
+        }
+      ],
+      "awarded_weight": 1
+    },
+    {
+      "id": "sales_tools",
+      "name": "Инструменты",
+      "description": "Предложил инструменты для скорейшей реализации",
+      "weight": 1,
+      "passed": true,
+      "comment": "Предложил ионизацию салона (новая услуга за 2000 руб.) и снижение цены для ускорения продажи.",
+      "evidence_segments": [
+        {
+          "start": 40.01,
+          "end": 50.33
+        },
+        {
+          "start": 118.45,
+          "end": 136.05
+        }
+      ],
+      "awarded_weight": 1
+    },
+    {
+      "id": "price_argumentation",
+      "name": "Аргументация цены",
+      "description": "При изменеии стоимости озвучил сумму на руки",
+      "weight": 1,
+      "passed": true,
+      "comment": "При предложении снижения цены назвал сумму «в руки» — 2 миллиона 70 тысяч рублей.",
+      "evidence_segments": [
+        {
+          "start": 126.09,
+          "end": 131.65
+        }
+      ],
+      "awarded_weight": 1
+    },
+    {
+      "id": "positive_attitude",
+      "name": "Позитив",
+      "description": "Улыбка, доброжелательность, позитивный настрой",
+      "weight": 1,
+      "passed": true,
+      "comment": "Теплый тембр, вежливые формулировки, использование имени клиента, позитивная лексика («Отлично»), готовность помочь. SER-метки раздражения в нескольких сегментах не нарушают общей доброжелательности по тексту и акустике.",
+      "evidence_segments": [
+        {
+          "start": 9.63,
+          "end": 16.23
+        },
+        {
+          "start": 171.19,
+          "end": 174.81
+        }
+      ],
+      "awarded_weight": 1
+    },
+    {
+      "id": "speech_quality",
+      "name": "Речь",
+      "description": "Речь грамотная, не использует сленг и жаргон",
+      "weight": 1,
+      "passed": true,
+      "comment": "Речь грамотная, без сленга и жаргонизмов, профессиональные термины (ионизация, позиция, осмотр).",
+      "evidence_segments": [
+        {
+          "start": 9.63,
+          "end": 16.23
+        }
+      ],
+      "awarded_weight": 1
+    },
+    {
+      "id": "sale_forecast",
+      "name": "Срок продажи",
+      "description": "Озвучил прогнозный/ожидаемый срок продажи",
+      "weight": 1,
+      "passed": true,
+      "comment": "Озвучил ожидаемый срок продажи: в среднем такие автомобили уезжают за 12 дней.",
+      "evidence_segments": [
+        {
+          "start": 185.15,
+          "end": 189.93
+        }
+      ],
+      "awarded_weight": 1
+    },
+    {
+      "id": "next_contact_date",
+      "name": "Следующий контакт",
+      "description": "Обозначил дату следующего контакта",
+      "weight": 1,
+      "passed": true,
+      "comment": "Обозначил ближайший контакт: позвонит на следующий день утром для уточнения встречи, а также договорились о созвоне через неделю.",
+      "evidence_segments": [
+        {
+          "start": 208.19,
+          "end": 213.71
+        },
+        {
+          "start": 190.17,
+          "end": 193.51
+        }
+      ],
+      "awarded_weight": 1
+    },
+    {
+      "id": "available_between_contacts",
+      "name": "Доступность",
+      "description": "ЭО озвучил что он в постоянном доступе для комитента в любой день между основными точками контакта.",
+      "weight": 1,
+      "passed": true,
+      "comment": "Сообщил, что доступен 24/7, дал личный номер, предложил звонить по любым вопросам.",
+      "evidence_segments": [
+        {
+          "start": 218.93,
+          "end": 227.65
+        }
+      ],
+      "awarded_weight": 1
+    }
+  ],
+  "criteria_snapshot": [
+    {
+      "id": "call_preparation",
+      "name": "Подготовка",
+      "description": "Подготовился к звонку (выписал инфо по обращениям; определил позицию авто в рынке; определил сумму для понижения)",
+      "weight": 1
+    },
+    {
+      "id": "greeting",
+      "name": "Приветствие",
+      "description": "Поприветствовал клиента, представился по имени, назвал свою должность",
+      "weight": 1
+    },
+    {
+      "id": "talking_convenience",
+      "name": "Удобство разговора",
+      "description": "Уточнил удобно ли разговаривать",
+      "weight": 1
+    },
+    {
+      "id": "weekly_actions",
+      "name": "Работа по авто",
+      "description": "Рассказал о проведенных мероприятиях с автомобилями за прошедшую неделю",
+      "weight": 1
+    },
+    {
+      "id": "sales_tools",
+      "name": "Инструменты",
+      "description": "Предложил инструменты для скорейшей реализации",
+      "weight": 1
+    },
+    {
+      "id": "price_argumentation",
+      "name": "Аргументация цены",
+      "description": "При изменеии стоимости озвучил сумму на руки",
+      "weight": 1
+    },
+    {
+      "id": "positive_attitude",
+      "name": "Позитив",
+      "description": "Улыбка, доброжелательность, позитивный настрой",
+      "weight": 1
+    },
+    {
+      "id": "speech_quality",
+      "name": "Речь",
+      "description": "Речь грамотная, не использует сленг и жаргон",
+      "weight": 1
+    },
+    {
+      "id": "sale_forecast",
+      "name": "Срок продажи",
+      "description": "Озвучил прогнозный/ожидаемый срок продажи",
+      "weight": 1
+    },
+    {
+      "id": "next_contact_date",
+      "name": "Следующий контакт",
+      "description": "Обозначил дату следующего контакта",
+      "weight": 1
+    },
+    {
+      "id": "available_between_contacts",
+      "name": "Доступность",
+      "description": "ЭО озвучил что он в постоянном доступе для комитента в любой день между основными точками контакта.",
+      "weight": 1
+    }
+  ],
+  "earned_score": 11,
+  "max_score": 11,
+  "overall_average": 100.0,
+  "speaker_roles_confidence": {
+    "SPEAKER_01": 0.95,
+    "SPEAKER_02": 1.0
+  },
+  "speaker_roles_reasoning": "SPEAKER_02 приветствует от имени компании «Фреш», называет должность «эксперт отдела оценки», ведет переговоры о продаже автомобиля клиента. SPEAKER_01 в начале дает вводную фразу, затем выступает в роли клиента (Роман), задает вопросы и соглашается с предложениями.",
+  "reasoning_trace": "We are asked to evaluate a dialogue transcript based on specific criteria, focusing on the employee's performance. First, we need to identify which speaker is the employee (the one being evaluated) and which is the client. The transcript shows SPEAKER_01 and SPEAKER_02. SPEAKER_01 starts with \"Воронеж-Юг, еженедельная тренировка на тему «Звонок комитента» в роли эксперта отдела оценки «Землянский Владимир». Начинаем.\" This sounds like a training intro, so SPEAKER_01 might be a trainer or someone narrating, but later, SPEAKER_02 starts speaking: \"Алло. Алло, да, Роман, здравствуйте. Это Владимир, эксперт отдела оценки компании «Фреш» первого автомобиля «Маркетплейс». Удобно разговаривать?\" So SPEAKER_02 is the person calling and introducing himself as Vladimir, an expert from the evaluation department. That is clearly the employee making an outgoing call. SPEAKER_01 in the beginning is probably just a role-play setup. Then later, SPEAKER_01 speaks again: \"Слушайте, Владимир, я же когда привозил автомобиль,\" which is the client responding. So SPEAKER_01 is playing the client (комитент). But note: in the initial segment [0.21-9.33], SPEAKER_01 is not the client but rather a trainer or someone setting up the scenario, as it says \"Воронеж-Юг, еженедельная тренировка на тему «Звонок комитента» в роли эксперта отдела оценки «Землянский Владимир». Начинаем.\" That's a meta-introduction. Then the actual call begins with SPEAKER_02 at [9.63]. From then on, SPEAKER_02 is consistently the employee (Vladimir), and SPEAKER_01 (when she appears later) is the client (Rоман, but actually client name is Роман? In the dialogue, SPEAKER_01 is referred to as \"Роман\" by the employee? Wait, SPEAKER_01 says \"Слушайте, Владимир, я же когда привозил автомобиль\" – the speaker refers to himself as \"я\", likely male, and later SPEAKER_02 calls him \"Роман\". So SPEAKER_01 is the client, Роман. But the initial SPEAKER_01 segment [0.21-9.33] is a setup, not the client. However, we should consider that SPEAKER_01 is the same speaker throughout: it might be the same person playing a dual role? The acoustic stats separate SPEAKER_01 and SPEAKER_02; SPEAKER_01 has a higher pitch (~155 Hz) vs SPEAKER_02 (~109 Hz), so they are different speakers. The first segment [0.21-9.33] is an aside, likely not part of the conversation with the client. So for evaluating employee actions, we focus on SPEAKER_02's segments. SPEAKER_01's later segments (starting at [55.71]) are the client. So employee is SPEAKER_02.\n\nThus, setting:\n- SPEAKER_01: the first segment is a trainer? But then the voice is the same as the client later? Acoustic stats show SPEAKER_01 has consistent characteristics across all his segments (since only one set of stats). So the same person voiced both the intro and the client. Probably in the audio, the trainer instructs first, then plays the client role. So SPEAKER_01 is overall a non-employee role (either trainer or client). But for criteria evaluation, we only consider the employee. We'll mark SPEAKER_01 as \"CLIENT\" (or maybe \"TRAINER\" but for the purpose, it's not the employee). The dialogue part where SPEAKER_01 appears as a client is the actual conversation. We'll set SPEAKER_01 as CLIENT, SPEAKER_02 as EMPLOYEE, with confidence high.\n\nNow, go through each criterion, using only the employee's speech (SPEAKER_02). We must provide evidence segments from the transcript where employee speaks.\n\nCriterion 1: call_preparation: Подготовка к звонку (выписал инфо по обращениям; определил позицию авто в рынке; определил сумму для понижения)\n\nCheck if employee mentions preparing info, determined market position, determined a price reduction amount. From the transcript:\n- [18.91-28.35] SPEAKER_02: \"Роман, смотрите, я звоню вам с обратной связью по поводу вашего автомобиля BMW X3. Машина у нас уже неделю в рекламе, полностью подготовлена, с авито у нас было 4 обращения.\" This shows he has info on inquiries.\n- Later, he discusses market position: [96.75-102.15] \"По рынку, если смотреть, мы с вами находимся вверху, в третьей позиции Воронежа, плюс 300\" (though that is about something else).\n- He proposes a price reduction: [118.45-128.31] \"машину перевести в следующую ... позицию ... до 2 миллионов 200 тысяч. ... в наруке было бы 2 миллиона 70\" and earlier he had mentioned the current price. So he has prepared a concrete sum for reduction.\nThus, he demonstrates preparation: knows about the car, its price, inquiries, suggests a specific price drop. So passed = true.\n\nEvidence segments: for inquiries: [18.91-28.35]; for market position: [96.75-102.15] (though that segment is about the current price position, not specifically preparation, but it shows knowledge); for sum: [118.45-128.31]. I'll combine them.\n\nCriterion 2: greeting: Приветствие: Поприветствовал клиента, представился по имени, назвал свою должность.\nCheck [9.63-16.23]: \"Алло. Алло, да, Роман, здравствуйте. Это Владимир, эксперт отдела оценки компании «Фреш» первого автомобиля «Маркетплейс». Удобно разговаривать?\" He greets, says his name, his position (\"эксперт отдела оценки\"), the company. So passed = true. Evidence: [9.63-16.23] (full greeting segment). He also asks about convenience (talking_convenience criterion next) but that is included. But greeting criterion is separate. He did all that.\n\nCriterion 3: talking_convenience: Уточнил удобно ли разговаривать.\nIn that same segment, he asks \"Удобно разговаривать?\" So passed = true. Evidence: same segment [9.63-16.23] (specifically the question at the end, but the segment includes it). We'll use the same interval.\n\nCriterion 4: weekly_actions: Рассказал о проведенных мероприятиях с автомобилями за прошедшую неделю.\nIn [18.91-28.35]: \"Машина у нас уже неделю в рекламе, полностью подготовлена, с авито у нас было 4 обращения. ... Одни люди приезжали, приезжали буквально вчера, посмотрели машину, чуть-чуть их отпугнул запах.\" That covers what has been done: advertising, 4 inquiries, a viewing. He mentions smell issue. So he described weekly activities. Passed = true. Evidence: [18.91-35.35] or the whole block. I'll include that.\n\nCriterion 5: sales_tools: Предложил инструменты для скорейшей реализации.\nWhat tools? He proposes ионизация салона (ionization) as a service, and price reduction to improve sale. Specifically, [40.01-50.33] he offers ionization: \"Я предлагаю вам сейчас сделать ионизацию салона. ... У нас сейчас появилась такая возможность, новая услуга. Для вас она будет стоить всего 2000 рублей.\" Then later he suggests lowering the price. So that's offering tools. Passed = true. Also the ionization is a tool. Evidence: ionization offer [40.01-50.33], price reduction suggestion [118.45-136.05] (the suggestion of moving to next position). So multiple tools.\n\nCriterion 6: price_argumentation: При изменении стоимости озвучил сумму на руки.\nWhen he proposes price change to 2,070,000, he says: \"Это до 2 миллионов 200 тысяч, соответственно, это в наруке было бы 2 миллиона 70\" ([126.09-131.65]). He explicitly states the \"на руки\" amount. So passed = true. Evidence: [126.09-131.65].\n\nCriterion 7: positive_attitude: Улыбка, доброжелательность, позитивный настрой. Since we only have text, acoustics, and SER, we can infer from tone. Acoustics: SPEAKER_02 overall has expressive_pitch_variation sometimes (F0σ = 98.6 at one point, many segments with warm_dark_timbral). SER labels: mostly neutral, but with some segments labeled angry (irritation). However, those irritation segments are: [59.0-61.6] (response to not helping), [68.0-70.5], [75.4-79.0], [132.0-136.1], [208.2-213.7], [227.8-229.8]. In text, these are moments of perhaps slight frustration or argument? But overall, the conversation seems professional and polite. The acoustics suggest mostly neutral tone, but the presence of \"раздражение\" in those segments might indicate some negativity. However, the employee stays polite verbally. The comment about \"Айкоша не помогла, я вам скажу более, она смешивается с этим запахом, и вот как раз таки у людей это вызвало отторжение\" might be delivered with irritation, but likely still professional. Positive attitude is about being upbeat and friendly. Given that SER labels are only model-based and not definitive, and the overall tone is described as warm_dark_timbral and expressive at times, but also monotone at times. We should consider if the employee maintains a positive, friendly demeanor. The lack of explicit smile markers and the presence of some irritation in SER might indicate that positive attitude is not fully present. But we are told to rely more on acoustic features like expressive_pitch_variation, bright_timbral (which is absent), and warm_dark_timbral. The employee's timbral is warm_dark_timbral frequently, which is pleasant. Irritation segments might be customer's side? Actually, the segments with anger are employee's speech: at [59.0-61.6] employee says \"я Айкошу ароматизатор покупал за 700 рублей, неужели это не помогло?\" Wait, that segment is mislabeled? Let's check speaker: In transcript, [59.03-61.59] is SPEAKER_02? Actually, looking back: \n[55.71–58.31] SPEAKER_01: Слушайте, Владимир, я же когда привозил автомобиль,\n[58.31–59.03] SPEAKER_01: я Айкошу\n[59.03–61.59] SPEAKER_02: ароматизатор покупал за 700 рублей, неужели это\nHmm, the transcript shows that [59.03-61.59] is SPEAKER_02, but then [61.59-62.09] SPEAKER_02 again. But from the content, it seems like the client says \"я Айкошу ароматизатор покупал за 700 рублей, неужели это не помогло?\" because SPEAKER_01 started that sentence, then SPEAKER_02 interjects? No, careful: [58.31–59.03] SPEAKER_01: \"я Айкошу\" then [59.03–61.59] SPEAKER_02: \"ароматизатор покупал за 700 рублей, неужели это\" and then [61.59–62.09] SPEAKER_02 again: \"не помогло?\" So it's actually SPEAKER_02 continuing the phrase? That would make SPEAKER_02 saying the whole client's question? That can't be, because SPEAKER_02 is the employee. The labeling might be wrong. Looking back at the initial lines: I see that the transcript has inconsistent labeling. Actually, it seems like the ASR might have split the sentence incorrectly between speakers. The client's sentence \"я Айкошу ароматизатор покупал за 700 рублей, неужели это не помогло?\" is likely spoken by the client (SPEAKER_01), but the transcript assigns part to SPEAKER_02. However, the overall dialogue: client (SPEAKER_01) asks about the air freshener, and employee (SPEAKER_02) responds \"Нет, Айкоша не помогла...\" So at [62.29-64.89] SPEAKER_02 says that. So the angry SER label at [59.0-61.6] is on a segment that is actually client's speech likely, but mislabeled as SPEAKER_02. We should trust the speaker IDs as given in the transcript, even if they seem wrong; but the instructions say: \"Перед оценкой явно определи: какой говорящий — сотрудник ... а какой — клиент.\" So we determined SPEAKER_02 is employee. However, the segment [59.03-61.59] is assigned to SPEAKER_02, but it logically belongs to the client. But we must follow the transcript labels. That would mean that the employee said \"ароматизатор покупал за 700 рублей, неужели это не помогло?\" That would be the employee repeating the client's concern? It's possible the employee is paraphrasing. Let's read: at [55.71-59.03] SPEAKER_01 says: \"Слушайте, Владимир, я же когда привозил автомобиль, я Айкошу\" then [59.03-61.59] SPEAKER_02 says \"ароматизатор покупал за 700 рублей, неужели это\" and [61.59-62.09] SPEAKER_02 \"не помогло?\" Then [62.29-64.89] SPEAKER_02 says \"Нет, Айкоша не помогла...\" So the employee might be finishing the client's sentence as a confirming question, then answering. That's actually a good technique. So the SER irritation on that segment might be from the employee expressing maybe some mild frustration about the ineffectiveness, but it's still part of the conversation. But the employee's tone could still be positive. The SER model might misread it. Since the overall tone of the employee is mostly neutral, we should not penalize the positive attitude for a few angry-flagged segments, especially since the text does not show rudeness. However, the criterion requires \"улыбка, доброжелательность, позитивный настрой\". From text alone, the employee is polite and solution-oriented. There's no overt negativity. The acoustic features have many instances of monotone_pitch, which might indicate a less expressive delivery. But we also have expressive_pitch_variation at times (e.g., [93.49-96.55], [136.93-138.41], [144.95-149.71]). The overall impression might be professional but not overly cheerful. But the criterion is subjective. I think we can pass it, as there's no clear evidence of unfriendliness; he addresses the client politely, uses name, thanks. So passed = true. Comment: \"Теплый тембр, вежливые формулировки, проявление эмпатии при обсуждении проблемы с запахом.\" Evidence segments: [9.63-16.23] for greeting, [171.19-174.81] \"Отлично. Роман, тогда мы сейчас сделаем ионизацию...\" which shows a positive tone, and others. I'll select some.\n\nCriterion 8: speech_quality: Речь грамотная, не использует сленг и жаргон. The transcript has some ASR artifacts, but overall the employee's language is proper, no slang. \"Авито\" is a proper noun, not slang. \"Ионизация\" is technical. No vulgarisms. Passed = true. Evidence: entire call, but I'll reference some segments like [9.63-16.23], [18.91-28.35] etc.\n\nCriterion 9: sale_forecast: Озвучил прогнозный/ожидаемый срок продажи. In [185.15-189.93]: \"Продажа не заставит себя долго ждать. В среднем такие позиции у нас уезжают за 12 дней.\" He says 12 days for similar cars. So he gave a forecast. Passed = true. Evidence: [185.15-189.93].\n\nCriterion 10: next_contact_date: Обозначил дату следующего контакта. After saying they'll speak in a week, but later they arrange for a call the next day. The employee says: \"Поэтому созвонимся с вами уже через неделю.\" (week) and then after the client asks to come smell, the employee says he will call tomorrow morning to confirm. So there is a planned contact: \"[208.19-213.71] наберу еще раз уточню получится ли у вас после этого уже точно договоримся о встрече\" and then \"тогда буду ждать завтра вашего звонка хорошо роман\" and \"созвонимся с вами уже через неделю\" earlier. He sets a contact date (next day). Actually, the \"созвонимся через неделю\" is a longer-term plan, but the next contact date is tomorrow because he will call. He explicitly says tomorrow he will call. So he designates the next contact date as the next day. So passed = true. Evidence: [208.19-213.71] where he says he'll call tomorrow morning.\n\nCriterion 11: available_between_contacts: ЭО озвучил что он в постоянном доступе для комитента в любой день между основными точками контакта. Employee says: \"если что я всегда на связи 24 на 7 мой номер лично у вас есть, звоните, отвечу на любые вопросы.\" in [218.93-227.65]. That indicates constant availability. So passed = true. Evidence: [218.93-227.65].\n\nNow, we need to compile JSON. All criteria appear to be passed for employee. The negative SER labels on employee segments should be considered but they don't override the textual evidence of politeness.\n\nNow, build evidence segments: For each criterion, select relevant intervals from the transcript where employee speaks. For criteria like positive_attitude, I'll pick a few segments showing positive language, e.g., the greeting, his enthusiastic \"Отлично\" etc.\n\nLet's prepare:\n\ncall_preparation: evidence_segments: [18.91-28.35] (info on inquiries), [118.45-131.65] (price reduction suggestion). So segments.\n\ngreeting: [9.63-16.23] (though the segment includes his full intro). I'll take [9.63-16.23] as it covers greeting, name, position.\n\ntalking_convenience: same as greeting, since he asks in that segment. So [9.63-16.23]. I can also just give that segment.\n\nweekly_actions: [18.91-35.35] covers the actions: \"Машина у нас уже неделю в рекламе... Одни люди приезжали, приезжали буквально вчера...\". So segment.\n\nsales_tools: ionization offer [40.01-50.33] and price reduction suggestion [118.45-136.05] (the segment where he proposes moving to next position). Use both.\n\nprice_argumentation: [126.09-131.65] where he says \"в наруке было бы 2 миллиона 70\".\n\npositive_attitude: I'll use [9.63-16.23] (polite greeting), [171.19-174.81] (enthusiasm), and maybe [218.93-227.65] (availability). I'll choose two: [9.63-16.23] and [171.19-174.81] because of \"Отлично. Роман, тогда мы сейчас сделаем ионизацию...\".\n\nspeech_quality: can reference the whole call, but I'll use [9.63-16.23] as an example of proper speech, and maybe [18.91-28.35]. I'll give one segment.\n\nsale_forecast: [185.15-189.93].\n\nnext_contact_date: [208.19-213.71] (he'll call tomorrow), also [190.17-193.51] \"созвонимся через неделю\" but the immediate next date is tomorrow, so I'll use the tomorrow call segment.\n\navailable_between_contacts: [218.93-227.65] \"я всегда на связи 24 на 7 ... звоните, отвечу на любые вопросы.\"\n\nNow, confidence for speaker roles: the first segment of SPEAKER_01 is a setup, so that's not client; but in the actual call, SPEAKER_01 plays client. So I'll state that with high confidence. speaker_roles_confidence: SPEAKER_01: 0.95 (clearly client after intro), SPEAKER_02: 1.0 (employee). But because the intro might confuse, I'll set 0.9.\n\nspeaker_roles_reasoning: \"SPEAKER_02 представляется сотрудником компании 'Фреш', экспертом отдела оценки, и ведет звонок комитенту. SPEAKER_01 в начале дает установку, затем играет роль клиента (Роман), что подтверждается диалогом.\"\n\nNow produce JSON."
+}

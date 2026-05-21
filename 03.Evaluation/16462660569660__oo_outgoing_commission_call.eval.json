@@ -1,0 +1,252 @@
+{
+  "schema_version": 3,
+  "criteria_version": "1",
+  "criteria_file": "oo_outgoing_commission_call",
+  "evaluated_at": "2026-05-16T14:08:00.209414+00:00",
+  "model": "deepseek-v4-pro",
+  "video_file": "16462660569660.mp4",
+  "speaker_roles": {
+    "SPEAKER_01": "EMPLOYEE",
+    "SPEAKER_02": "CLIENT"
+  },
+  "employee_speaker": "SPEAKER_01",
+  "criteria": [
+    {
+      "id": "call_preparation",
+      "name": "Подготовка",
+      "description": "Подготовился к звонку (выписал инфо по обращениям; определил позицию авто в рынке; определил сумму для понижения)",
+      "weight": 1,
+      "passed": true,
+      "comment": "Сотрудник заранее провёл аналитику рынка: обозначил реальный диапазон цен, определил переоценку автомобиля клиента и подготовил конкретное предложение по снижению цены.",
+      "evidence_segments": [
+        {
+          "start": 11.7,
+          "end": 17.46
+        },
+        {
+          "start": 19.24,
+          "end": 25.0
+        },
+        {
+          "start": 25.12,
+          "end": 27.4
+        },
+        {
+          "start": 29.22,
+          "end": 36.44
+        }
+      ],
+      "awarded_weight": 1
+    },
+    {
+      "id": "greeting",
+      "name": "Приветствие",
+      "description": "Поприветствовал клиента, представился по имени, назвал свою должность",
+      "weight": 1,
+      "passed": true,
+      "comment": "Поприветствовал клиента, назвал своё имя и должность.",
+      "evidence_segments": [
+        {
+          "start": 0.02,
+          "end": 5.04
+        }
+      ],
+      "awarded_weight": 1
+    },
+    {
+      "id": "talking_convenience",
+      "name": "Удобство разговора",
+      "description": "Уточнил удобно ли разговаривать",
+      "weight": 1,
+      "passed": false,
+      "comment": "Не уточнил, удобно ли клиенту разговаривать в данный момент.",
+      "evidence_segments": [],
+      "awarded_weight": 0
+    },
+    {
+      "id": "weekly_actions",
+      "name": "Работа по авто",
+      "description": "Рассказал о проведенных мероприятиях с автомобилями за прошедшую неделю",
+      "weight": 1,
+      "passed": false,
+      "comment": "Не рассказал о проведённых с автомобилем мероприятиях за прошедшую неделю, только упомянул проведение аналитики и отсутствие обращений.",
+      "evidence_segments": [],
+      "awarded_weight": 0
+    },
+    {
+      "id": "sales_tools",
+      "name": "Инструменты",
+      "description": "Предложил инструменты для скорейшей реализации",
+      "weight": 1,
+      "passed": true,
+      "comment": "Предложил снизить цену на 50 тысяч рублей для ускорения продажи.",
+      "evidence_segments": [
+        {
+          "start": 36.44,
+          "end": 40.12
+        },
+        {
+          "start": 44.02,
+          "end": 47.84
+        },
+        {
+          "start": 66.82,
+          "end": 74.16
+        }
+      ],
+      "awarded_weight": 1
+    },
+    {
+      "id": "price_argumentation",
+      "name": "Аргументация цены",
+      "description": "При изменеии стоимости озвучил сумму на руки",
+      "weight": 1,
+      "passed": false,
+      "comment": "При изменении стоимости не озвучил сумму на руки (итоговую сумму, которую получит клиент).",
+      "evidence_segments": [],
+      "awarded_weight": 0
+    },
+    {
+      "id": "positive_attitude",
+      "name": "Позитив",
+      "description": "Улыбка, доброжелательность, позитивный настрой",
+      "weight": 1,
+      "passed": false,
+      "comment": "По аудио преобладает монотонный тон (monotone_pitch) и тёплый, но тёмный тембр; нет речевых или акустических признаков улыбки или выраженного позитивного настроя.",
+      "evidence_segments": [],
+      "awarded_weight": 0
+    },
+    {
+      "id": "speech_quality",
+      "name": "Речь",
+      "description": "Речь грамотная, не использует сленг и жаргон",
+      "weight": 1,
+      "passed": true,
+      "comment": "Речь грамотная, без сленга и жаргона; профессиональная лексика (аналитика, реаналитика) уместна в контексте оценки автомобиля.",
+      "evidence_segments": [
+        {
+          "start": 0.02,
+          "end": 5.04
+        }
+      ],
+      "awarded_weight": 1
+    },
+    {
+      "id": "sale_forecast",
+      "name": "Срок продажи",
+      "description": "Озвучил прогнозный/ожидаемый срок продажи",
+      "weight": 1,
+      "passed": true,
+      "comment": "Озвучил ожидаемый срок продажи — около двух недель.",
+      "evidence_segments": [
+        {
+          "start": 80.88,
+          "end": 89.38
+        }
+      ],
+      "awarded_weight": 1
+    },
+    {
+      "id": "next_contact_date",
+      "name": "Следующий контакт",
+      "description": "Обозначил дату следующего контакта",
+      "weight": 1,
+      "passed": true,
+      "comment": "Явно обозначил дату следующего звонка — через неделю.",
+      "evidence_segments": [
+        {
+          "start": 105.44,
+          "end": 109.8
+        }
+      ],
+      "awarded_weight": 1
+    },
+    {
+      "id": "available_between_contacts",
+      "name": "Доступность",
+      "description": "ЭО озвучил что он в постоянном доступе для комитента в любой день между основными точками контакта.",
+      "weight": 1,
+      "passed": false,
+      "comment": "Не озвучил, что находится в постоянном доступе для клиента между основными точками контакта.",
+      "evidence_segments": [],
+      "awarded_weight": 0
+    }
+  ],
+  "criteria_snapshot": [
+    {
+      "id": "call_preparation",
+      "name": "Подготовка",
+      "description": "Подготовился к звонку (выписал инфо по обращениям; определил позицию авто в рынке; определил сумму для понижения)",
+      "weight": 1
+    },
+    {
+      "id": "greeting",
+      "name": "Приветствие",
+      "description": "Поприветствовал клиента, представился по имени, назвал свою должность",
+      "weight": 1
+    },
+    {
+      "id": "talking_convenience",
+      "name": "Удобство разговора",
+      "description": "Уточнил удобно ли разговаривать",
+      "weight": 1
+    },
+    {
+      "id": "weekly_actions",
+      "name": "Работа по авто",
+      "description": "Рассказал о проведенных мероприятиях с автомобилями за прошедшую неделю",
+      "weight": 1
+    },
+    {
+      "id": "sales_tools",
+      "name": "Инструменты",
+      "description": "Предложил инструменты для скорейшей реализации",
+      "weight": 1
+    },
+    {
+      "id": "price_argumentation",
+      "name": "Аргументация цены",
+      "description": "При изменеии стоимости озвучил сумму на руки",
+      "weight": 1
+    },
+    {
+      "id": "positive_attitude",
+      "name": "Позитив",
+      "description": "Улыбка, доброжелательность, позитивный настрой",
+      "weight": 1
+    },
+    {
+      "id": "speech_quality",
+      "name": "Речь",
+      "description": "Речь грамотная, не использует сленг и жаргон",
+      "weight": 1
+    },
+    {
+      "id": "sale_forecast",
+      "name": "Срок продажи",
+      "description": "Озвучил прогнозный/ожидаемый срок продажи",
+      "weight": 1
+    },
+    {
+      "id": "next_contact_date",
+      "name": "Следующий контакт",
+      "description": "Обозначил дату следующего контакта",
+      "weight": 1
+    },
+    {
+      "id": "available_between_contacts",
+      "name": "Доступность",
+      "description": "ЭО озвучил что он в постоянном доступе для комитента в любой день между основными точками контакта.",
+      "weight": 1
+    }
+  ],
+  "earned_score": 6,
+  "max_score": 11,
+  "overall_average": 54.5,
+  "speaker_roles_confidence": {
+    "SPEAKER_01": 0.97,
+    "SPEAKER_02": 0.96
+  },
+  "speaker_roles_reasoning": "SPEAKER_01 представляется «Юрий Смышев, эксперт отдела оценки», ведёт звонок, даёт аналитику, предлагает снизить цену и назначает следующий контакт — это сотрудник. SPEAKER_02 задаёт вопросы о гарантиях продажи, выражает сомнение и соглашается — классическая роль клиента.",
+  "reasoning_trace": "We are given a transcript with speakers, audio features, SER labels, and a glossary. We need to determine which speaker is the employee and which is the client. Then evaluate the employee on a set of criteria. The dialogue appears to be a call where a manager/employee (Yuri Smyshev) is calling a client about the price of their car, suggesting to lower the price from 1,150,000 to 1,100,000, and discussing analytics. The employee is SPEAKER_01, who introduces himself as \"Yuri Smyshev, expert of the evaluation department\". SPEAKER_02 is the client, asking about guarantees, etc. So I will assign SPEAKER_01 as EMPLOYEE and SPEAKER_02 as CLIENT.\n\nNow evaluate criteria for the employee:\n\n1. call_preparation: The employee prepared: mentions \"делали сейчас, на данный момент, реаналитику\", \"по аналитике наших продаж, такие машины продают в районе миллиона\", \"проводили аналитику\". He determined the car's position in the market and the necessary price reduction (50k). So passed = true. Evidence segments: from the transcript, he talks about analytics and price in [11.70–17.46], [19.24–25.00], [25.12–27.40], [29.22–36.44]. Use segments covering these statements.\n\n2. greeting: He said \"Добрый день, это Юрий Смышев, эксперт отдела оценки.\" That includes greeting, name, and position. So passed = true. Evidence: [0.02–5.04].\n\n3. talking_convenience: The employee does not ask if it's convenient to talk; he just starts the conversation. No evidence. So passed = false. Comment: \"Не уточнил, удобно ли разговаривать.\"\n\n4. weekly_actions: He mentions \"сейчас с коллегами проводили аналитику\" and \"делали сейчас реаналитику\", but that's about analytics, not about actions on the car for the past week (like viewings, inquiries). He also says \"пока что обращения не было\" (no inquiries yet). This is about the absence of inquiries, but not about conducted activities with the car. The criterion says \"Рассказал о проведенных мероприятиях с автомобилями за прошедшую неделю.\" He might have mentioned reacting to the current standing, but it's not clear. The transcript: \"[6.02–11.54] ... машина уже не вверх стоит, не продаётся.\" That's more about current state. \"[92.30–96.74] ... пока что обращения не было\" (no inquiries so far). So he did not really list any specific weekly actions like increasing visibility, advertising, etc. So false. Or maybe he implies they did analytics as the action. But \"проведенные мероприятия\" likely means concrete actions like posting on sites, adjusting price, etc. He just did analytics now. So I'll say passed = false. Comment: \"Не рассказал о проведённых мероприятиях с автомобилем за прошедшую неделю, только сообщил об отсутствии обращений и проведении аналитики.\"\n\n5. sales_tools: He suggests lowering the price: \"я предлагаю вам понизить, ... Давайте сначала 50 тысяч понизим\". That's a pricing tool, but the criterion might mean something else: \"Предложил инструменты для скорейшей реализации\". Tools could include: lowering price, advertising on platforms, promotion, etc. He only suggests lowering the price. He doesn't mention other tools like paid placement, highlighting in search, etc. But lowering price is a key tool. I think price reduction is a tool for faster sale. So passed = true. Comment: \"Предложил снижение цены как способ ускорить продажу.\" Evidence: [36.44–40.12], [44.02–47.84], [66.82–74.16]. However, note that the criterion might require a variety of tools. But I'll assume price adjustment qualifies.\n\n6. price_argumentation: When changing the price, he mentions that according to analytics, similar cars sell around 1 million, and his car is at 1,150,000, so proposed to reduce by 50k to 1,100,000. He doesn't explicitly say \"сумма на руки\" (amount to receive after sale? Or net amount?). Usually \"сумма на руки\" means the amount the owner will get after all deductions. In a sale on commission, the selling price minus commission is what the owner gets. The employee doesn't mention commission or net amount. He only says the selling price (1,100,000) but not what the owner will receive. So passed = false. Comment: \"Не озвучил сумму на руки клиенту, только предложил снизить цену на 50 тысяч, не уточняя итоговую сумму к получению.\"\n\n7. positive_attitude: Audio: mostly monotone_pitch, warm_dark_timbral, F0σ moderate (some variation but often flagged as monotone_pitch). SER: mostly neutral. The employee's tone is flat, no signs of a smile. No evidence of positive attitude from text or audio. Passed = false. Comment: \"Отсутствуют признаки улыбки и позитивного настроя в речи, тон монотонный.\"\n\n8. speech_quality: Speech seems grammatically correct, no obvious slang or jargon. Words like \"реаналитика\" (maybe a professional term) but not slang. So passed = true. Comment: \"Речь грамотная, без сленга и жаргона.\"\n\n9. sale_forecast: He says: \"я думаю, сейчас посмотрю, опять же, по аналитике, в течение двух недель, в принципе, я думаю, должна продаваться.\" That gives a forecast of about two weeks. So passed = true. Evidence: [80.88–89.38].\n\n10. next_contact_date: He says: \"через неделю я вам обязательно позвоню, дам обратную связь\". That's a specific date for next contact. So passed = true. Evidence: [105.44–109.80].\n\n11. available_between_contacts: Does he say he is constantly available? Not explicitly. He says \"давайте, давайте\" in response to \"Может, кто-то поможет, мы достаем\" (this is unclear). No statement like \"я всегда на связи\". So passed = false. Comment: \"Не озвучил свою постоянную доступность между основными точками контакта.\"\n\nNow construct JSON. Ensure evidence segments have correct start/end times from the transcript. I'll copy intervals exactly.\n\nFor call_preparation: I'll combine several segments where he talks about analytics: [11.70–17.46] (делали реаналитику, стоит слишком дорого), [19.24–25.00] (по аналитике ... в районе миллиона), [25.12–27.40] (у вас стоит машина миллион сто пятьдесят), [29.22–36.44] (с коллегами проводили аналитику ... будут, я предлагаю вам понизить). So evidence segments array.\n\nFor greeting: [0.02–5.04].\n\nFor weekly_actions: no evidence, empty array.\n\nFor sales_tools: price reduction suggestion: [36.44–40.12] and [44.02–47.84] and [66.82–74.16]. Note that [66.82–74.16] says \"Я вам даю от себя совет, ну реально, если вы хотите продать свой автомобиль, давайте своим понизимся.\" So that's also suggesting lowering price. So include all.\n\nFor price_argumentation: he does not give net amount, so false, evidence empty.\n\nFor positive_attitude: no smile, empty.\n\nFor speech_quality: all speech, but we can use [0.02–5.04] as evidence of his speech. Could just use a generic segment. But typically we need evidence that speech is grammatically correct. I'll note a segment where he speaks clearly, like [0.02–5.04] for demonstration. I'll include that.\n\nFor sale_forecast: [80.88–89.38].\n\nFor next_contact_date: [105.44–109.80].\n\nFor available_between_contacts: no mention, empty.\n\nNow produce JSON."
+}

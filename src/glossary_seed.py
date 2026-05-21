@@ -6,6 +6,15 @@ from typing import Any
 
 GLOSSARY_SEED: list[dict[str, Any]] = [
     {
+        "id": "fresh_brand",
+        "category": "priority_whisper_terms",
+        "term": "Фрэш",
+        "variants": ["Fresh", "Fresh Auto", "Фреш", "автосалон Фрэш", "автомобильный маркетплейс Фрэш"],
+        "definition": "Бренд автомобильного маркетплейса Fresh.",
+        "whisper_hint": "Фрэш, Fresh, Fresh Auto, автосалон Фрэш, автомобильный маркетплейс Фрэш",
+        "llm_hint": "Фрэш/Fresh/Fresh Auto — бренд компании; похожие ошибочные распознавания в приветствии учитывать как Fresh по контексту.",
+    },
+    {
         "id": "kso",
         "category": "Сокращения",
         "term": "КСО",

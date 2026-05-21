@@ -1,0 +1,574 @@
+{
+  "schema_version": 3,
+  "criteria_version": "1",
+  "criteria_file": "oo_visit_salon",
+  "evaluated_at": "2026-05-16T13:48:17.444125+00:00",
+  "model": "deepseek-v4-pro",
+  "video_file": "16457649818172 1.mp4",
+  "speaker_roles": {
+    "SPEAKER_01": "EMPLOYEE",
+    "SPEAKER_02": "CLIENT"
+  },
+  "employee_speaker": "SPEAKER_01",
+  "criteria": [
+    {
+      "id": "greeting",
+      "name": "Приветствие",
+      "description": "Поприветствовал клиента, Представился (имя, должность, отдел)",
+      "weight": 1,
+      "passed": true,
+      "comment": "Поприветствовал клиента, представился по имени и должности, спросил, как обращаться, несмотря на фрагментарную разметку ASR.",
+      "evidence_segments": [
+        {
+          "start": 1.65,
+          "end": 2.39
+        },
+        {
+          "start": 3.01,
+          "end": 4.53
+        }
+      ],
+      "awarded_weight": 1
+    },
+    {
+      "id": "name_usage",
+      "name": "Имя клиента",
+      "description": "Уточнил имя клиента, обращается по имени не менее 3х раз",
+      "weight": 1,
+      "passed": true,
+      "comment": "Уточнил имя клиента (хотя реплика «Юрий» в [4.73–4.99] ошибочно приписана SPEAKER_01, по контексту это клиент). Обращается по имени «Юрий» трижды: при обсуждении срочности, подтверждении понимания и при закрытии сделки.",
+      "evidence_segments": [
+        {
+          "start": 43.73,
+          "end": 47.11
+        },
+        {
+          "start": 160.36,
+          "end": 162.24
+        },
+        {
+          "start": 415.6,
+          "end": 417.36
+        }
+      ],
+      "awarded_weight": 1
+    },
+    {
+      "id": "small_talk",
+      "name": "Small talk",
+      "description": "Проводит Smal - talk",
+      "weight": 1,
+      "passed": false,
+      "comment": "Нет лёгкой вступительной беседы (о дороге, погоде и т. п.), разговор сразу переходит к делу.",
+      "evidence_segments": [],
+      "awarded_weight": 0
+    },
+    {
+      "id": "company_experience",
+      "name": "Опыт клиента",
+      "description": "Уточняет опыт взаимодействия с нашей компанией (впервые в салоне/ знакомы с компанией)",
+      "weight": 1,
+      "passed": true,
+      "comment": "Спросил, как клиент узнал о компании (друг посоветовал), выясняя опыт взаимодействия.",
+      "evidence_segments": [
+        {
+          "start": 60.28,
+          "end": 69.06
+        }
+      ],
+      "awarded_weight": 1
+    },
+    {
+      "id": "v_prezentatsii_ispolzuet",
+      "name": "В презентации использует",
+      "description": "В презентации использует следующие факты:",
+      "weight": 1,
+      "passed": true,
+      "comment": "В презентации использовал факты о масштабе компании, спектре услуг и помощи при продаже.",
+      "evidence_segments": [
+        {
+          "start": 74.34,
+          "end": 80.44
+        },
+        {
+          "start": 80.44,
+          "end": 91.5
+        },
+        {
+          "start": 91.5,
+          "end": 102.88
+        }
+      ],
+      "awarded_weight": 1
+    },
+    {
+      "id": "company_scale",
+      "name": "Масштаб",
+      "description": "Масштаб (20 лет на автомобильном рынке, продаем по 6000 авто в мес",
+      "weight": 1,
+      "passed": true,
+      "comment": "Упомянул федеральный уровень, более 50 автосалонов в 30 регионах.",
+      "evidence_segments": [
+        {
+          "start": 74.34,
+          "end": 80.44
+        },
+        {
+          "start": 80.44,
+          "end": 91.5
+        }
+      ],
+      "awarded_weight": 1
+    },
+    {
+      "id": "services_list",
+      "name": "Виды услуг",
+      "description": "Перечислил основные виды услуг компании: выкуп, комиссия, трейд-ин, интерактивные продажи, КСО",
+      "weight": 1,
+      "passed": false,
+      "comment": "Не перечислил ключевые виды услуг (выкуп, комиссия, трейд-ин, интерактивные продажи, КСО), говорил лишь о предпродажной подготовке и реализации.",
+      "evidence_segments": [],
+      "awarded_weight": 0
+    },
+    {
+      "id": "help_with_sale",
+      "name": "Помощь с продажей",
+      "description": "Мы в любом случае поможем с продажей авто",
+      "weight": 1,
+      "passed": true,
+      "comment": "Сказал, что помогают максимально выгодно продать автомобиль, и позже предложил вариант «с нашей помощью в реализации».",
+      "evidence_segments": [
+        {
+          "start": 91.5,
+          "end": 102.88
+        },
+        {
+          "start": 187.84,
+          "end": 195.12
+        }
+      ],
+      "awarded_weight": 1
+    },
+    {
+      "id": "logic_sequence",
+      "name": "Логика презентации",
+      "description": "При презентации компании соблюдается логическая последовательность:",
+      "weight": 1,
+      "passed": true,
+      "comment": "Соблюдена логика: сначала масштаб и опыт, затем спектр услуг, затем обещание помощи в продаже.",
+      "evidence_segments": [
+        {
+          "start": 74.34,
+          "end": 80.44
+        },
+        {
+          "start": 80.44,
+          "end": 91.5
+        },
+        {
+          "start": 91.5,
+          "end": 102.88
+        }
+      ],
+      "awarded_weight": 1
+    },
+    {
+      "id": "services_list_2",
+      "name": "Виды услуг",
+      "description": "давно работаем, много продаем -> все виды услуг -> все услуги интересные, в любом случае можем помочь",
+      "weight": 1,
+      "passed": false,
+      "comment": "Не проговорил последовательность «давно работаем, много продаем → все виды услуг → все услуги интересные, поможем». Конкретные виды услуг не названы, упоминание «давно» отсутствует.",
+      "evidence_segments": [],
+      "awarded_weight": 0
+    },
+    {
+      "id": "sale_reason",
+      "name": "Причина продажи",
+      "description": "Необходимо выявить причину продажи (ПОЧЕМУ)",
+      "weight": 1,
+      "passed": false,
+      "comment": "Прямой вопрос о причине продажи не задан, сотрудник не выявил, почему клиент хочет продать автомобиль.",
+      "evidence_segments": [],
+      "awarded_weight": 0
+    },
+    {
+      "id": "sale_timing",
+      "name": "Срок продажи",
+      "description": "Узнать у клиента время, которым располагает клиент на продажу авто (КОГДА?)",
+      "weight": 1,
+      "passed": true,
+      "comment": "Спросил, как срочно нужно продать автомобиль.",
+      "evidence_segments": [
+        {
+          "start": 43.73,
+          "end": 47.11
+        }
+      ],
+      "awarded_weight": 1
+    },
+    {
+      "id": "price_expectation",
+      "name": "Ожидания по цене",
+      "description": "Узнать ценовые оживания клиента (СКОЛЬКО?)",
+      "weight": 1,
+      "passed": true,
+      "comment": "Уточнил цену, которую клиент ранее озвучивал (1,2 млн руб.), для оценки ожиданий.",
+      "evidence_segments": [
+        {
+          "start": 232.96,
+          "end": 243.48
+        }
+      ],
+      "awarded_weight": 1
+    },
+    {
+      "id": "inspection_flow",
+      "name": "Порядок осмотра",
+      "description": "ЭО озвучивает последовательность действий по осмотру автомобиля",
+      "weight": 1,
+      "passed": false,
+      "comment": "Не озвучил последовательность осмотра, сразу перешёл к фактическому осмотру автомобиля.",
+      "evidence_segments": [],
+      "awarded_weight": 0
+    },
+    {
+      "id": "open_questions",
+      "name": "Открытые вопросы",
+      "description": "Задает открытые вопросы по техничскому состоянию автомтобиля",
+      "weight": 1,
+      "passed": false,
+      "comment": "Не задавал открытых вопросов о техническом состоянии, только констатировал видимые недостатки.",
+      "evidence_segments": [],
+      "awarded_weight": 0
+    },
+    {
+      "id": "best_fit_service",
+      "name": "Подходящая услуга",
+      "description": "ЭО подбробно рассказывает про услугу компании, которая максимально подходит клиенту",
+      "weight": 1,
+      "passed": true,
+      "comment": "После разъяснения, что выкуп будет ниже рынка, детально презентовал реализацию (комиссию): предпродажная подготовка, акции, кредит, безопасность, контроль состояния и т. д.",
+      "evidence_segments": [
+        {
+          "start": 198.26,
+          "end": 203.7
+        },
+        {
+          "start": 206.66,
+          "end": 212.76
+        },
+        {
+          "start": 288.12,
+          "end": 299.44
+        },
+        {
+          "start": 327.34,
+          "end": 338.02
+        },
+        {
+          "start": 344.52,
+          "end": 349.41
+        }
+      ],
+      "awarded_weight": 1
+    },
+    {
+      "id": "alternative_service",
+      "name": "Альтернатива",
+      "description": "Подробно презентует альтернативный вариант услуг компании",
+      "weight": 1,
+      "passed": false,
+      "comment": "Альтернативный вариант (например, выкуп) не презентован детально, лишь упомянут в контексте минусов срочной продажи.",
+      "evidence_segments": [],
+      "awarded_weight": 0
+    },
+    {
+      "id": "price_argumentation",
+      "name": "Аргументация цены",
+      "description": "Аргументированно озвучивает стоимость (внешнее состояние, дефекты, состояние, ликвидность, эксклюзивность)",
+      "weight": 1,
+      "passed": true,
+      "comment": "Аргументировал рекомендованную цену 1,1 млн руб. ссылаясь на срочность при выкупе, внешнее состояние, дефекты (трещина на руле) и эффект предпродажной подготовки.",
+      "evidence_segments": [
+        {
+          "start": 170.62,
+          "end": 181.64
+        },
+        {
+          "start": 256.12,
+          "end": 276.12
+        }
+      ],
+      "awarded_weight": 1
+    },
+    {
+      "id": "no_excuses",
+      "name": "Без оправданий",
+      "description": "ЭО не оправдывается, не перекладывает ответственность",
+      "weight": 1,
+      "passed": true,
+      "comment": "Не оправдывался, не перекладывал ответственность, уверенно отвечал на вопросы.",
+      "evidence_segments": [
+        {
+          "start": 160.36,
+          "end": 162.24
+        }
+      ],
+      "awarded_weight": 1
+    },
+    {
+      "id": "objection_handling",
+      "name": "Возражения",
+      "description": "Отрабатывает возражение клиента по технике работы с возражениями",
+      "weight": 1,
+      "passed": true,
+      "comment": "Отработал возражения: «что такое реализация?» — объяснил суть и преимущества; «если за месяц не продалась?» — разъяснил автоматическое продление договора и информирование.",
+      "evidence_segments": [
+        {
+          "start": 198.26,
+          "end": 206.66
+        },
+        {
+          "start": 376.96,
+          "end": 386.42
+        }
+      ],
+      "awarded_weight": 1
+    },
+    {
+      "id": "clear_argument",
+      "name": "Аргументация",
+      "description": "Дает четкий аргументированный ответ",
+      "weight": 1,
+      "passed": true,
+      "comment": "Давал чёткие, аргументированные ответы на вопросы клиента, например, про реализацию и условия договора.",
+      "evidence_segments": [
+        {
+          "start": 198.26,
+          "end": 206.66
+        },
+        {
+          "start": 376.96,
+          "end": 386.42
+        }
+      ],
+      "awarded_weight": 1
+    },
+    {
+      "id": "deal_close",
+      "name": "Закрытие на сделку",
+      "description": "ЭО предлагает клиенту оформить сделку",
+      "weight": 1,
+      "passed": true,
+      "comment": "После согласия клиента предложил оформить сделку: запросил документы, объявил о составлении карточки и подписании бумаг.",
+      "evidence_segments": [
+        {
+          "start": 415.6,
+          "end": 427.06
+        }
+      ],
+      "awarded_weight": 1
+    },
+    {
+      "id": "body_language",
+      "name": "Контакт",
+      "description": "Соблюдает комфортную социальную дистанцию, поддерживает контакт глаз,",
+      "weight": 1,
+      "passed": false,
+      "comment": "Визуальную составляющую (дистанция, контакт глаз) по разговору подтвердить не удалось; видео недоступно.",
+      "evidence_segments": [],
+      "awarded_weight": 0
+    },
+    {
+      "id": "positive_attitude",
+      "name": "Позитив",
+      "description": "Улыбка, доброжелательность, позитивный настрой",
+      "weight": 1,
+      "passed": false,
+      "comment": "Улыбка и доброжелательность не подтверждаются: по аудио преобладает монотонная подача (monotone_pitch), эмоции по SER нейтральны, визуальный канал отсутствует.",
+      "evidence_segments": [],
+      "awarded_weight": 0
+    },
+    {
+      "id": "speech_quality",
+      "name": "Речь",
+      "description": "Речь грамотная, не использует сленг и жаргон",
+      "weight": 1,
+      "passed": true,
+      "comment": "Речь грамотная, без сленга и жаргона; использует профессиональную лексику уместно.",
+      "evidence_segments": [
+        {
+          "start": 160.36,
+          "end": 162.24
+        },
+        {
+          "start": 198.26,
+          "end": 203.7
+        }
+      ],
+      "awarded_weight": 1
+    }
+  ],
+  "criteria_snapshot": [
+    {
+      "id": "greeting",
+      "name": "Приветствие",
+      "description": "Поприветствовал клиента, Представился (имя, должность, отдел)",
+      "weight": 1
+    },
+    {
+      "id": "name_usage",
+      "name": "Имя клиента",
+      "description": "Уточнил имя клиента, обращается по имени не менее 3х раз",
+      "weight": 1
+    },
+    {
+      "id": "small_talk",
+      "name": "Small talk",
+      "description": "Проводит Smal - talk",
+      "weight": 1
+    },
+    {
+      "id": "company_experience",
+      "name": "Опыт клиента",
+      "description": "Уточняет опыт взаимодействия с нашей компанией (впервые в салоне/ знакомы с компанией)",
+      "weight": 1
+    },
+    {
+      "id": "v_prezentatsii_ispolzuet",
+      "name": "В презентации использует",
+      "description": "В презентации использует следующие факты:",
+      "weight": 1
+    },
+    {
+      "id": "company_scale",
+      "name": "Масштаб",
+      "description": "Масштаб (20 лет на автомобильном рынке, продаем по 6000 авто в мес",
+      "weight": 1
+    },
+    {
+      "id": "services_list",
+      "name": "Виды услуг",
+      "description": "Перечислил основные виды услуг компании: выкуп, комиссия, трейд-ин, интерактивные продажи, КСО",
+      "weight": 1
+    },
+    {
+      "id": "help_with_sale",
+      "name": "Помощь с продажей",
+      "description": "Мы в любом случае поможем с продажей авто",
+      "weight": 1
+    },
+    {
+      "id": "logic_sequence",
+      "name": "Логика презентации",
+      "description": "При презентации компании соблюдается логическая последовательность:",
+      "weight": 1
+    },
+    {
+      "id": "services_list_2",
+      "name": "Виды услуг",
+      "description": "давно работаем, много продаем -> все виды услуг -> все услуги интересные, в любом случае можем помочь",
+      "weight": 1
+    },
+    {
+      "id": "sale_reason",
+      "name": "Причина продажи",
+      "description": "Необходимо выявить причину продажи (ПОЧЕМУ)",
+      "weight": 1
+    },
+    {
+      "id": "sale_timing",
+      "name": "Срок продажи",
+      "description": "Узнать у клиента время, которым располагает клиент на продажу авто (КОГДА?)",
+      "weight": 1
+    },
+    {
+      "id": "price_expectation",
+      "name": "Ожидания по цене",
+      "description": "Узнать ценовые оживания клиента (СКОЛЬКО?)",
+      "weight": 1
+    },
+    {
+      "id": "inspection_flow",
+      "name": "Порядок осмотра",
+      "description": "ЭО озвучивает последовательность действий по осмотру автомобиля",
+      "weight": 1
+    },
+    {
+      "id": "open_questions",
+      "name": "Открытые вопросы",
+      "description": "Задает открытые вопросы по техничскому состоянию автомтобиля",
+      "weight": 1
+    },
+    {
+      "id": "best_fit_service",
+      "name": "Подходящая услуга",
+      "description": "ЭО подбробно рассказывает про услугу компании, которая максимально подходит клиенту",
+      "weight": 1
+    },
+    {
+      "id": "alternative_service",
+      "name": "Альтернатива",
+      "description": "Подробно презентует альтернативный вариант услуг компании",
+      "weight": 1
+    },
+    {
+      "id": "price_argumentation",
+      "name": "Аргументация цены",
+      "description": "Аргументированно озвучивает стоимость (внешнее состояние, дефекты, состояние, ликвидность, эксклюзивность)",
+      "weight": 1
+    },
+    {
+      "id": "no_excuses",
+      "name": "Без оправданий",
+      "description": "ЭО не оправдывается, не перекладывает ответственность",
+      "weight": 1
+    },
+    {
+      "id": "objection_handling",
+      "name": "Возражения",
+      "description": "Отрабатывает возражение клиента по технике работы с возражениями",
+      "weight": 1
+    },
+    {
+      "id": "clear_argument",
+      "name": "Аргументация",
+      "description": "Дает четкий аргументированный ответ",
+      "weight": 1
+    },
+    {
+      "id": "deal_close",
+      "name": "Закрытие на сделку",
+      "description": "ЭО предлагает клиенту оформить сделку",
+      "weight": 1
+    },
+    {
+      "id": "body_language",
+      "name": "Контакт",
+      "description": "Соблюдает комфортную социальную дистанцию, поддерживает контакт глаз,",
+      "weight": 1
+    },
+    {
+      "id": "positive_attitude",
+      "name": "Позитив",
+      "description": "Улыбка, доброжелательность, позитивный настрой",
+      "weight": 1
+    },
+    {
+      "id": "speech_quality",
+      "name": "Речь",
+      "description": "Речь грамотная, не использует сленг и жаргон",
+      "weight": 1
+    }
+  ],
+  "earned_score": 16,
+  "max_score": 25,
+  "overall_average": 64.0,
+  "speaker_roles_confidence": {
+    "SPEAKER_01": 0.95,
+    "SPEAKER_02": 0.95
+  },
+  "speaker_roles_reasoning": "SPEAKER_01 представляется экспертом оценки, задаёт уточняющие вопросы, презентует услуги компании, обрабатывает возражения и закрывает сделку. SPEAKER_02 сообщает о желании продать Lada Vesta, описывает комплектацию, называет цену, соглашается на предложение — типичная роль клиента.",
+  "reasoning_trace": "We need to determine SPEAKER_01 and SPEAKER_02 roles based on the transcript. The initial lines: SPEAKER_01 says \"Здравствуйте, меня зовут Антон, эксперт оценки, как могу обращаться?\" Wait, looking carefully: [1.65–2.39] SPEAKER_01: Здравствуйте, меня | [2.39–2.91] SPEAKER_02: зовут Антон, | [3.01–4.53] SPEAKER_01: эксперт оценки, как могу обращаться? So there is overlapping: Actually it's likely that SPEAKER_01 starts with \"Здравствуйте, меня\" and SPEAKER_02 says \"зовут Антон,\" and then SPEAKER_01 again \"эксперт оценки, как могу обращаться?\" That seems odd. Perhaps the labeling is swapped? Let's re-read: Segment [1.65–2.39] SPEAKER_01: Здравствуйте, меня | [2.39–2.91] SPEAKER_02: зовут Антон, | [3.01–4.53] SPEAKER_01: эксперт оценки, как могу обращаться? So it's as if SPEAKER_01 says \"Здравствуйте, меня ... эксперт оценки, как могу обращаться?\" and SPEAKER_02 interjects \"зовут Антон\". That would be strange for a coherent greeting. More likely the transcription is incorrectly assigning speaker labels? Let's see the next: [4.73–4.99] SPEAKER_01: Юрий. So after asking \"как могу обращаться?\", SPEAKER_01 answers \"Юрий.\" That suggests SPEAKER_01 might be the client? But then SPEAKER_01 said \"Здравствуйте, меня ... эксперт оценки, как могу обращаться?\" It could be the employee introducing themselves. Standard employee: \"Здравствуйте, меня зовут Антон, эксперт оценки, как могу обращаться?\" and the client replies \"Юрий.\" But the labeling has SPEAKER_02 saying \"зовут Антон,\" and SPEAKER_01 saying \"эксперт оценки\". So a fragmentary assignment. Overall, if we combine, it could be: SPEAKER_01: \"Здравствуйте, меня ... эксперт оценки, как могу обращаться?\" not including \"зовут Антон\". That's inconsistent. But later: [5.15–8.81] SPEAKER_01: Можешь, пожалуйста, посоветуйтесь и рассказывайте, | [8.89–10.85] SPEAKER_02: чем могу вам помочь. So SPEAKER_02 says \"чем могу вам помочь.\" That is likely the employee. So who is the employee? If SPEAKER_02 says \"чем могу вам помочь\", then that is the employee's offer to help. But earlier [3.01–4.53] SPEAKER_01 asked \"как могу обращаться?\" That could be the employee asking the client's name. So then [4.73–4.99] SPEAKER_01: Юрий. That would mean SPEAKER_01 is the client giving his name. So SPEAKER_01 might be the client? But then [5.15–8.81] SPEAKER_01: \"Можешь, пожалуйста, посоветуйтесь и рассказывайте,\" which is garbled but clearly an invitation to speak, which the employee might say. And then [8.89–10.85] SPEAKER_02: \"чем могу вам помочь.\" That would be the employee again. So it's inconsistent. Let's re-evaluate: After the greeting, [11.89–15.77] SPEAKER_02: \"Хочу автомобиль свой продать...\" So SPEAKER_02 is the client who wants to sell a car. So that means SPEAKER_02 is the client. Then who is the employee? The employee would be SPEAKER_01. But the initial greeting: SPEAKER_01 said \"Здравствуйте, меня\" and then SPEAKER_02 interjected \"зовут Антон,\" then SPEAKER_01 \"эксперт оценки, как могу обращаться?\" That implies SPEAKER_02 might be the employee? But SPEAKER_02 later says \"Хочу автомобиль свой продать\" which is client-like. So there is a contradiction. Possibly the segment \"зовут Антон\" is actually a continuation of SPEAKER_01's speech, but the label accidentally gave it to SPEAKER_02 due to overlap. The ASR might have split it. In reality, the employee says \"Здравствуйте, меня зовут Антон, эксперт оценки, как могу обращаться?\" and the client then says \"Юрий.\" So the employee is the one who says that whole greeting. If the label split it, then the employee is the one who said \"Здравствуйте, меня\" and \"эксперт оценки, как могу обращаться?\" (SPEAKER_01), and the \"зовут Антон\" might have been incorrectly assigned to SPEAKER_02, but it's part of the same speech. So the employee is SPEAKER_01. And SPEAKER_02 is the client who says \"Юрий\" and then \"чем могу вам помочь\" as garbled, but actually the client said \"Юрий\"? Wait, after [4.73–4.99] SPEAKER_01: Юрий. That is the name given. Then [5.15–8.81] SPEAKER_01 says \"Можешь, пожалуйста, посоветуйтесь и рассказывайте,\" which might be garbled \"Можете, пожалуйста, рассказать, чем могу вам помочь?\" but the employee is offering help. Then SPEAKER_02: \"чем могу вам помочь\" - maybe that's a mis-attribution; it might be the employee speaking. But the employee already spoke. Actually, the client wants to sell a car, so the employee would be asking \"чем могу вам помочь?\" So the employee should say that phrase. If SPEAKER_02 says \"чем могу вам помочь\" then SPEAKER_02 might be the employee, which would conflict with SPEAKER_02 later saying \"Хочу автомобиль свой продать.\" So it's more plausible that the transcription has swapped speakers in some segments. Let's examine the whole flow:\n\n- [1.65–2.39] SPEAKER_01: Здравствуйте, меня (greeting, part of \"меня зовут...\")\n- [2.39–2.91] SPEAKER_02: зовут Антон, (the name, but if this is employee, then employee says \"зовут Антон\")\n- [3.01–4.53] SPEAKER_01: эксперт оценки, как могу обращаться? (employee continues)\n- [4.73–4.99] SPEAKER_01: Юрий. (This could be client's name, but if SPEAKER_01 is employee, they wouldn't say their own name; they'd ask the client's name and then client says \"Юрий\". So likely the client says \"Юрий.\" So [4.73–4.99] should be SPEAKER_02 (client). But it's labeled as SPEAKER_01. So here the labeling is inconsistent. \n\nThen:\n- [5.15–8.81] SPEAKER_01: Можешь, пожалуйста, посоветуйтесь и рассказывайте, (garbled, likely \"Можете, пожалуйста, рассказать, чем я могу вам помочь?\" or something)\n- [8.89–10.85] SPEAKER_02: чем могу вам помочь. (this would be employee again? Actually it would be the employee asking \"чем могу вам помочь?\" So SPEAKER_02 is the employee in this segment. But then [11.89–15.77] SPEAKER_02: \"Хочу автомобиль свой продать\" - client. So it's inconsistent. So it's likely that the segments [5.15–8.81] and [8.89–10.85] are both employee speaking, but the ASR split them incorrectly, assigning the latter to SPEAKER_02. So overall, we need to deduce roles from the conversation content. \n\nFrom [11.89–15.77] SPEAKER_02 says they want to sell their Lada Vesta. So that is definitely the client. So SPEAKER_02 is the client. Then the other speaker, SPEAKER_01, must be the employee. The employee asks questions like \"Отлично, а примерно в какой комплектации?\" [16.63–18.45] by SPEAKER_01, so that's the employee. So despite some garbled segments, it's clear that SPEAKER_01 is the employee (expert evaluator), and SPEAKER_02 is the client (Yuri). We'll set speaker_roles accordingly with high confidence. \n\nNow, for evaluation, we focus on SPEAKER_01's actions.\n\nNow, let's list the criteria and evaluate each based on speech of SPEAKER_01, using the transcript, acoustic markers, and SER. The criteria are all about employee performance, so we'll look at SPEAKER_01's lines.\n\nFirst, the greeting: Did the employee greet and introduce themselves? The combined greeting appears to be: \"Здравствуйте, меня зовут Антон, эксперт оценки, как могу обращаться?\" but it's split across segments. We can treat that as a successful greeting and introduction. So greeting=true.\n\nname_usage: Did employee ask client's name and use it at least 3 times? The client's name is Юрий. SPEAKER_01 says \"Юрий\" at [4.73–4.99] (that's actually the client's name said by someone, but we attribute that to SPEAKER_01, but it could be the client. Wait: the segment [4.73–4.99] is labeled SPEAKER_01, so if SPEAKER_01 is the employee, they say \"Юрий.\" That would be weird because the employee wouldn't say their own name. So this segment is likely a misclassification. Actually, in the dialogue, after \"как могу обращаться?\" the client says \"Юрий.\" So the name \"Юрий\" should be spoken by the client, not the employee. But it's labeled as SPEAKER_01. So there is an error in speaker assignment for that particular line. Since we've determined SPEAKER_01 is the employee, we must assume this line is a labeling error, so we cannot credit the employee with saying the name here. Later, where does the employee use the name? Look for instances of \"Юрий\" by SPEAKER_01. [43.73–47.11] SPEAKER_01: \"Так, Юрий, хорошо, расскажите, как срочно продаете автомобиль?\" So that's one use. [160.36–162.24] SPEAKER_01: \"Так, Юрий, я понял вас.\" That's second. [415.60–417.36] SPEAKER_01: \"все отлично Юрий тогда смотрите...\" So that's a third use. So the employee uses the name at least three times. So name_usage passed, but we must note that the first \"Юрий\" [4.73–4.99] is likely client, not employee. But the employee did use it later 3 times. So passed.\n\nsmall_talk: Did employee conduct small talk? No small talk about road, weather, etc. The conversation directly goes into business. So small_talk=false.\n\ncompany_experience: Did employee ask if client has previously interacted with the company? There is a question: \"расскажите пожалуйста вы на нас откуда узнать ну я посмотрел\" [60.28–69.06] (garbled) and then client says \"как бы друг посоветовал\". So the employee did ask how the client found out about the company. That fits checking experience. So passed.\n\nv_prezentatsii_ispolzuet: This is a list of possible facts used in presentation, but the criterion says: \"В презентации использует следующие факты:\" and then sub-items? Actually the criteria are separate items: company_scale, services_list, help_with_sale, logic_sequence, services_list_2. So maybe we need to evaluate each sub-criterion individually. The list given: \"В презентации использует следующие факты:\" is a header, then company_scale, services_list, etc. are separate criteria. The instruction says \"ровно по одному ключу на каждый id из списка выше.\" The list above includes: greeting, name_usage, small_talk, company_experience, v_prezentatsii_ispolzuet, company_scale, services_list, help_with_sale, logic_sequence, services_list_2, sale_reason, sale_timing, price_expectation, inspection_flow, open_questions, best_fit_service, alternative_service, price_argumentation, no_excuses, objection_handling, clear_argument, deal_close, body_language, positive_attitude, speech_quality. So yes, all those are separate criteria IDs. I'll evaluate each.\n\nSo for v_prezentatsii_ispolzuet, the description says \"В презентации использует следующие факты:\" but no further specific list within that criterion; it's like it's a header followed by sub-items, but those sub-items are separate criteria. So maybe we treat v_prezentatsii_ispolzuet as an overall whether they used any facts? It's ambiguous. I'll interpret that this is an overall criterion that the employee uses facts in the presentation, and then the sub-items measure which facts they used. But the schema expects an individual passed/false for each ID. So for v_prezentatsii_ispolzuet, we need to judge: did the employee use any facts at all during the presentation? They did mention scale, services, etc. So likely true. But I'll be careful: they did mention company's reach (\"более 50 двух автосалонов более чем 30 регионах\") and services (предпродажная подготовка). So passed.\n\ncompany_scale: Did they mention scale? Yes, in [74.34–80.44] and [80.44–91.50] they mention \"компания флешка компания федерального уровня находимся более чем 50 двух автосалонов более чем 30 регионах россии\". So passed.\n\nservices_list: Did they list main services: выкуп, комиссия, трейд-ин, интерактивные продажи, КСО? They mention \"выкуп\" (client mentions it, employee talks about выкуп but not directly listing; employee mentions \"реализация\" which is commission sale, and mentions \"кредит\" and КСО? Not clear. They don't list all services. They talk about \"полный спектр предпродажной подготовки\" and \"реализация\". They mention выкуп earlier (client mentions, employee acknowledges). But they don't explicitly list the services. So probably false.\n\nhelp_with_sale: \"Мы в любом случае поможем с продажей авто\" - employee says something like \"мы предоставляем полный спектр продажной подготовки и помогаем максимально ... по выгодной вам цене продать ваш автомобиль\" [91.50–102.88] which implies help. And earlier \"мы в любом случае поможем\"? Not exactly. So maybe not explicitly said, but the spirit is there. The criterion is specific phrase? I'll check: after discussing выкуп, the employee says \"Поэтому, мне кажется, вам идеально подходил бы наш вариант с нашей помощью в реализации вашего авто.\" That says help. So passed.\n\nlogic_sequence: \"При презентации компании соблюдается логическая последовательность:\" and the next item services_list_2 says \"давно работаем, много продаем -> все виды услуг -> все услуги интересные, в любом случае можем помочь\". So the logic is that you talk about scale, then services, then help. Did employee follow that? They mentioned scale (\"федерального уровня, более 50 автосалонов, 30 регионов\"), then they mentioned \"полный спектр продажной подготовки\" which is services, then they said \"помогаем максимально по выгодной вам цене продать\" which is help. So yes, they followed that sequence. So logic_sequence passed.\n\nservices_list_2: This is a sub-criterion that the presentation follows: давно работаем, много продаем -> все виды услуг -> все услуги интересные, в любом случае можем помочь. That's essentially the same as logic_sequence, but maybe it's the actual statement of those steps. The employee says \"давно работаем? Not explicitly '20 лет'. But they imply scale. So might not be fully met. I'd say false, because they didn't say \"давно работаем\" and \"много продаем\" (they said more than 50 auto salons and 30 regions, but not years or volume). Also, they didn't list all service types. So false.\n\nsale_reason: Did employee ask why the client is selling? Yes, after discussing, they ask \"расскажите, как срочно продаете автомобиль?\" which is timing, not reason. But later, client voluntarily explains \"жена почти не езди\" etc. Employee didn't explicitly ask \"почему продаете?\" but they might have asked indirectly: [43.73–47.11] \"расскажите, как срочно продаете автомобиль?\" Not \"почему\". The criterion says \"Необходимо выявить причину продажи (ПОЧЕМУ)\" - the employee did not directly ask why. So false.\n\nsale_timing: Did employee ask when (timing)? Yes, \"как срочно продаете автомобиль?\" at [43.73–47.11]. So passed.\n\nprice_expectation: Did employee ask about price expectations? The employee asks: \"я могу вам предложить вашу цену какую ранее озвучивали\" at [232.96–243.48] - it's garbled but employee asks about the price client mentioned earlier. Actually client previously said something? Let's see: client said \"я могу за миллион двести в принципе реально ее продать\" at [243.48–250.18]. So employee asks about that. So yes, they asked about price expectations. So passed.\n\ninspection_flow: Did employee outline the sequence of vehicle inspection? They go to see the car after asking: [104.10–105.54] \"можно брать и посмотреть да\" and then they examine it and mention findings (трещина на руле, etc.). But they did not verbally outline the steps of the inspection beforehand. So maybe false. The criterion: \"ЭО озвучивает последовательность действий по осмотру автомобиля\". They did not. So false.\n\nopen_questions: Did employee ask open-ended questions about technical state? They mention some things like \"машина хорошая пробег небольшой имеются конечно незначительные косячки\" but they don't ask open questions: they state observations. There's no question like \"какие есть недостатки?\" They do ask about комплектация earlier, that's not technical state. So false.\n\nbest_fit_service: Did employee thoroughly describe the service that best fits the client? The client wanted to sell quickly, so the employee recommended \"выкуп\" initially? Actually, the employee talked about выкуп: [170.62–176.72] \"цена за выпук, сами понимаете, будет, так скажем, меньше, чем вы хотите.\" But then they proposed \"реализация\" (commission sale) as a better option. The client initially mentioned \"выкуп\" from a hotline, employee clarifies that выкуп price would be lower, then suggests \"наша помощь в реализации вашего авто\" and then explains the realization service in detail: предпродажная подготовка, credit, safety, supervision. So the employee did describe the service that fits (реализация) in detail. So best_fit_service passed.\n\nalternative_service: Did employee present an alternative service in detail? They only focused on realization. They might have mentioned выкуп briefly, but not in detail as an alternative. So false.\n\nprice_argumentation: Did employee argue the price based on external condition, defects, liquidity, exclusivity? When discussing the realization price, employee said \"оптимальная цена продажи здесь составляла бы 1 миллион 100 тысяч рублей\" and previously mentioned that выкуп would be lower because of urgency. They also noted that with prep and display, the car would look fresher and sell better. They pointed out defects like трещина на руле. They argued that this price is optimal. So yes, they provided arguments. So passed.\n\nno_excuses: Did employee avoid excuses, not shift responsibility? The employee sounds confident, no excuses. So passed.\n\nobjection_handling: Did employee handle client's objection using objection handling techniques? The client had an objection: \"А что такое реализация?\" at [195.62–197.06]. Employee explained: \"в нашем салоне есть ... полный спектр предпродажной подготовки.\" That's a clarification. Also later, client asked about if the car doesn't sell in a month, employee explained the auto-renewal contract. These are objections being handled. So passed.\n\nclear_argument: Did employee provide a clear, reasoned answer? Yes, when explaining реализация, the arguments were clear. So passed.\n\ndeal_close: Did employee propose to close the deal? At the end, after client says \"давайте сделаем реализацию\", employee says \"все отлично Юрий тогда смотрите мне сейчас от вас требуются документы я составлю карточку распечатываю бумаги мы с вами подпишем и будем реализовывать\" [415.60–427.06]. That's closing the deal. So passed.\n\nbody_language: This is about visual cues: comfortable distance, eye contact. No video evidence. The transcript doesn't provide visual clues. The employee might have mentioned looking at the car, but visual body language can't be confirmed. So we'll set false with comment that visual confirmation not available.\n\npositive_attitude: Smile, goodwill. The employee's speech is monotone (according to acoustic: monotone_pitch, warm_dark_timbral, F0σ mostly low). There's no positive emotion detected in SER (neutral). The words are professional but no explicit warmth or smiling. We cannot confirm smile from audio alone. So likely false because we can't confirm.\n\nspeech_quality: Is speech literate, without slang or jargon? The employee uses business terms like \"реализация\", \"ксо\", \"предпродажная подготовка\", but that's not jargon, it's professional. No slang. The speech is mostly coherent despite ASR issues. So passed.\n\nNow we need to collect evidence_segments for each criterion with segments from SPEAKER_01. We'll pick intervals that include the relevant speech.\n\nFor greeting: combine the initial fragments [1.65-2.39] and [3.01-4.53] (employee speaking). Even if the name \"Антон\" is in [2.39-2.91] labeled SPEAKER_02, but that's actually part of the same speech, but we'll only include employee-labeled segments for evidence. So evidence: {start:1.65, end:2.39} and {start:3.01, end:4.53}. That's fine.\n\nFor name_usage: employee says \"Юрий\" at [43.73, end 47.11], [160.36, 162.24], [415.60, 417.36]. So those three segments.\n\nFor small_talk: none, so empty.\n\nFor company_experience: employee asks how they heard about company: [60.28–69.06] (garbled) but we have [60.28–69.06] SPEAKER_01: \"я понял или расскажите пожалуйста вы на нас откуда узнать ну я посмотрел\". It's a question. So evidence segment: {start:60.28, end:69.06}.\n\nv_prezentatsii_ispolzuet: they used facts throughout, we can pick the segments where they talk about company: [74.34–80.44] and [80.44–91.50] and [91.50–102.88]. So evidence: those.\n\ncompany_scale: evidence: [74.34–80.44] and [80.44–91.50] specifically.\n\nservices_list: they didn't explicitly list, so false, no evidence segments.\n\nhelp_with_sale: they said \"мы предоставляем полный спектр продажной подготовки и помогаем максимально по выгодной вам цене продать\" in [91.50–102.88], and also \"с нашей помощью в реализации\" [187.84–195.12]. So evidence segments: [91.50–102.88], [187.84–195.12].\n\nlogic_sequence: need evidence showing they followed scale->services->help. Evidence from [74.34–91.50] (scale), [91.50–102.88] (services and help). So evidence segments: [74.34–80.44] and [80.44–91.50] and [91.50–102.88].\n\nservices_list_2: false, no evidence.\n\nsale_reason: false, no evidence.\n\nsale_timing: employee asked \"как срочно продаете автомобиль?\" at [43.73–47.11]. So evidence: that.\n\nprice_expectation: employee said \"я могу вам предложить вашу цену какую ранее озвучивали\" at [232.96–243.48] (garbled but basically). So evidence: {start:232.96, end:243.48}.\n\ninspection_flow: false.\n\nopen_questions: false.\n\nbest_fit_service: employee detailed реализация: [198.26–203.70], [203.70–206.66], [206.66–212.76], [214.10–218.74], [220.96–223.62], [223.62–227.20], [227.20–231.44], [231.44–232.96], [284.18–288.12], [288.12–294.04], [294.04–299.44], [299.44–304.70], [304.70–310.66], [310.66–313.08], [327.34–332.84], [332.84–338.02], [338.02–344.48], [344.52–349.41], [350.60–355.38]. That's a lot, but we can pick a few key segments. For brevity, evidence segments: [198.26–203.70], [206.66–212.76], [288.12–299.44], etc.\n\nalternative_service: false.\n\nprice_argumentation: employee argued that выкуп price lower for urgency, and optimal 1.1M. Evidence: [170.62–176.72] (explaining выкуп price lower), [176.80–181.64] (why lower), [256.12–261.52] (optimal 1.1M), [271.94–276.12] (with services, it looks fresher). So evidence: {start:170.62, end:181.64}, {start:256.12, end:276.12}.\n\nno_excuses: can cite any segment where they don't make excuses; we'll pick a segment like [160.36–162.24] where they say \"Так, Юрий, я понял вас.\" No excuses. So evidence: [160.36–162.24] maybe.\n\nobjection_handling: objection \"что такое реализация?\" and employee's answer at [197.48–206.66] (SPEAKER_01: \"Смотрите, в нашем салоне есть...\"). So evidence: {start:197.48, end:206.66} (actually segment starts at 198.26, so use 198.26–206.66). Also another objection about not selling in a month: employee handles at [376.96–386.42] etc. So evidence segments: [198.26–206.66], [376.96–398.36] (employee says \"нет, смотрите, договор заключается...\").\n\nclear_argument: the same answer is clear. Evidence: [198.26–206.66], [376.96–386.42].\n\ndeal_close: employee proposes signing: [415.60–427.06]. So evidence: that.\n\nbody_language: false, no evidence.\n\npositive_attitude: false, no visual, acoustic is monotone, so no confirmation.\n\nspeech_quality: can cite any grammatically correct segment, e.g., [160.36–162.24] \"Так, Юрий, я понял вас.\" or [198.26–203.70]. So evidence: [160.36–162.24], [198.26–203.70].\n\nNow, we need to assign confidence for speaker roles: high confidence that SPEAKER_01 is employee because they introduce themselves as expert evaluator, ask for name, present company, handle objection, close deal. SPEAKER_02 is client because they state their intent to sell a car, describe car, accept offer. So confidence 0.95 each.\n\nNow produce JSON."
+}

@@ -1,0 +1,338 @@
+{
+  "schema_version": 3,
+  "criteria_version": "1",
+  "criteria_file": "oo_incoming_call",
+  "evaluated_at": "2026-05-18T15:41:43.488311+00:00",
+  "model": "deepseek-v4-pro",
+  "video_file": "VID_20260518_181927.mp4",
+  "speaker_roles": {
+    "SPEAKER_01": "CLIENT",
+    "SPEAKER_02": "EMPLOYEE"
+  },
+  "employee_speaker": "SPEAKER_02",
+  "criteria": [
+    {
+      "id": "self_intro",
+      "name": "Представление",
+      "description": "Начинает общение с представления и слов приветствия",
+      "weight": 1,
+      "passed": true,
+      "comment": "Сотрудник в первых репликах представился от компании, назвал своё имя и предложил помощь.",
+      "evidence_segments": [
+        {
+          "start": 2.58,
+          "end": 6.4
+        }
+      ],
+      "awarded_weight": 1
+    },
+    {
+      "id": "name_usage",
+      "name": "Имя клиента",
+      "description": "Уточняет имя клиента, обращается на «Вы» и по имени",
+      "weight": 1,
+      "passed": true,
+      "comment": "Уточнил имя клиента ('как вас зовут?'), сразу использовал его ('Дарья, очень приятно') и в дальнейшем обращался на 'Вы' и по имени.",
+      "evidence_segments": [
+        {
+          "start": 12.24,
+          "end": 16.26
+        },
+        {
+          "start": 18.28,
+          "end": 24.88
+        }
+      ],
+      "awarded_weight": 1
+    },
+    {
+      "id": "speech_quality",
+      "name": "Речь",
+      "description": "При разговоре не использует \"не знаю\", сленг, жаргон, уменьшительно-ласкательные слова",
+      "weight": 1,
+      "passed": true,
+      "comment": "В речи сотрудника отсутствуют фразы «не знаю», сленг, жаргон и уменьшительно-ласкательные слова; речь профессиональная и ровная.",
+      "evidence_segments": [
+        {
+          "start": 2.58,
+          "end": 6.4
+        },
+        {
+          "start": 18.28,
+          "end": 24.88
+        },
+        {
+          "start": 197.63,
+          "end": 206.99
+        }
+      ],
+      "awarded_weight": 1
+    },
+    {
+      "id": "car_info",
+      "name": "Данные авто",
+      "description": "Уточняет информацию об автомобиле",
+      "weight": 1,
+      "passed": true,
+      "comment": "Сотрудник последовательно уточнил марку/модель, год, пробег, техническое состояние, необходимость вложений, принадлежность автомобиля и юридические ограничения.",
+      "evidence_segments": [
+        {
+          "start": 18.28,
+          "end": 24.88
+        },
+        {
+          "start": 40.0,
+          "end": 46.86
+        },
+        {
+          "start": 60.58,
+          "end": 65.96
+        },
+        {
+          "start": 70.86,
+          "end": 76.4
+        }
+      ],
+      "awarded_weight": 1
+    },
+    {
+      "id": "sale_reason",
+      "name": "Причина продажи",
+      "description": "Выясняет ответы на вопросы «Почему, когда?»",
+      "weight": 1,
+      "passed": true,
+      "comment": "Прямо задал вопрос «Почему решили продать автомобиль?», выясняя мотивацию клиента.",
+      "evidence_segments": [
+        {
+          "start": 80.12,
+          "end": 82.02
+        }
+      ],
+      "awarded_weight": 1
+    },
+    {
+      "id": "prezentuet_uslugu_i",
+      "name": "Презентует услугу и",
+      "description": "Презентует услугу и компанию",
+      "weight": 1,
+      "passed": true,
+      "comment": "Презентовал услуги: выкуп автомобиля с закрытием кредита, подбор машины на площадке, масштаб компании (100 машин на площадке, 10 тысяч по России) и диагностику по 258 пунктам.",
+      "evidence_segments": [
+        {
+          "start": 96.06,
+          "end": 100.32
+        },
+        {
+          "start": 100.98,
+          "end": 104.2
+        },
+        {
+          "start": 104.8,
+          "end": 112.64
+        },
+        {
+          "start": 122.28,
+          "end": 133.3
+        }
+      ],
+      "awarded_weight": 1
+    },
+    {
+      "id": "alternative_service",
+      "name": "Альтернатива",
+      "description": "Презентует альтернативные варианты услуг",
+      "weight": 1,
+      "passed": true,
+      "comment": "Предложил альтернативные варианты: просто выкуп или trade-in с подбором автомобиля на площадке Fresh.",
+      "evidence_segments": [
+        {
+          "start": 96.06,
+          "end": 100.32
+        },
+        {
+          "start": 100.98,
+          "end": 104.2
+        }
+      ],
+      "awarded_weight": 1
+    },
+    {
+      "id": "objection_handling",
+      "name": "Возражения",
+      "description": "Работает с возражениями",
+      "weight": 1,
+      "passed": true,
+      "comment": "Отработал возражения: на просьбу назвать цену по телефону объяснил, что без осмотра точная оценка невозможна и приходить надо лично; на неудобство расположения – привел аргументы о коротком времени осмотра и классной кофейне.",
+      "evidence_segments": [
+        {
+          "start": 149.74,
+          "end": 169.34
+        },
+        {
+          "start": 197.63,
+          "end": 206.99
+        }
+      ],
+      "awarded_weight": 1
+    },
+    {
+      "id": "motiviruet_na_vizit",
+      "name": "Мотивирует на визит",
+      "description": "Мотивирует на визит в салон",
+      "weight": 1,
+      "passed": true,
+      "comment": "Мотивировал приехать: указал, что осмотр и согласование займут мало времени, упомянул кофейню, просил привезти машину сегодня и сообщил о готовности ждать до вечера.",
+      "evidence_segments": [
+        {
+          "start": 197.63,
+          "end": 206.99
+        },
+        {
+          "start": 207.13,
+          "end": 214.89
+        },
+        {
+          "start": 291.83,
+          "end": 296.49
+        }
+      ],
+      "awarded_weight": 1
+    },
+    {
+      "id": "no_exact_price",
+      "name": "Без точной цены",
+      "description": "Не называет точную цену",
+      "weight": 1,
+      "passed": true,
+      "comment": "Ни разу не назвал конкретную цену, подчеркнул, что без осмотра цифры будут неточными и цену назовут только после визуального осмотра.",
+      "evidence_segments": [
+        {
+          "start": 149.74,
+          "end": 169.34
+        },
+        {
+          "start": 215.63,
+          "end": 222.45
+        }
+      ],
+      "awarded_weight": 1
+    },
+    {
+      "id": "phone_number",
+      "name": "Телефон",
+      "description": "Уточняет номер телефона",
+      "weight": 1,
+      "passed": true,
+      "comment": "Уточнил номер телефона клиента и подтвердил его перед завершением разговора.",
+      "evidence_segments": [
+        {
+          "start": 285.71,
+          "end": 288.05
+        }
+      ],
+      "awarded_weight": 1
+    },
+    {
+      "id": "summary_and_goodbye",
+      "name": "Резюме",
+      "description": "Резюмирует договоренности и прощается по стандарту",
+      "weight": 1,
+      "passed": true,
+      "comment": "Резюмировал договорённость о визите сегодня, перечислил необходимые документы и попрощался до встречи.",
+      "evidence_segments": [
+        {
+          "start": 291.83,
+          "end": 296.49
+        },
+        {
+          "start": 319.17,
+          "end": 322.09
+        }
+      ],
+      "awarded_weight": 1
+    }
+  ],
+  "criteria_snapshot": [
+    {
+      "id": "self_intro",
+      "name": "Представление",
+      "description": "Начинает общение с представления и слов приветствия",
+      "weight": 1
+    },
+    {
+      "id": "name_usage",
+      "name": "Имя клиента",
+      "description": "Уточняет имя клиента, обращается на «Вы» и по имени",
+      "weight": 1
+    },
+    {
+      "id": "speech_quality",
+      "name": "Речь",
+      "description": "При разговоре не использует \"не знаю\", сленг, жаргон, уменьшительно-ласкательные слова",
+      "weight": 1
+    },
+    {
+      "id": "car_info",
+      "name": "Данные авто",
+      "description": "Уточняет информацию об автомобиле",
+      "weight": 1
+    },
+    {
+      "id": "sale_reason",
+      "name": "Причина продажи",
+      "description": "Выясняет ответы на вопросы «Почему, когда?»",
+      "weight": 1
+    },
+    {
+      "id": "prezentuet_uslugu_i",
+      "name": "Презентует услугу и",
+      "description": "Презентует услугу и компанию",
+      "weight": 1
+    },
+    {
+      "id": "alternative_service",
+      "name": "Альтернатива",
+      "description": "Презентует альтернативные варианты услуг",
+      "weight": 1
+    },
+    {
+      "id": "objection_handling",
+      "name": "Возражения",
+      "description": "Работает с возражениями",
+      "weight": 1
+    },
+    {
+      "id": "motiviruet_na_vizit",
+      "name": "Мотивирует на визит",
+      "description": "Мотивирует на визит в салон",
+      "weight": 1
+    },
+    {
+      "id": "no_exact_price",
+      "name": "Без точной цены",
+      "description": "Не называет точную цену",
+      "weight": 1
+    },
+    {
+      "id": "phone_number",
+      "name": "Телефон",
+      "description": "Уточняет номер телефона",
+      "weight": 1
+    },
+    {
+      "id": "summary_and_goodbye",
+      "name": "Резюме",
+      "description": "Резюмирует договоренности и прощается по стандарту",
+      "weight": 1
+    }
+  ],
+  "earned_score": 12,
+  "max_score": 12,
+  "overall_average": 100.0,
+  "speaker_roles_confidence": {
+    "SPEAKER_01": 0.98,
+    "SPEAKER_02": 0.99
+  },
+  "speaker_roles_reasoning": "SPEAKER_02 начинает разговор с приветствия от компании Fresh, представляется, задаёт структурирующие вопросы по автомобилю и ведёт клиента к визиту. SPEAKER_01 отвечает на вопросы, описывает машину и просит цену, поведение типично для клиента.",
+  "reasoning_trace": "We are asked to evaluate the transcript of a dialogue between two speakers. We need to:\n\n1. Determine which speaker is the employee and which is the client based on the dialogue content. The employee is the one representing the company (Fresh automotive marketplace), initiating with greeting, asking questions about the car, leading the conversation toward a sale or visit.\n\n2. Evaluate the employee's performance on a set of criteria, each with passed/false/null and comment, plus evidence_segments (time intervals) from the transcript where the employee's relevant speech occurs.\n\n3. Use the provided acoustic and SER metadata as auxiliary signals for engagement/friendliness, but primarily rely on content and acoustic expressive features.\n\nFirst, we must identify the speakers:\n\nSPEAKER_01 says \"Алло.\" at the start. Then SPEAKER_02 says: \"Первый автомобильный маркетплейс Fresh, меня зовут Камил, чем могу вам помочь?\" That is clearly the employee greeting from the company. So SPEAKER_02 is the employee (Камил). Then SPEAKER_01 says: \"Здравствуйте, Камил, да я бы хотела машинку продать.\" So SPEAKER_01 is the client (Дарья). Later, SPEAKER_02 says \"Дарья, очень приятно. ...\" indicating the client's name.\n\nThus:\n- employee_speaker: \"SPEAKER_02\"\n- speaker_roles: {\"SPEAKER_01\": \"CLIENT\", \"SPEAKER_02\": \"EMPLOYEE\"}\n- confidence: high for both, given clear exchange.\n\nNow, go through criteria one by one. All criteria refer to the employee. We'll need to cite evidence_segments where the employee speaks. Note that some segments are misattributed in the transcript? For instance, at [16.42–17.82] it says SPEAKER_02: \"Меня Дарья\" but that seems like the client (Дарья) introducing herself. However, the transcript attributes it to SPEAKER_02. That might be an ASR error? Let's check: [16.42–17.82] SPEAKER_02: Меня Дарья | ASR: ... Actually, that line is spoken by the client: \"Меня Дарья зовут.\" Then [17.82–18.04] SPEAKER_01: \"зовут.\" So there's a cross-talk, the speaker labels may be mixed because of overlapping. In the dialogue, it's likely SPEAKER_01 (client) says \"Меня Дарья зовут.\" but ASR split it incorrectly. We'll treat the segment order: at 12.24–16.26, SPEAKER_02 asks name. Then 16.42–17.82 is SPEAKER_02? No, that would be wrong. But we'll go by the labels as provided, but if it contradicts our role assignment, we must be consistent. The instruction says: \"Перед оценкой явно определи: какой говорящий — сотрудник ... а какой — клиент\". So we must assign roles based on content. The line \"Меня Дарья\" is clearly the client introducing herself. So if the transcript says SPEAKER_02 for that, it's likely a mislabel. But we should still consider that the employee (SPEAKER_02) might have said something else. However, the evidence segments must be from the speech of the employee as we determined. So if a segment is labeled SPEAKER_02 but contains client speech, we should not use it as evidence of employee actions. The criteria evaluation should be based on the correct employee lines, regardless of technical speaker labels. But the evidence_segments need to be intervals from the transcript where the employee's speech actually occurs. So we will only use intervals where the content matches employee speech, even if the label is mistaken? The problem states: \"evidence_segments: массив объектов {\"start\": <сек>, \"end\": <сек>} — отрезки из транскрипта, на которых основана оценка (можно несколько, если признак проявляется в разных местах; границы возьми из строк [t0–t1] транскрипта, не выдумывай таймкоды)\". So we should take the intervals as given in the transcript. If the transcript line for that interval has a wrong speaker label but the actual speaker is the employee (based on content), we need to decide whether to include it. The instruction says: \"если по фрагменту нельзя уверенно судить (обрезано, нет реплик сотрудника, нет подтверждения действия), ставь false в passed\". So we should only include segments that are genuinely the employee's speech. For the mislabeled segment, we might note that the transcript is erroneous but we'll rely on the actual employee speech intervals when we can identify them. In this case, the segment [16.42–17.82] is marked SPEAKER_02, but it's the client. We'll skip it for criteria related to employee's name usage. Nonetheless, the employee already addressed the client by name later: at 18.28–24.88, SPEAKER_02 says \"Дарья, очень приятно.\" So we can use that.\n\nNow, analyze each criterion.\n\n1. **self_intro** (Представление, вес 1): Начинает общение с представления и слов приветствия. \n- Employee (SPEAKER_02) starts with: \"Первый автомобильный маркетплейс Fresh, меня зовут Камил, чем могу вам помочь?\" (2.58–6.40). That includes greeting and introduction. So passed=true. Comment: \"Сотрудник представился от компании, назвал имя и предложил помощь.\" Evidence: that segment.\n\n2. **name_usage** (Имя клиента, вес 1): Уточняет имя клиента, обращается на «Вы» и по имени. \n- Employee asks: \"Подскажите, как вас зовут?\" at 12.24–16.26. Then later says \"Дарья, очень приятно.\" at 18.28–24.88, and throughout uses \"вы\" and \"Дарья\". So yes. Passed=true. Evidence: those segments.\n\n3. **speech_quality** (Речь, вес 1): При разговоре не использует \"не знаю\", сленг, жаргон, уменьшительно-ласкательные слова. \n- Check employee's speech throughout. Does he use \"не знаю\"? I don't see that phrase. No slang, jargon? Possibly some conversational fillers like \"ну\", \"там\", but that's not necessarily slang. No diminutives. The employee's speech seems professional. Passed=true. But need to check for any phrase like \"не знаю\". None. Comment: \"Речь сотрудника профессиональная, без сленга, жаргона и фразы 'не знаю'.\" Evidence: could provide multiple segments but better to note a sample. For evidence, we could include the whole employee conversation? But we'll pick specific segments where he speaks. That's many. We can provide a couple representative segments like early part and later part. But the criteria is about the whole conversation. We'll take a broad interval where we can confirm no negative language. But evidence_segments ideally show the positive absence? That's tricky. We can note that across all employee segments, no such words were found. We'll pick a few intervals like [2.58–6.40] and [18.28–24.88] and others as examples of his speech. I'll include a couple.\n\n4. **car_info** (Данные авто, вес 1): Уточняет информацию об автомобиле. \n- Employee asks: \"расскажите более подробно, пожалуйста, какой у вас автомобиль, какой год, какой пробег?\" (18.28–24.88). Then later: \"хотел бы узнать там побольше про ее техническое состояние что внешне у нее надо ли вкладывать\" (40.00–46.86). Also asks about ownership: \"подскажите на вас оформлен автомобиль\" (60.58–65.96). Also about legal issues: \"по юридической части у вас есть ли какие-либо ограничения залоги что то есть она\" (70.86–76.40) and then finds out it's in credit. So yes, he gathers car info. Passed=true. Evidence: these segments.\n\n5. **sale_reason** (Причина продажи, вес 1): Выясняет ответы на вопросы «Почему, когда?». \n- Employee asks: \"Почему решили продать автомобиль?\" at 80.12–82.02. So yes. Passed=true. Evidence: that segment.\n\n6. **prezentuet_uslugu_i** (Презентует услугу и, вес 1): Презентует услугу и компанию. \n- Employee presents services and the company. He says: \"Мы можем у вас, как и просто купить автомобиль и закрыть кредит ваш.\" (96.06–100.32), \"Второй вариант, мы можем подобрать автомобиль у нас на площадке.\" (100.98–104.20), \"У нас здесь на площадке порядка 100 автомобилей, еще есть автомобили в Адлере и также по всей России порядка 10 тысяч автомобилей.\" (104.80–112.64), \"Все машины у нас проверены, диагностика у нас всегда на всех автомобилях сделана по 258 пунктам, то есть уедете и останетесь довольны.\" (122.28–133.30). So yes, he presents the company and services. Passed=true. Evidence: these segments.\n\n7. **alternative_service** (Альтернатива, вес 1): Презентует альтернативные варианты услуг. \n- As above, he presents buyout option and trade-in option (подобрать автомобиль), that's alternative. So passed=true. Evidence: same as above.\n\n8. **objection_handling** (Возражения, вес 1): Работает с возражениями. \n- The client wants a price estimate over the phone (\"я бы хотела получить ценник по телефону предварительно\") and also mentions the location is far (конец города, в горах). The employee handles that by explaining why he can't give an accurate price over the phone: \"по названию машины, году, там, пробегу, ... мне тяжело дать оценку. Чтобы вам озвучить какие-либо цифры, здесь нужно вам привезти автомобиль. я его полностью осмотрю...\" (149.74–169.34). Then addresses the distance: \"Слушайте, ну много времени это не займет. Мне, чтобы машину осмотреть, нужно минут 15-20 и там еще 15 минут, чтобы там все согласовать. У нас классная кофейня...\". So he addresses objections. Passed=true. Evidence: the price objection handling from [149.74–169.34], and distance handling from [197.63–206.99] and beyond.\n\n9. **motiviruet_na_vizit** (Мотивирует на визит, вес 1): Мотивирует на визит в салон. \n- Employee tries to get the client to visit: after handling objections, he says \"давайте, я вас сегодня жду, Привозите свою машину\" and also offers coffee, etc. Specifically, he says \"я вас сегодня жду\" at [291.83–295.05] (but check: that's after summary). Also earlier, \"в любой день можете приехать...\". The motivation includes the benefits: coffee, quick process. So passed=true. Evidence: from his objection handling and invitation: [197.63–206.99], [207.13–214.89], and [291.83–296.49] (\"давайте, я вас сегодня жду, Привозите свою машину\").\n\n10. **no_exact_price** (Без точной цены, вес 1): Не называет точную цену. \n- Throughout, he refuses to give a price over the phone, saying he needs to see the car. That's correct. So passed=true. Evidence: his response to price request: [149.74–169.34] and later [215.63–222.45] (\"цену по телефону назвать сами понимаете это не будет соответствовать реальность\"). So yes.\n\n11. **phone_number** (Телефон, вес 1): Уточняет номер телефона. \n- At the end, employee asks: \"подскажите мне, пожалуйста, ваш номер телефона\" at [285.71–288.05] and confirms it. So passed=true. Evidence that segment.\n\n12. **summary_and_goodbye** (Резюме, вес 1): Резюмирует договоренности и прощается по стандарту. \n- At the end, employee says: \"Все, отлично. Далее, тогда договорились, давайте, я вас сегодня жду, Привозите свою машину\" (291.83–296.49), then instructs to bring documents, and says \"До встречи, тогда буду вас ждать До свидания\" (319.17–322.09). That summarizes the agreement (visit today) and says goodbye. So passed=true. Evidence: those segments.\n\nNow, check SER and acoustic signals: For employee, most segments are neutral/moderate, with a few positive/other. That's fine, engagement is indicated by the content and the expressiveness (F0σ=27.1 at intro, later around 22-38 Hz, moderate). The employee's pitch variation is decent (average F0σ ~22.31 Hz according to summary, moderate). Not highly dynamic but not very monotone. So engagement is adequate. This supports passed for those criteria.\n\nFor speech_quality, no slurs. For all, passed.\n\nEvidence segments should be taken from the actual employee timestamps from transcript. I'll gather the relevant ones:\n\n- self_intro: [2.58–6.40]\n- name_usage: [12.24–16.26] (ask name), [18.28–24.88] (use name)\n- speech_quality: multiple, maybe include [2.58–6.40] and [18.28–24.88] and [197.63–206.99] to show professional speech.\n- car_info: [18.28–24.88], [40.00–46.86], [60.58–65.96], [70.86–76.40]\n- sale_reason: [80.12–82.02]\n- prezentuet_uslugu_i: [96.06–100.32], [100.98–104.20], [104.80–112.64], [122.28–133.30]\n- alternative_service: same\n- objection_handling: [149.74–169.34] (and maybe [174.84–180.38] if needed), [197.63–206.99] (distance)\n- motiviruet_na_vizit: [197.63–206.99], [207.13–214.89], [291.83–296.49]\n- no_exact_price: [149.74–169.34], [215.63–222.45]\n- phone_number: [285.71–288.05] (ask phone), maybe [291.83–295.05] confirming, but the main ask is there.\n- summary_and_goodbye: [291.83–296.49], [319.17–322.09] (goodbye)\n\nNow, we produce JSON.\n\nNote: Some segments might have other speaker due to mislabel, but I'll stick to those labeled SPEAKER_02. For the \"Меня Дарья\" part, we ignore because it's not employee. The evidence for name_usage uses the later segment, not the 16.42 one.\n\nBuild JSON."
+}

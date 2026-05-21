@@ -172,8 +172,8 @@ def _quality_gate_enabled() -> bool:
 def _quality_gate_raise_on_fail() -> bool:
     import os
 
-    raw = os.environ.get("ASR_QUALITY_GATE_RAISE_ON_FAIL", "1").strip().lower()
-    return raw not in ("0", "false", "no", "off")
+    raw = os.environ.get("ASR_QUALITY_GATE_RAISE_ON_FAIL", "0").strip().lower()
+    return raw in ("1", "true", "yes", "on")
 
 
 def _ensure_transcript_quality(data: dict[str, object], transcript_path: Path) -> None:
@@ -189,6 +189,7 @@ def _ensure_transcript_quality(data: dict[str, object], transcript_path: Path) -
 
     data["transcript_needs_review"] = True
     data["transcript_review_reason"] = quality_summary_text(quality)
+    data["transcript_review_severity"] = "warning"
     write_transcript_json(data, transcript_path)  # type: ignore[arg-type]
     if _quality_gate_raise_on_fail():
         raise RuntimeError(

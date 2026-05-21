@@ -1,0 +1,265 @@
+{
+  "schema_version": 3,
+  "criteria_version": "1",
+  "criteria_file": "op_vehicle_presentation",
+  "evaluated_at": "2026-05-19T16:30:45.181390+00:00",
+  "model": "deepseek-v4-pro",
+  "video_file": "VID_20260519_192620.mp4",
+  "speaker_roles": {
+    "SPEAKER_01": "CLIENT",
+    "SPEAKER_02": "EMPLOYEE",
+    "SPEAKER_03": "CLIENT"
+  },
+  "employee_speaker": "SPEAKER_02",
+  "criteria": [
+    {
+      "id": "needs_assessment",
+      "name": "Потребности",
+      "description": "Проводит презентацию основываясь на ключевой потребности клиента",
+      "weight": 1,
+      "passed": false,
+      "comment": "Презентация построена как общий перечень характеристик и преимуществ; сотрудник не выявил и не учёл ключевую потребность клиента.",
+      "evidence_segments": [
+        {
+          "start": 4.45,
+          "end": 12.97
+        },
+        {
+          "start": 65.09,
+          "end": 69.87
+        },
+        {
+          "start": 132.11,
+          "end": 141.02
+        }
+      ],
+      "awarded_weight": 0
+    },
+    {
+      "id": "needs_assessment_2",
+      "name": "Потребности",
+      "description": "Задает уточняющие вопросы по потребностям",
+      "weight": 1,
+      "passed": false,
+      "comment": "На протяжении всего разговора сотрудник не задал ни одного уточняющего вопроса о потребностях клиента.",
+      "evidence_segments": [],
+      "awarded_weight": 0
+    },
+    {
+      "id": "dialog_control",
+      "name": "Инициатива",
+      "description": "Перехватывает инициативу диалога",
+      "weight": 1,
+      "passed": true,
+      "comment": "После каждого уточняющего вопроса клиента сотрудник чётко отвечает и возвращает управление разговором, продолжая презентацию и демонстрируя преимущества автомобиля.",
+      "evidence_segments": [
+        {
+          "start": 180.48,
+          "end": 184.68
+        },
+        {
+          "start": 206.84,
+          "end": 211.88
+        },
+        {
+          "start": 221.32,
+          "end": 224.78
+        },
+        {
+          "start": 226.42,
+          "end": 228.54
+        },
+        {
+          "start": 230.1,
+          "end": 241.96
+        }
+      ],
+      "awarded_weight": 1
+    },
+    {
+      "id": "team_invitation",
+      "name": "Приглашение коллег",
+      "description": "Предлагает осмотр подкапотного пространства",
+      "weight": 1,
+      "passed": false,
+      "comment": "В транскрипте отсутствует предложение осмотреть подкапотное пространство.",
+      "evidence_segments": [],
+      "awarded_weight": 0
+    },
+    {
+      "id": "driver_seat_offer",
+      "name": "Место водителя",
+      "description": "Предлагает присесть на водительское место и садится рядом на место переднего пассажира",
+      "weight": 1,
+      "passed": false,
+      "comment": "В диалоге нет предложения присесть на водительское место и сесть рядом на пассажирское.",
+      "evidence_segments": [],
+      "awarded_weight": 0
+    },
+    {
+      "id": "name_usage",
+      "name": "Имя клиента",
+      "description": "По ходу презентации обращается к клиенту по имени не менее 3 раз",
+      "weight": 1,
+      "passed": false,
+      "comment": "Сотрудник ни разу не обратился к клиенту по имени.",
+      "evidence_segments": [],
+      "awarded_weight": 0
+    },
+    {
+      "id": "competitive_advantages",
+      "name": "Преимущества",
+      "description": "Рассказывает о преимуществах перед конкурентами данной модели",
+      "weight": 1,
+      "passed": true,
+      "comment": "Сотрудник детально называет конкурентов (Camry 3.5, Mazda 6, Passat B8) и перечисляет преимущества Optima GT по динамике, цене, оснащению и стилю.",
+      "evidence_segments": [
+        {
+          "start": 141.02,
+          "end": 156.08
+        },
+        {
+          "start": 156.08,
+          "end": 160.42
+        },
+        {
+          "start": 160.42,
+          "end": 167.46
+        },
+        {
+          "start": 171.98,
+          "end": 177.1
+        }
+      ],
+      "awarded_weight": 1
+    },
+    {
+      "id": "main_functions_demo",
+      "name": "Основные функции",
+      "description": "Показывает как работают основные функции автомобиля",
+      "weight": 1,
+      "passed": false,
+      "comment": "Упоминания функций (круговой обзор, вентиляция сидений и т.п.) носят описательный характер; по текстовой части разговора невозможно подтвердить демонстрацию их работы. Визуальную составляющую по разговору подтвердить не удалось.",
+      "evidence_segments": [
+        {
+          "start": 26.67,
+          "end": 29.03
+        },
+        {
+          "start": 30.69,
+          "end": 32.73
+        },
+        {
+          "start": 37.63,
+          "end": 40.67
+        },
+        {
+          "start": 43.05,
+          "end": 44.45
+        }
+      ],
+      "awarded_weight": 0
+    },
+    {
+      "id": "extra_options_demo",
+      "name": "Доп. опции",
+      "description": "Показывает как работают дополнительные опции автомобиля",
+      "weight": 1,
+      "passed": false,
+      "comment": "Признаков показа работы дополнительных опций (например, панорамной крыши, лепестков переключения передач) в речи нет; визуальное подтверждение отсутствует.",
+      "evidence_segments": [
+        {
+          "start": 43.05,
+          "end": 44.45
+        },
+        {
+          "start": 48.49,
+          "end": 51.49
+        }
+      ],
+      "awarded_weight": 0
+    },
+    {
+      "id": "test_drive_offer",
+      "name": "Тест-драйв",
+      "description": "Предлагает провести тест-драйв по дорогам общего пользования",
+      "weight": 1,
+      "passed": false,
+      "comment": "Предложение тест-драйва по дорогам общего пользования в транскрипте не зафиксировано.",
+      "evidence_segments": [],
+      "awarded_weight": 0
+    }
+  ],
+  "criteria_snapshot": [
+    {
+      "id": "needs_assessment",
+      "name": "Потребности",
+      "description": "Проводит презентацию основываясь на ключевой потребности клиента",
+      "weight": 1
+    },
+    {
+      "id": "needs_assessment_2",
+      "name": "Потребности",
+      "description": "Задает уточняющие вопросы по потребностям",
+      "weight": 1
+    },
+    {
+      "id": "dialog_control",
+      "name": "Инициатива",
+      "description": "Перехватывает инициативу диалога",
+      "weight": 1
+    },
+    {
+      "id": "team_invitation",
+      "name": "Приглашение коллег",
+      "description": "Предлагает осмотр подкапотного пространства",
+      "weight": 1
+    },
+    {
+      "id": "driver_seat_offer",
+      "name": "Место водителя",
+      "description": "Предлагает присесть на водительское место и садится рядом на место переднего пассажира",
+      "weight": 1
+    },
+    {
+      "id": "name_usage",
+      "name": "Имя клиента",
+      "description": "По ходу презентации обращается к клиенту по имени не менее 3 раз",
+      "weight": 1
+    },
+    {
+      "id": "competitive_advantages",
+      "name": "Преимущества",
+      "description": "Рассказывает о преимуществах перед конкурентами данной модели",
+      "weight": 1
+    },
+    {
+      "id": "main_functions_demo",
+      "name": "Основные функции",
+      "description": "Показывает как работают основные функции автомобиля",
+      "weight": 1
+    },
+    {
+      "id": "extra_options_demo",
+      "name": "Доп. опции",
+      "description": "Показывает как работают дополнительные опции автомобиля",
+      "weight": 1
+    },
+    {
+      "id": "test_drive_offer",
+      "name": "Тест-драйв",
+      "description": "Предлагает провести тест-драйв по дорогам общего пользования",
+      "weight": 1
+    }
+  ],
+  "earned_score": 2,
+  "max_score": 10,
+  "overall_average": 20.0,
+  "speaker_roles_confidence": {
+    "SPEAKER_01": 0.95,
+    "SPEAKER_02": 0.99,
+    "SPEAKER_03": 0.95
+  },
+  "speaker_roles_reasoning": "SPEAKER_02 проводит развернутую презентацию автомобиля, описывает технические характеристики и преимущества; SPEAKER_01 задаёт уточняющие вопросы, характерные для покупателя (сравнение с конкурентами, опции), что позволяет уверенно идентифицировать его как клиента.",
+  "reasoning_trace": "We are asked to evaluate the dialogue and return a JSON. We need to identify the employee speaker, then evaluate criteria (only regarding the employee). The transcript has SPEAKER_01, SPEAKER_02, SPEAKER_03. Let's analyze:\n\n- SPEAKER_01 says: \"Коллеги, добрый вечер, презентация Optima GT, погнали.\" This sounds like an employee starting a presentation. Also later SPEAKER_01 asks a question: \"за счет чего он быстрее, чем Camry 3.5?\" and \"Camry нету?\" etc., clarifying points. Could be another employee or a client? The phrase \"Коллеги, добрый вечер\" suggests a greeting in a group, possibly between colleagues? But the dialogue later includes questions from SPEAKER_01 about the car, like \"за счет чего он быстрее, чем Camry 3.5?\" and \"что еще здесь есть, чего нет в Camry?\" This could be a client asking questions. However, the initial \"Коллеги, добрый вечер\" might indicate SPEAKER_01 is also an employee? The phrase \"презентация Optima GT, погнали\" is like starting a presentation. But then SPEAKER_02 launches into a long presentation (lines 4.45-12.97). SPEAKER_02 seems to be the main one describing the car, features, engine, etc. SPEAKER_02's lines are all about the car: \"Kia Optima GT на 2-литровом турбированном моторе 2016 года\", \"Автомобиль в отличном состоянии\", \"Давайте перейдем к самому автомобилю, расскажу, что это такое вообще\", \"У него двухлитровый турбированный мотор на 245 лошадиных сил\", etc. So SPEAKER_02 is clearly an employee (salesperson). SPEAKER_01 might be a client, because later they ask clarifying questions about the comparison, like \"за счет чего он быстрее, чем Camry 3.5?\", \"Объем же больше у Camry 3.5.\", \"Mazda?\", \"что еще здесь есть, чего нет в Camry?\". These are typical customer questions. Also SPEAKER_03 says \"А\" and \"данный\", not much. So SPEAKER_01 is likely a client (or colleague? but the wording \"Коллеги\" might indicate they are colleagues within the company, perhaps a training? The prompt says: \"Ты эксперт по оценке речи в деловом и сервисном общении.\" And the dialogue seems like a presentation to colleagues, not a customer? Actually, the context: The transcript starts with \"Коллеги, добрый вечер, презентация Optima GT, погнали.\" This could be an internal training presentation where one employee presents to colleagues. However, later questions from SPEAKER_01 seem like genuine customer interest (\"что еще здесь есть, чего нет в Camry?\"). But the greeting \"Коллеги\" suggests they are all employees. The prompt says \"Для оценки вовлечённости и доброжелательности сотрудника больше опирайся на ...\". So we need to identify the employee being evaluated. In a service context, it's the employee presenting the car. SPEAKER_02 is clearly the one doing the presentation. SPEAKER_01 could be a colleague evaluating or a client. The phrase \"Коллеги\" might indicate both are employees, but then the evaluation might still apply. I'll interpret SPEAKER_02 as the employee doing the presentation. SPEAKER_01 could be a colleague acting as a client, or a real client? Since the transcript starts with \"Коллеги, добрый вечер,\" it's likely an internal presentation to colleagues, but the dialogue still has a \"customer\" role asking questions. In that case, SPEAKER_02 is the employee (presenter), and SPEAKER_01 and SPEAKER_03 are colleagues (or other employees). The prompt says: \"Все критерии относятся только к сотруднику (менеджеру, консультанту), не к клиенту.\" So even if it's a training, the evaluated employee is SPEAKER_02. I'll set employee_speaker = \"SPEAKER_02\". Roles: SPEAKER_01: CLIENT (or colleague? but for evaluation, SPEAKER_01 is not the employee). SPEAKER_02: EMPLOYEE. SPEAKER_03: CLIENT (probably minor). I'll do speaker_roles: {\"SPEAKER_01\": \"CLIENT\", \"SPEAKER_02\": \"EMPLOYEE\", \"SPEAKER_03\": \"CLIENT\"} with high confidence (0.95). Reason: SPEAKER_02 leads the presentation, describes car features, addresses comparisons; SPEAKER_01 asks questions typical of a buyer (advantages over competitors, specs, etc.).\n\nNow, evaluating each criterion:\n\n1. **needs_assessment**: \"Проводит презентацию основываясь на ключевой потребности клиента\". Does the presentation address the key need? From the dialogue, it's a general presentation of the car's features, not obviously tailored to a specific customer need. There's no discovery of the customer's needs before the presentation. The presentation just lists features. So passed likely false. Comment: \"Сотрудник не выяснил потребности клиента и не строил презентацию вокруг них.\" But maybe the presentation is generic. Evidence: The whole monologue is a feature dump. No needs assessment. So passed=false, evidence maybe from start of SPEAKER_02's speech.\n\n2. **needs_assessment_2**: \"Задает уточняющие вопросы по потребностям\". The employee does not ask any clarifying questions about the client's needs. SPEAKER_02 just presents. SPEAKER_02 does not ask anything. So passed=false.\n\n3. **dialog_control**: \"Перехватывает инициативу диалога\". The employee SPEAKER_02 dominates the conversation, answering questions and continuing the presentation. When SPEAKER_01 asks \"за счет чего он быстрее...\", SPEAKER_02 answers promptly. Then SPEAKER_01 asks another question about Mazda, SPEAKER_02 answers. So the employee maintains initiative. Passed=true. But need to check definition: \"Перехватывает инициативу диалога\" might refer to taking control after a pause or from a client. Here the client asks questions, the employee answers and keeps going. That's good. Evidence: segments where SPEAKER_02 answers and continues. For instance, after SPEAKER_01 asks \"за счет чего он быстрее...\", SPEAKER_02 explains at 180.48-184.68. Then later when SPEAKER_01 asks about Mazda, SPEAKER_02 responds. So yes, evidence from those intervals.\n\n4. **team_invitation**: \"Предлагает осмотр подкапотного пространства\". There is no mention of opening the hood or inspecting the engine bay. The transcript does not show any such offer. So passed=false, evidence empty.\n\n5. **driver_seat_offer**: \"Предлагает присесть на водительское место и садится рядом на место переднего пассажира\". No such offer in the dialogue. So false.\n\n6. **name_usage**: \"По ходу презентации обращается к клиенту по имени не менее 3 раз\". The employee never uses any name. So false.\n\n7. **competitive_advantages**: \"Рассказывает о преимуществах перед конкурентами данной модели\". Yes, the employee mentions competitors: Camry 3.5, Mazda 6, Passat B8, and claims the Optima GT is better. For example: \"конкуренты такие как камри 35 mazda шестерка супер супер бис она тот двухлитровый на турбине passat b8 это такие серьезные конкуренты ... но наш автомобиль лучший потому что он выглядит дорого это максимальная комплектация самое большое его преимущество это его цена ...\". Also later \"Также он быстрее Camry 3.5 будет и комфортнее многих немцев.\" So yes, passed true. Evidence: [141.02–156.08], [156.08–160.42], [160.42–167.46], [171.98–177.10] etc.\n\n8. **main_functions_demo**: \"Показывает как работают основные функции автомобиля\". The presentation describes features (ventilated seats, panoramic, multimedia, etc.) but does it show them working? The employee says \"у него здесь кресло GT, у него здесь руль, также у него круговой обзор\" etc. It might be describing while pointing, but the transcript doesn't confirm demonstration of operation (like turning on the A/C or showing screen). The criterion says \"показывает как работают\". The text alone might not confirm visual demo, but we can infer that he is showing around the car: \"у него здесь кресло\" implies pointing. However, explicit demonstration of functions is not evidenced. So we can't confirm that he demonstrated actually working. The instruction: \"Если по разговору визуальную часть надёжно подтвердить нельзя, не придумывай её: ставь false в passed и явно пиши в comment, что визуальную составляющую по разговору подтвердить не удалось.\" Here, there's no explicit mention like \"Посмотрите, как работает вентиляция\" or \"Я покажу\". The phrases \"у него здесь кресло GT\" could be indication of location, not demonstration of function. So I'll set false, comment: \"Не подтверждено, что сотрудник показывал работу основных функций; только перечисление опций.\" Evidence: segments like [26.67–29.03], [30.69–32.73], etc., but these are only verbal mentions.\n\n9. **extra_options_demo**: \"Показывает как работают дополнительные опции автомобиля\". Similar, no demonstration shown. False.\n\n10. **test_drive_offer**: \"Предлагает провести тест-драйв по дорогам общего пользования\". The transcript does not mention test drive. So false.\n\nNow, for each criterion, provide passed, comment, and evidence_segments. The evidence for needs_assessment false: we can provide segments where employee presents without needs: I'll give a range from start of presentation (4.45–12.97) maybe. But needs_assessment passed false, so evidence that he didn't do it? The prompt says: \"evidence_segments: массив объектов ... — отрезки из транскрипта, на которых основана оценка (можно несколько, если признак проявляется в разных местах; границы возьми из строк [t0–t1] транскрипта, не выдумывай таймкоды). Если passed null или нечего привязать — [].\" For false, we can still include the segments where the employee could have done needs assessment but didn't. But maybe they want segments that show the absence? Usually evidence_segments are for positive evidence. If passed false, maybe we can leave empty or list the portion where the employee ignored the need. The instruction says: \"Если passed null или нечего привязать — [].\" So I can leave [] for false if there's no specific segment that demonstrates lack. But to be safe, I'll note the start of the presentation where no needs were asked. However, the criterion is \"проводит презентацию основываясь на ключевой потребности клиента\", so if we see the presentation is not based on needs, we need evidence of the presentation itself. So I'll provide the main presentation segments as evidence of a non-needs-based presentation. That makes sense. I'll list several segments from SPEAKER_02 where the presentation is generic. For needs_assessment_2, I'll list the segment where the employee could have asked questions but didn't, like the opening (no questions). Or leave empty. I'll just include the initial segment where he launched straight into presentation without asking.\n\nFor dialog_control, evidence segments where SP2 answers and maintains flow: 180.48-184.68, 206.84-211.88, 221.32-224.78, etc.\n\nFor competitive_advantages: evidence segments where competitors mentioned.\n\nAlso, note that the dialogue is between multiple speakers. Speaker roles: SPEAKER_02 is definitely employee. SPEAKER_01 and SPEAKER_03 clients. So speaker_roles confidence high.\n\nNow, generate JSON."
+}

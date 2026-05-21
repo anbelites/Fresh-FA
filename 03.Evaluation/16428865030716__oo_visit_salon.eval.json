@@ -1,0 +1,449 @@
+{
+  "schema_version": 3,
+  "criteria_version": "1",
+  "criteria_file": "oo_visit_salon",
+  "evaluated_at": "2026-05-18T14:34:52.424068+00:00",
+  "model": "deepseek-v4-pro",
+  "video_file": "16428865030716.mp4",
+  "speaker_roles": {
+    "SPEAKER_01": "EMPLOYEE",
+    "SPEAKER_02": "CLIENT"
+  },
+  "employee_speaker": "SPEAKER_01",
+  "criteria": [
+    {
+      "id": "greeting",
+      "name": "Приветствие",
+      "description": "Поприветствовал клиента, Представился (имя, должность, отдел)",
+      "weight": 1,
+      "passed": false,
+      "comment": "В репликах сотрудника отсутствует приветствие и представление себя.",
+      "evidence_segments": [],
+      "awarded_weight": 0
+    },
+    {
+      "id": "name_usage",
+      "name": "Имя клиента",
+      "description": "Уточнил имя клиента, обращается по имени не менее 3х раз",
+      "weight": 1,
+      "passed": false,
+      "comment": "Имя клиента не уточняется и не используется в диалоге.",
+      "evidence_segments": [],
+      "awarded_weight": 0
+    },
+    {
+      "id": "small_talk",
+      "name": "Small talk",
+      "description": "Проводит Smal - talk",
+      "weight": 1,
+      "passed": false,
+      "comment": "Small talk не проводится; разговор сразу переходит к осмотру.",
+      "evidence_segments": [],
+      "awarded_weight": 0
+    },
+    {
+      "id": "company_experience",
+      "name": "Опыт клиента",
+      "description": "Уточняет опыт взаимодействия с нашей компанией (впервые в салоне/ знакомы с компанией)",
+      "weight": 1,
+      "passed": false,
+      "comment": "Не уточняется, впервые ли клиент в компании.",
+      "evidence_segments": [],
+      "awarded_weight": 0
+    },
+    {
+      "id": "v_prezentatsii_ispolzuet",
+      "name": "В презентации использует",
+      "description": "В презентации использует следующие факты:",
+      "weight": 1,
+      "passed": false,
+      "comment": "Сотрудник не проводит презентацию компании и не использует никакие факты о ней.",
+      "evidence_segments": [],
+      "awarded_weight": 0
+    },
+    {
+      "id": "company_scale",
+      "name": "Масштаб",
+      "description": "Масштаб (20 лет на автомобильном рынке, продаем по 6000 авто в мес",
+      "weight": 1,
+      "passed": false,
+      "comment": "Масштаб компании (20 лет, 6000 авто в мес и т.п.) не упоминается.",
+      "evidence_segments": [],
+      "awarded_weight": 0
+    },
+    {
+      "id": "services_list",
+      "name": "Виды услуг",
+      "description": "Перечислил основные виды услуг компании: выкуп, комиссия, трейд-ин, интерактивные продажи, КСО",
+      "weight": 1,
+      "passed": false,
+      "comment": "Виды услуг (выкуп, комиссия, трейд-ин и др.) не перечислены.",
+      "evidence_segments": [],
+      "awarded_weight": 0
+    },
+    {
+      "id": "help_with_sale",
+      "name": "Помощь с продажей",
+      "description": "Мы в любом случае поможем с продажей авто",
+      "weight": 1,
+      "passed": false,
+      "comment": "Заявление 'в любом случае поможем с продажей' не звучит.",
+      "evidence_segments": [],
+      "awarded_weight": 0
+    },
+    {
+      "id": "logic_sequence",
+      "name": "Логика презентации",
+      "description": "При презентации компании соблюдается логическая последовательность:",
+      "weight": 1,
+      "passed": false,
+      "comment": "Презентация компании отсутствует, логическая последовательность не соблюдена.",
+      "evidence_segments": [],
+      "awarded_weight": 0
+    },
+    {
+      "id": "services_list_2",
+      "name": "Виды услуг",
+      "description": "давно работаем, много продаем -> все виды услуг -> все услуги интересные, в любом случае можем помочь",
+      "weight": 1,
+      "passed": false,
+      "comment": "Связка 'давно работаем, много продаем -> все виды услуг -> можем помочь' не проговаривается.",
+      "evidence_segments": [],
+      "awarded_weight": 0
+    },
+    {
+      "id": "sale_reason",
+      "name": "Причина продажи",
+      "description": "Необходимо выявить причину продажи (ПОЧЕМУ)",
+      "weight": 1,
+      "passed": false,
+      "comment": "Причина продажи не выясняется, вопрос 'почему' не задан.",
+      "evidence_segments": [],
+      "awarded_weight": 0
+    },
+    {
+      "id": "sale_timing",
+      "name": "Срок продажи",
+      "description": "Узнать у клиента время, которым располагает клиент на продажу авто (КОГДА?)",
+      "weight": 1,
+      "passed": false,
+      "comment": "Сроки продажи не обсуждаются.",
+      "evidence_segments": [],
+      "awarded_weight": 0
+    },
+    {
+      "id": "price_expectation",
+      "name": "Ожидания по цене",
+      "description": "Узнать ценовые оживания клиента (СКОЛЬКО?)",
+      "weight": 1,
+      "passed": false,
+      "comment": "Ценовые ожидания клиента не уточняются.",
+      "evidence_segments": [],
+      "awarded_weight": 0
+    },
+    {
+      "id": "inspection_flow",
+      "name": "Порядок осмотра",
+      "description": "ЭО озвучивает последовательность действий по осмотру автомобиля",
+      "weight": 1,
+      "passed": false,
+      "comment": "Сотрудник предлагает осмотр ('пойдемте рассмотрим машинку') и затем сразу говорит 'все, рассмотрели автомобиль', не озвучивая последовательность действий.",
+      "evidence_segments": [
+        {
+          "start": 45.82,
+          "end": 47.5
+        },
+        {
+          "start": 47.5,
+          "end": 51.14
+        }
+      ],
+      "awarded_weight": 0
+    },
+    {
+      "id": "open_questions",
+      "name": "Открытые вопросы",
+      "description": "Задает открытые вопросы по техничскому состоянию автомтобиля",
+      "weight": 1,
+      "passed": false,
+      "comment": "Открытые вопросы по техническому состоянию автомобиля не задаются; единственный вопрос исходит от клиента.",
+      "evidence_segments": [],
+      "awarded_weight": 0
+    },
+    {
+      "id": "best_fit_service",
+      "name": "Подходящая услуга",
+      "description": "ЭО подбробно рассказывает про услугу компании, которая максимально подходит клиенту",
+      "weight": 1,
+      "passed": false,
+      "comment": "Подходящая услуга не обсуждается, подробный рассказ отсутствует.",
+      "evidence_segments": [],
+      "awarded_weight": 0
+    },
+    {
+      "id": "alternative_service",
+      "name": "Альтернатива",
+      "description": "Подробно презентует альтернативный вариант услуг компании",
+      "weight": 1,
+      "passed": false,
+      "comment": "Альтернативные варианты услуг не презентуются.",
+      "evidence_segments": [],
+      "awarded_weight": 0
+    },
+    {
+      "id": "price_argumentation",
+      "name": "Аргументация цены",
+      "description": "Аргументированно озвучивает стоимость (внешнее состояние, дефекты, состояние, ликвидность, эксклюзивность)",
+      "weight": 1,
+      "passed": false,
+      "comment": "Стоимость не озвучивается и не аргументируется.",
+      "evidence_segments": [],
+      "awarded_weight": 0
+    },
+    {
+      "id": "no_excuses",
+      "name": "Без оправданий",
+      "description": "ЭО не оправдывается, не перекладывает ответственность",
+      "weight": 1,
+      "passed": false,
+      "comment": "Нет ситуаций, требующих оправдания или перекладывания ответственности; по доступному фрагменту поведения нельзя судить.",
+      "evidence_segments": [],
+      "awarded_weight": 0
+    },
+    {
+      "id": "objection_handling",
+      "name": "Возражения",
+      "description": "Отрабатывает возражение клиента по технике работы с возражениями",
+      "weight": 1,
+      "passed": false,
+      "comment": "Возражений клиента не зафиксировано, возможность отработки не представилась.",
+      "evidence_segments": [],
+      "awarded_weight": 0
+    },
+    {
+      "id": "clear_argument",
+      "name": "Аргументация",
+      "description": "Дает четкий аргументированный ответ",
+      "weight": 1,
+      "passed": false,
+      "comment": "Четкие аргументированные ответы не даются, поскольку сотрудник не предоставляет аргументацию ни по одному вопросу.",
+      "evidence_segments": [],
+      "awarded_weight": 0
+    },
+    {
+      "id": "deal_close",
+      "name": "Закрытие на сделку",
+      "description": "ЭО предлагает клиенту оформить сделку",
+      "weight": 1,
+      "passed": false,
+      "comment": "Предложение оформить сделку не поступает.",
+      "evidence_segments": [],
+      "awarded_weight": 0
+    },
+    {
+      "id": "body_language",
+      "name": "Контакт",
+      "description": "Соблюдает комфортную социальную дистанцию, поддерживает контакт глаз,",
+      "weight": 1,
+      "passed": false,
+      "comment": "Визуальные аспекты (дистанция, контакт глаз) не могут быть подтверждены из аудиозаписи; речевые маркеры не свидетельствуют о их наличии.",
+      "evidence_segments": [],
+      "awarded_weight": 0
+    },
+    {
+      "id": "positive_attitude",
+      "name": "Позитив",
+      "description": "Улыбка, доброжелательность, позитивный настрой",
+      "weight": 1,
+      "passed": false,
+      "comment": "Улыбка и позитивный настрой не проявляются ни в содержании слов, ни в акустике (SER нейтральный, тембр тёмный).",
+      "evidence_segments": [],
+      "awarded_weight": 0
+    },
+    {
+      "id": "speech_quality",
+      "name": "Речь",
+      "description": "Речь грамотная, не использует сленг и жаргон",
+      "weight": 1,
+      "passed": true,
+      "comment": "В доступных репликах речь грамотная, без жаргона и сленга: используется вежливое обращение 'пойдемте', фразы построены корректно.",
+      "evidence_segments": [
+        {
+          "start": 45.82,
+          "end": 47.5
+        },
+        {
+          "start": 47.5,
+          "end": 51.14
+        },
+        {
+          "start": 194.86,
+          "end": 196.46
+        }
+      ],
+      "awarded_weight": 1
+    }
+  ],
+  "criteria_snapshot": [
+    {
+      "id": "greeting",
+      "name": "Приветствие",
+      "description": "Поприветствовал клиента, Представился (имя, должность, отдел)",
+      "weight": 1
+    },
+    {
+      "id": "name_usage",
+      "name": "Имя клиента",
+      "description": "Уточнил имя клиента, обращается по имени не менее 3х раз",
+      "weight": 1
+    },
+    {
+      "id": "small_talk",
+      "name": "Small talk",
+      "description": "Проводит Smal - talk",
+      "weight": 1
+    },
+    {
+      "id": "company_experience",
+      "name": "Опыт клиента",
+      "description": "Уточняет опыт взаимодействия с нашей компанией (впервые в салоне/ знакомы с компанией)",
+      "weight": 1
+    },
+    {
+      "id": "v_prezentatsii_ispolzuet",
+      "name": "В презентации использует",
+      "description": "В презентации использует следующие факты:",
+      "weight": 1
+    },
+    {
+      "id": "company_scale",
+      "name": "Масштаб",
+      "description": "Масштаб (20 лет на автомобильном рынке, продаем по 6000 авто в мес",
+      "weight": 1
+    },
+    {
+      "id": "services_list",
+      "name": "Виды услуг",
+      "description": "Перечислил основные виды услуг компании: выкуп, комиссия, трейд-ин, интерактивные продажи, КСО",
+      "weight": 1
+    },
+    {
+      "id": "help_with_sale",
+      "name": "Помощь с продажей",
+      "description": "Мы в любом случае поможем с продажей авто",
+      "weight": 1
+    },
+    {
+      "id": "logic_sequence",
+      "name": "Логика презентации",
+      "description": "При презентации компании соблюдается логическая последовательность:",
+      "weight": 1
+    },
+    {
+      "id": "services_list_2",
+      "name": "Виды услуг",
+      "description": "давно работаем, много продаем -> все виды услуг -> все услуги интересные, в любом случае можем помочь",
+      "weight": 1
+    },
+    {
+      "id": "sale_reason",
+      "name": "Причина продажи",
+      "description": "Необходимо выявить причину продажи (ПОЧЕМУ)",
+      "weight": 1
+    },
+    {
+      "id": "sale_timing",
+      "name": "Срок продажи",
+      "description": "Узнать у клиента время, которым располагает клиент на продажу авто (КОГДА?)",
+      "weight": 1
+    },
+    {
+      "id": "price_expectation",
+      "name": "Ожидания по цене",
+      "description": "Узнать ценовые оживания клиента (СКОЛЬКО?)",
+      "weight": 1
+    },
+    {
+      "id": "inspection_flow",
+      "name": "Порядок осмотра",
+      "description": "ЭО озвучивает последовательность действий по осмотру автомобиля",
+      "weight": 1
+    },
+    {
+      "id": "open_questions",
+      "name": "Открытые вопросы",
+      "description": "Задает открытые вопросы по техничскому состоянию автомтобиля",
+      "weight": 1
+    },
+    {
+      "id": "best_fit_service",
+      "name": "Подходящая услуга",
+      "description": "ЭО подбробно рассказывает про услугу компании, которая максимально подходит клиенту",
+      "weight": 1
+    },
+    {
+      "id": "alternative_service",
+      "name": "Альтернатива",
+      "description": "Подробно презентует альтернативный вариант услуг компании",
+      "weight": 1
+    },
+    {
+      "id": "price_argumentation",
+      "name": "Аргументация цены",
+      "description": "Аргументированно озвучивает стоимость (внешнее состояние, дефекты, состояние, ликвидность, эксклюзивность)",
+      "weight": 1
+    },
+    {
+      "id": "no_excuses",
+      "name": "Без оправданий",
+      "description": "ЭО не оправдывается, не перекладывает ответственность",
+      "weight": 1
+    },
+    {
+      "id": "objection_handling",
+      "name": "Возражения",
+      "description": "Отрабатывает возражение клиента по технике работы с возражениями",
+      "weight": 1
+    },
+    {
+      "id": "clear_argument",
+      "name": "Аргументация",
+      "description": "Дает четкий аргументированный ответ",
+      "weight": 1
+    },
+    {
+      "id": "deal_close",
+      "name": "Закрытие на сделку",
+      "description": "ЭО предлагает клиенту оформить сделку",
+      "weight": 1
+    },
+    {
+      "id": "body_language",
+      "name": "Контакт",
+      "description": "Соблюдает комфортную социальную дистанцию, поддерживает контакт глаз,",
+      "weight": 1
+    },
+    {
+      "id": "positive_attitude",
+      "name": "Позитив",
+      "description": "Улыбка, доброжелательность, позитивный настрой",
+      "weight": 1
+    },
+    {
+      "id": "speech_quality",
+      "name": "Речь",
+      "description": "Речь грамотная, не использует сленг и жаргон",
+      "weight": 1
+    }
+  ],
+  "earned_score": 1,
+  "max_score": 25,
+  "overall_average": 4.0,
+  "speaker_roles_confidence": {
+    "SPEAKER_01": 0.92,
+    "SPEAKER_02": 0.85,
+    "SPEAKER_03": 0.1
+  },
+  "speaker_roles_reasoning": "SPEAKER_01 инициирует осмотр автомобиля ('пойдемте рассмотрим машинку', 'все, рассмотрели автомобиль') — типичное поведение сотрудника. SPEAKER_02 задает вопрос 'что есть в машинке', что характерно для клиента. SPEAKER_03 произносит технические фразы ('микрофоны', 'Реклама', 'Редактор субтитров'), не участвуя в продажном диалоге.",
+  "reasoning_trace": "We need to analyze the transcript and identify speakers, then evaluate the employee according to the given criteria. The transcript appears to be a mixture of speech, possibly with some automatic subtitles and commentary. There are three speakers: SPEAKER_01, SPEAKER_02, SPEAKER_03. The dialogue seems nonsensical: \"Время обслуживания | ASR: low_asr_logprob | аудио: warm_dark_timbral; etc.\" and then \"Редактор субтитров А.Семкин Корректор А.Егорова\" etc. It looks like the transcript is contaminated with subtitle editor names and maybe some test phrases. There are a few actual conversation snippets:\n\n[0.00–11.52] SPEAKER_01: Время обслуживания (service time?) but it's more like metadata.\n\n[18.00–26.12] SPEAKER_01: Редактор субтитров А.Семкин Корректор А.Егорова — this is not dialogue.\n\n[28.20–31.00] SPEAKER_01: Продолжение следует...\n\n[34.34–36.61] SPEAKER_01: на обучение в картофеле (??)\n\n[39.23–44.77] SPEAKER_01: ну, так скажем, вместе делаем\n\n[45.82–47.50] SPEAKER_01: пойдемте рассмотрим машинку\n\n[47.50–51.14] SPEAKER_01: все, рассмотрели автомобиль\n\n[51.14–52.76] SPEAKER_01: смотрим,\n\n[52.80–54.12] SPEAKER_02: что есть в машинке\n\n[61.51–62.49] SPEAKER_01: разрешено, проверим\n\n[63.69–64.17] SPEAKER_02: нужны\n\n[141.57–142.13] SPEAKER_03: микрофоны\n\n[142.13–146.89] SPEAKER_03: вот так они движутся\n\n[149.50–152.28] SPEAKER_03: просто так и не пиздят очень громко (bleep)\n\n[152.28–173.06] SPEAKER_03: если как\n\n[194.86–196.46] SPEAKER_01: бы все устраивает\n\n[205.64–207.04] SPEAKER_03: Реклама\n\n[219.38–229.98] SPEAKER_03: Редактор субтитров А.Семкин Корректор А.Егорова\n\n[224.80–225.50] SPEAKER_03: Реклама\n\n[231.20–234.00] SPEAKER_02: Продолжение следует...\n\nThis looks like a mock or test audio with snippets from a car sales conversation. The actual interaction seems to be between SPEAKER_01 and SPEAKER_02, with SPEAKER_03 possibly being some other person or perhaps the same as SPEAKER_01? The segments are disjointed. The first half (0-64 seconds) appears to have SPEAKER_01 and SPEAKER_02. SPEAKER_01 says \"пойдемте рассмотрим машинку\", \"все, рассмотрели автомобиль\", \"смотрим\". SPEAKER_02 says \"что есть в машинке\" and \"нужны\". Then later (141-173) SPEAKER_03 says \"микрофоны\", \"вот так они движутся\", \"просто так и не пиздят очень громко\", \"если как\" — seems like testing microphones or technical commentary, not related to the car sales script. Then SPEAKER_01: \"бы все устраивает\" (maybe \"все устраивает\"?). Then SPEAKER_03: \"Реклама\" and subtitle editor info. Then SPEAKER_02: \"Продолжение следует...\".\n\nGiven these, the likely car sales interaction is SPEAKER_01 as employee (initiating car inspection) and SPEAKER_02 as client (asking about the car). SPEAKER_03 appears to be someone commenting on microphones and saying \"реклама\", likely a technician or narrator, not part of the customer-employee dialogue. So I'll assign SPEAKER_01 as EMPLOYEE, SPEAKER_02 as CLIENT, and SPEAKER_03 as OTHER (maybe test, not a party). But the instructions say to identify which is employee and which is client and evaluate only employee. So I'll mark SPEAKER_03 as not relevant; maybe it's a separate person but not part of the evaluated interaction. In the JSON, we need speaker_roles for all speakers present, I can mark SPEAKER_03 as \"OTHER\" or \"UNKNOWN\", but the schema expects \"EMPLOYEE\" or \"CLIENT\". Since it's not part of the conversation, I'll label as \"OTHER\". However, the criteria only apply to the employee. So I'll set employee_speaker = \"SPEAKER_01\". Confidence: for SPEAKER_01, high because he leads the car inspection and uses phrases like \"рассмотрим машинку\", typical of a sales consultant. SPEAKER_02 asks \"что есть в машинке\" — typical client. SPEAKER_03's speech doesn't fit any role in a sales call, likely a voiceover or test audio, so I'll put confidence low for its role but mark as OTHER.\n\nNow, evaluate the criteria for employee (SPEAKER_01). The transcript is extremely sparse, with only a few phrases from SPEAKER_01: \"Время обслуживания\" (maybe not dialogue), \"Редактор субтитров\" (that's not employee), \"Продолжение следует...\" (not dialogue), \"на обучение в картофеле\" (gibberish), \"ну, так скажем, вместе делаем\", \"пойдемте рассмотрим машинку\", \"все, рассмотрели автомобиль\", \"смотрим\", \"разрешено, проверим\", \"бы все устраивает\". There's no greeting, no name usage, no small talk, no company presentation, no questions about sale reason, timing, price, etc. So most criteria will be false with comment that there is insufficient information or the behavior is not observed. The criteria that involve visual aspects like body language, positive attitude cannot be confirmed from speech alone; but the speech itself: no warmth or smiles evident in content, but maybe from audio? The audio features for SPEAKER_01: mostly neutral, warm_dark_timbral, some monotone pitch, some expressive pitch variation. But that doesn't conclusively indicate positive attitude; it says SER is neutral/moderate, so likely not extremely positive. The comment should reflect that from the limited speech, no positivity is shown. I'll mark passed false and comment that the dialogue is too fragmented to assess, or based on the available utterances, there is no evidence of greeting, etc. For criteria that require whole flow (like logic sequence, services list), clearly not present.\n\nBut note: the transcript includes some non-dialogue phrases that might be part of a promo or test, but those are not the employee's speech to the client. We must ignore those as they are not in the context of service communication (e.g., \"Редактор субтитров\" is not evaluating the employee). So I'll evaluate only the segments where SPEAKER_01 is speaking to the client, i.e., real conversational segments. The ones that seem conversational: 0.00-11.52 \"Время обслуживания\" — could be metadata or a phrase about service time; it's ambiguous. 18.00-26.12 is editor credits, not employee. 28.20-31.00 \"Продолжение следует\" — maybe a video outro, not employee. 34.34-36.61 \"на обучение в картофеле\" — nonsense. 39.23-44.77 \"ну, так скажем, вместе делаем\" — ambiguous, maybe small talk? Not clear. 45.82-47.50 \"пойдемте рассмотрим машинку\" — leads inspection. 47.50-51.14 \"все, рассмотрели автомобиль\" — declares done. 51.14-52.76 \"смотрим\" — maybe part of inspection. 61.51-62.49 \"разрешено, проверим\" — possibly about checking something. 194.86-196.46 \"бы все устраивает\" — possibly \"все устраивает\" (everything suits). These are minimal. So there's virtually no opportunity to assess most criteria. I'll mark passed false for all criteria except perhaps \"inspection_flow\" could be partially passed? He says \"пойдемте рассмотрим машинку\" and then \"все, рассмотрели автомобиль\" — he did conduct an inspection, but \"озвучивает последовательность действий\" — he just said let's go look, then immediately said we looked at the car, no sequence. So not really meeting the criterion. I'll mark false with explanation that there's no sequence description.\n\nSome criteria might be null if not applicable? The schema expects true/false/null. I'll set false and comment that no evidence, insufficient data.\n\nEvidence segments: For each criterion, I'll list segments where the employee spoke that might relate. For greeting, no greeting found, so empty evidence. For inspection_flow, segments [45.82-47.50] and [47.50-51.14] maybe, but they don't show a flow. So I'll include them in evidence as the only relevant speech. But careful: evidence_segments must be from the employee's speech, and only if they are directly about the criterion. I'll include intervals that correspond to the employee's utterance, even if they don't fulfill the criterion fully, to show what was evaluated.\n\nFor positive_attitude: need evidence, but no smile or positivity detected from text; audio SER is neutral, no bright timbral. So evidence empty.\n\nFor body_language: cannot assess from audio alone; no visual markers, so false with comment that visual confirmation not possible.\n\nNow, compile the JSON.\n\nI'll structure: speaker_roles: { \"SPEAKER_01\": \"EMPLOYEE\", \"SPEAKER_02\": \"CLIENT\", \"SPEAKER_03\": \"OTHER\" }, employee_speaker: \"SPEAKER_01\", speaker_roles_confidence: { \"SPEAKER_01\": 0.9, \"SPEAKER_02\": 0.8, \"SPEAKER_03\": 0.1 }, speaker_roles_reasoning: \"SPEAKER_01 ведет осмотр автомобиля: предлагает 'рассмотрим машинку', говорит 'все, рассмотрели автомобиль', что характерно для сотрудника. SPEAKER_02 задает вопрос 'что есть в машинке', характерный для клиента. SPEAKER_03 произносит технические фразы, не относящиеся к диалогу продажи.\"\n\nNow criteria:\n\ngreeting: passed: false, comment: \"В доступных репликах сотрудника отсутствует приветствие клиента и представление себя.\", evidence_segments: []\n\nname_usage: false, \"Имя клиента не уточняется и не используется.\", []\n\nsmall_talk: false, \"Small talk не проводится; разговор сразу переходит к осмотру.\", evidence_segments: maybe the segment \"ну, так скажем, вместе делаем\" could be considered small talk? Not really; it's too vague. I'll put false, no evidence.\n\ncompany_experience: false, \"Не уточняет, впервые ли клиент в компании.\", []\n\nv_prezentatsii_ispolzuet (this criterion seems to be a heading for a list of sub-criteria like company_scale, services_list, help_with_sale, logic_sequence, services_list_2. The prompt lists them as separate criteria? No, the list: \"В презентации использует следующие факты:\" and then sub-items: \"Масштаб\", \"Виды услуг\", \"Помощь с продажей\", and then \"При презентации компании соблюдается логическая последовательность:\" with sub-item \"давно работаем, много продаем -> все виды услуг -> все услуги интересные, в любом случае можем помочь\". So the overall criterion is \"v_prezentatsii_ispolzuet\" (uses in presentation) and \"logic_sequence\". But the JSON schema expects separate criteria for each id from the list. The list of criteria ids given in the prompt are: greeting, name_usage, small_talk, company_experience, v_prezentatsii_ispolzuet, company_scale, services_list, help_with_sale, logic_sequence, services_list_2, sale_reason, sale_timing, price_expectation, inspection_flow, open_questions, best_fit_service, alternative_service, price_argumentation, no_excuses, objection_handling, clear_argument, deal_close, body_language, positive_attitude, speech_quality. So yes, each of those is a separate criterion. So I'll include all.\n\nNow, v_prezentatsii_ispolzuet: \"passed\": false, comment: \"Сотрудник не проводит презентацию компании, не использует никакие факты о ней.\", evidence_segments: [maybe if there was some talk about company, but none]. So false, empty.\n\ncompany_scale: false, \"Не упоминает масштаб компании (20 лет, 6000 авто в мес).\", []\n\nservices_list: false, \"Не перечисляет виды услуг (выкуп, комиссия, трейд-ин и др.).\", []\n\nhelp_with_sale: false, \"Не говорит, что в любом случае помогут с продажей.\", []\n\nlogic_sequence: false, \"Презентация компании отсутствует, логическая последовательность не соблюдена.\", []\n\nservices_list_2: false, \"Не проговаривает связку 'давно работаем, много продаем -> все виды услуг -> всем можем помочь'.\", []\n\nsale_reason: false, \"Причина продажи не выясняется; вопрос 'почему' не задаётся.\", []\n\nsale_timing: false, \"Сроки продажи не обсуждаются.\", []\n\nprice_expectation: false, \"Ценовые ожидания клиента не уточняются.\", []\n\ninspection_flow: false, \"Сотрудник предлагает осмотр ('пойдемте рассмотрим машинку') и затем сразу говорит 'все, рассмотрели автомобиль', не озвучивая последовательность действий.\", evidence_segments: [{\"start\": 45.82, \"end\": 47.50}, {\"start\": 47.50, \"end\": 51.14}] (the second segment ends at 51.14, might include \"все, рассмотрели автомобиль\" and part of \"смотрим\" but it's within that range). Actually the segment is 47.50-51.14 \"все, рассмотрели автомобиль\". I'll include that.\n\nopen_questions: false, \"Не задаёт открытых вопросов по техническому состоянию автомобиля. Единственный вопрос от клиента 'что есть в машинке', но сотрудник не задаёт вопросы.\", evidence_segments: [maybe the \"разрешено, проверим\" segment? That's not an open question. So none.]\n\nbest_fit_service: false, \"Не рассказывает о подходящей услуге.\", []\n\nalternative_service: false, \"Не презентует альтернативные варианты.\", []\n\nprice_argumentation: false, \"Стоимость не озвучивается и не аргументируется.\", []\n\nno_excuses: null or false? The criterion is \"не оправдывается, не перекладывает ответственность\". There is no situation where he might need to excuse; no evidence of excuses, but that doesn't mean he fails. The instruction says: \"Если по фрагменту нельзя уверенно судить (обрезано, нет реплик сотрудника, нет подтверждения действия), ставь false в passed и прямо пиши в comment, что информации недостаточно.\" So because there's no situation to judge, I'll put false and comment \"Нет ситуаций, требующих оправданий; поведение не проявлено.\" Actually, false and comment that insufficient data, no opportunity to assess. That's safer.\n\nSimilarly for objection_handling: no objections, so false.\n\nclear_argument: false, because no argumentation is given.\n\ndeal_close: false, no offer to close deal.\n\nbody_language: false, \"Визуальный контакт и дистанция не могут быть подтверждены из аудиозаписи; признаков по речи нет.\"\n\npositive_attitude: false, \"Речь нейтральная, без улыбки и позитивных маркеров; акустически SER нейтральный, нет яркого тембра.\"\n\nspeech_quality: I need to evaluate if speech is literate and free of slang. From the few phrases: \"пойдемте рассмотрим машинку\" - correct, \"все, рассмотрели автомобиль\" - okay, \"разрешено, проверим\" - maybe \"разрешено\" is a bit odd, could be \"разрешите\" but it's not slang; \"бы все устраивает\" might be \"все устраивает\". Overall, no slang or jargon detected. So I could set passed: true? But very limited data. I'll set passed: true with comment: \"В доступных репликах речь грамотная, без жаргона и сленга; используется вежливое обращение 'пойдемте'.\" And evidence segments: [45.82-47.50], [47.50-51.14], [194.86-196.46] (if it's \"все устраивает\"). So I'll include those. That seems fair.\n\nNow compile JSON. Ensure format."
+}

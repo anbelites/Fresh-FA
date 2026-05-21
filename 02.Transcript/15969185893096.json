@@ -1,0 +1,7173 @@
+{
+  "schema_version": 1,
+  "speech_delivery_version": 1,
+  "video_file": "15969185893096.mp4",
+  "video_path": "/home/ab/Fresh-FA/01.Video/15969185893096.mp4",
+  "processed_at": "2026-05-17T07:22:10.771550+00:00",
+  "whisper_model": "large-v3",
+  "whisper_device": "cuda",
+  "whisper_compute_type": "float16",
+  "asr_profile": "accurate",
+  "asr_profiles": [
+    {
+      "name": "balanced",
+      "description": "stable default full pass",
+      "transcribe_options": {
+        "word_timestamps": true,
+        "vad_filter": true,
+        "condition_on_previous_text": false,
+        "language": "ru",
+        "initial_prompt_present": true
+      }
+    },
+    {
+      "name": "accurate",
+      "description": "higher quality full pass",
+      "transcribe_options": {
+        "word_timestamps": true,
+        "vad_filter": true,
+        "condition_on_previous_text": false,
+        "beam_size": 3,
+        "best_of": 3,
+        "temperature": [
+          0.0,
+          0.2,
+          0.4
+        ],
+        "compression_ratio_threshold": 2.4,
+        "log_prob_threshold": -1.0,
+        "no_speech_threshold": 0.6,
+        "hallucination_silence_threshold": 2.0,
+        "vad_parameters": {
+          "min_silence_duration_ms": 450,
+          "speech_pad_ms": 500
+        },
+        "language": "ru",
+        "initial_prompt_present": true
+      }
+    }
+  ],
+  "asr_premerge_quality_history": [
+    {
+      "stage": "balanced",
+      "quality": {
+        "schema_version": 1,
+        "status": "fail",
+        "risk_score": 54.73,
+        "thresholds": {
+          "gap_warn_sec": 6.0,
+          "gap_fail_sec": 12.0,
+          "gap_rescue_sec": 8.0,
+          "coverage_warn_lt": 82.0,
+          "coverage_fail_lt": 70.0,
+          "low_mean_word_prob_lt": 0.55,
+          "low_word_prob_lt": 0.5,
+          "low_logprob_lt": -0.38,
+          "high_compression_gt": 2.4,
+          "high_no_speech_gt": 0.35,
+          "tiny_segment_sec": 0.6,
+          "max_warn_score": 18.0,
+          "max_fail_score": 32.0,
+          "repeat_ngram_min_count": 4
+        },
+        "summary": {
+          "segments_count": 49,
+          "duration_sec": 389.862,
+          "covered_sec": 331.03,
+          "coverage_pct": 84.91,
+          "gaps_count": 2,
+          "max_gap_sec": 22.68,
+          "low_logprob_segments_count": 23,
+          "low_confidence_segments_count": 2,
+          "low_word_probability_count": 50,
+          "words_count": 492,
+          "high_compression_segments_count": 0,
+          "high_no_speech_segments_count": 8,
+          "repeated_ngrams_count": 0,
+          "duplicate_segments_count": 0,
+          "tiny_segments_count": 2,
+          "speakers_count": 1,
+          "expected_speaker_count": 2,
+          "extra_speakers_count": 0
+        },
+        "gaps": [
+          {
+            "start": 53.1,
+            "end": 63.12,
+            "duration_sec": 10.02,
+            "kind": "middle"
+          },
+          {
+            "start": 136.54,
+            "end": 159.22,
+            "duration_sec": 22.68,
+            "kind": "middle"
+          }
+        ],
+        "low_logprob_segments": [
+          {
+            "index": 0,
+            "start": 3.5,
+            "end": 8.58,
+            "speaker": "SPEAKER_01",
+            "text": "Михаил, здравствуйте. Какой автомобиль Вы сегодня подобрали?",
+            "avg_logprob": -0.5619
+          },
+          {
+            "index": 1,
+            "start": 8.9,
+            "end": 13.48,
+            "speaker": "SPEAKER_01",
+            "text": "Ну, я вообще хотел рассмотреть двигатель нового, двигатель седана, двигатель автомобиля.",
+            "avg_logprob": -0.5619
+          },
+          {
+            "index": 2,
+            "start": 14.02,
+            "end": 20.44,
+            "speaker": "SPEAKER_01",
+            "text": "Вообще, я смотрел самарисовый автомобиль, самарис, георгий, я смотрю.",
+            "avg_logprob": -0.5619
+          },
+          {
+            "index": 3,
+            "start": 20.58,
+            "end": 21.22,
+            "speaker": "SPEAKER_01",
+            "text": "Я понял.",
+            "avg_logprob": -0.5619
+          },
+          {
+            "index": 4,
+            "start": 21.58,
+            "end": 22.22,
+            "speaker": "SPEAKER_01",
+            "text": "Что у вас?",
+            "avg_logprob": -0.5619
+          },
+          {
+            "index": 5,
+            "start": 22.84,
+            "end": 27.48,
+            "speaker": "SPEAKER_01",
+            "text": "У нас есть бездельный снижение.",
+            "avg_logprob": -0.5619
+          },
+          {
+            "index": 6,
+            "start": 28.32,
+            "end": 30.46,
+            "speaker": "SPEAKER_01",
+            "text": "Кнопки Тайсона как-то не особо.",
+            "avg_logprob": -0.4667
+          },
+          {
+            "index": 7,
+            "start": 30.52,
+            "end": 32.5,
+            "speaker": "SPEAKER_01",
+            "text": "Выглядит он, по-моему, хорошо.",
+            "avg_logprob": -0.4667
+          },
+          {
+            "index": 8,
+            "start": 33.34,
+            "end": 35.04,
+            "speaker": "SPEAKER_01",
+            "text": "Выглядит он получше, чем Солярик.",
+            "avg_logprob": -0.4667
+          },
+          {
+            "index": 9,
+            "start": 35.26,
+            "end": 39.6,
+            "speaker": "SPEAKER_01",
+            "text": "У него практически нулящий таблет, 41 таблет.",
+            "avg_logprob": -0.4667
+          },
+          {
+            "index": 10,
+            "start": 39.82,
+            "end": 40.96,
+            "speaker": "SPEAKER_01",
+            "text": "41 таблет.",
+            "avg_logprob": -0.4667
+          },
+          {
+            "index": 11,
+            "start": 41.2,
+            "end": 43.42,
+            "speaker": "SPEAKER_01",
+            "text": "На 2 миллиона 700 тысяч рублей.",
+            "avg_logprob": -0.4667
+          },
+          {
+            "index": 12,
+            "start": 43.8,
+            "end": 47.34,
+            "speaker": "SPEAKER_01",
+            "text": "На классическом автомате i-SIM 6 ступеней.",
+            "avg_logprob": -0.4667
+          },
+          {
+            "index": 13,
+            "start": 47.84,
+            "end": 51.16,
+            "speaker": "SPEAKER_01",
+            "text": "Трубы соли, трубы резиновые, нормальные.",
+            "avg_logprob": -0.4667
+          },
+          {
+            "index": 14,
+            "start": 51.8,
+            "end": 53.1,
+            "speaker": "SPEAKER_01",
+            "text": "Давайте покажем.",
+            "avg_logprob": -0.4667
+          },
+          {
+            "index": 36,
+            "start": 314.17,
+            "end": 320.91,
+            "speaker": "SPEAKER_01",
+            "text": "Ну вот я хотел Hyundai или Kia, но в Solaris сейчас мы ждали, потому что они проверили время на лёжке.",
+            "avg_logprob": -0.3845
+          },
+          {
+            "index": 37,
+            "start": 321.03,
+            "end": 322.97,
+            "speaker": "SPEAKER_01",
+            "text": "По поводу этого автомобиля я не уверен.",
+            "avg_logprob": -0.3845
+          },
+          {
+            "index": 38,
+            "start": 324.39,
+            "end": 327.71,
+            "speaker": "SPEAKER_01",
+            "text": "Хотелось бы опять же... Чехословакия.",
+            "avg_logprob": -0.3845
+          },
+          {
+            "index": 39,
+            "start": 327.73,
+            "end": 330.21,
+            "speaker": "SPEAKER_01",
+            "text": "Это Чехословакия.",
+            "avg_logprob": -0.3845
+          },
+          {
+            "index": 40,
+            "start": 331.15,
+            "end": 331.77,
+            "speaker": "SPEAKER_01",
+            "text": "Чехословакия, да?",
+            "avg_logprob": -0.3845
+          },
+          {
+            "index": 41,
+            "start": 331.89,
+            "end": 332.03,
+            "speaker": "SPEAKER_01",
+            "text": "Да.",
+            "avg_logprob": -0.3845
+          },
+          {
+            "index": 42,
+            "start": 332.11,
+            "end": 332.71,
+            "speaker": "SPEAKER_01",
+            "text": "Ну возможно.",
+            "avg_logprob": -0.3845
+          },
+          {
+            "index": 43,
+            "start": 332.97,
+            "end": 334.89,
+            "speaker": "SPEAKER_01",
+            "text": "А по поводу гарантии?",
+            "avg_logprob": -0.3845
+          }
+        ],
+        "low_confidence_segments": [
+          {
+            "index": 10,
+            "start": 39.82,
+            "end": 40.96,
+            "speaker": "SPEAKER_01",
+            "text": "41 таблет.",
+            "mean_word_probability": 0.5073
+          },
+          {
+            "index": 42,
+            "start": 332.11,
+            "end": 332.71,
+            "speaker": "SPEAKER_01",
+            "text": "Ну возможно.",
+            "mean_word_probability": 0.4354
+          }
+        ],
+        "high_compression_segments": [],
+        "high_no_speech_segments": [
+          {
+            "index": 36,
+            "start": 314.17,
+            "end": 320.91,
+            "speaker": "SPEAKER_01",
+            "text": "Ну вот я хотел Hyundai или Kia, но в Solaris сейчас мы ждали, потому что они проверили время на лёжке.",
+            "no_speech_prob": 0.5122
+          },
+          {
+            "index": 37,
+            "start": 321.03,
+            "end": 322.97,
+            "speaker": "SPEAKER_01",
+            "text": "По поводу этого автомобиля я не уверен.",
+            "no_speech_prob": 0.5122
+          },
+          {
+            "index": 38,
+            "start": 324.39,
+            "end": 327.71,
+            "speaker": "SPEAKER_01",
+            "text": "Хотелось бы опять же... Чехословакия.",
+            "no_speech_prob": 0.5122
+          },
+          {
+            "index": 39,
+            "start": 327.73,
+            "end": 330.21,
+            "speaker": "SPEAKER_01",
+            "text": "Это Чехословакия.",
+            "no_speech_prob": 0.5122
+          },
+          {
+            "index": 40,
+            "start": 331.15,
+            "end": 331.77,
+            "speaker": "SPEAKER_01",
+            "text": "Чехословакия, да?",
+            "no_speech_prob": 0.5122
+          },
+          {
+            "index": 41,
+            "start": 331.89,
+            "end": 332.03,
+            "speaker": "SPEAKER_01",
+            "text": "Да.",
+            "no_speech_prob": 0.5122
+          },
+          {
+            "index": 42,
+            "start": 332.11,
+            "end": 332.71,
+            "speaker": "SPEAKER_01",
+            "text": "Ну возможно.",
+            "no_speech_prob": 0.5122
+          },
+          {
+            "index": 43,
+            "start": 332.97,
+            "end": 334.89,
+            "speaker": "SPEAKER_01",
+            "text": "А по поводу гарантии?",
+            "no_speech_prob": 0.5122
+          }
+        ],
+        "duplicate_segments": [],
+        "repeated_ngrams": [],
+        "tiny_segments": [
+          {
+            "index": 41,
+            "start": 331.89,
+            "end": 332.03
+          },
+          {
+            "index": 42,
+            "start": 332.11,
+            "end": 332.71
+          }
+        ]
+      },
+      "summary": "ASR quality=fail, risk=54.73, coverage=84.91%, gaps=2 (max 22.68s), low_conf=2, low_logprob=23, repeats=0"
+    },
+    {
+      "stage": "accurate",
+      "quality": {
+        "schema_version": 1,
+        "status": "fail",
+        "risk_score": 43.1,
+        "thresholds": {
+          "gap_warn_sec": 6.0,
+          "gap_fail_sec": 12.0,
+          "gap_rescue_sec": 8.0,
+          "coverage_warn_lt": 82.0,
+          "coverage_fail_lt": 70.0,
+          "low_mean_word_prob_lt": 0.55,
+          "low_word_prob_lt": 0.5,
+          "low_logprob_lt": -0.38,
+          "high_compression_gt": 2.4,
+          "high_no_speech_gt": 0.35,
+          "tiny_segment_sec": 0.6,
+          "max_warn_score": 18.0,
+          "max_fail_score": 32.0,
+          "repeat_ngram_min_count": 4
+        },
+        "summary": {
+          "segments_count": 43,
+          "duration_sec": 389.862,
+          "covered_sec": 329.03,
+          "coverage_pct": 84.4,
+          "gaps_count": 1,
+          "max_gap_sec": 17.04,
+          "low_logprob_segments_count": 16,
+          "low_confidence_segments_count": 3,
+          "low_word_probability_count": 46,
+          "words_count": 438,
+          "high_compression_segments_count": 0,
+          "high_no_speech_segments_count": 1,
+          "repeated_ngrams_count": 0,
+          "duplicate_segments_count": 0,
+          "tiny_segments_count": 0,
+          "speakers_count": 1,
+          "expected_speaker_count": 2,
+          "extra_speakers_count": 0
+        },
+        "gaps": [
+          {
+            "start": 46.2,
+            "end": 63.24,
+            "duration_sec": 17.04,
+            "kind": "middle"
+          }
+        ],
+        "low_logprob_segments": [
+          {
+            "index": 0,
+            "start": 4.48,
+            "end": 8.58,
+            "speaker": "SPEAKER_01",
+            "text": "Михаил, здравствуйте. Какой автомобиль вы здесь подобрали?",
+            "avg_logprob": -0.5719
+          },
+          {
+            "index": 1,
+            "start": 8.92,
+            "end": 13.56,
+            "speaker": "SPEAKER_01",
+            "text": "Ну я вообще хотел рассмотреть дилер нового, седана, автомобиль.",
+            "avg_logprob": -0.5719
+          },
+          {
+            "index": 2,
+            "start": 14.1,
+            "end": 20.48,
+            "speaker": "SPEAKER_01",
+            "text": "Вообще смотрел самарис, георгий, смотрел.",
+            "avg_logprob": -0.5719
+          },
+          {
+            "index": 3,
+            "start": 20.58,
+            "end": 21.18,
+            "speaker": "SPEAKER_01",
+            "text": "Я понял.",
+            "avg_logprob": -0.5719
+          },
+          {
+            "index": 4,
+            "start": 21.54,
+            "end": 22.78,
+            "speaker": "SPEAKER_01",
+            "text": "Что вообще у вас?",
+            "avg_logprob": -0.5719
+          },
+          {
+            "index": 5,
+            "start": 23.4,
+            "end": 27.48,
+            "speaker": "SPEAKER_01",
+            "text": "У нас есть бездельный снижение.",
+            "avg_logprob": -0.5719
+          },
+          {
+            "index": 6,
+            "start": 28.14,
+            "end": 30.46,
+            "speaker": "SPEAKER_01",
+            "text": "Ну от китайцев мы как-то не особо.",
+            "avg_logprob": -0.5719
+          },
+          {
+            "index": 7,
+            "start": 30.46,
+            "end": 35.0,
+            "speaker": "SPEAKER_01",
+            "text": "будет получше чем солярик",
+            "avg_logprob": -0.9964
+          },
+          {
+            "index": 8,
+            "start": 35.0,
+            "end": 38.88,
+            "speaker": "SPEAKER_01",
+            "text": "практически 0 человек 40",
+            "avg_logprob": -0.9964
+          },
+          {
+            "index": 9,
+            "start": 38.88,
+            "end": 46.2,
+            "speaker": "SPEAKER_01",
+            "text": "на классическом автомате айсин",
+            "avg_logprob": -0.9964
+          },
+          {
+            "index": 25,
+            "start": 228.74,
+            "end": 238.02,
+            "speaker": "SPEAKER_01",
+            "text": "бэк багажнику этого автомобиля огромный то есть удобная удобный угол носа скажем так",
+            "avg_logprob": -0.4753
+          },
+          {
+            "index": 26,
+            "start": 238.78,
+            "end": 243.02,
+            "speaker": "SPEAKER_01",
+            "text": "у друга с нами было такое что багажник большая",
+            "avg_logprob": -0.4753
+          },
+          {
+            "index": 27,
+            "start": 245.48,
+            "end": 250.98,
+            "speaker": "SPEAKER_01",
+            "text": "она намного длиннее это такой переходной вариант из",
+            "avg_logprob": -0.4753
+          },
+          {
+            "index": 34,
+            "start": 307.36,
+            "end": 315.34,
+            "speaker": "SPEAKER_01",
+            "text": "вообще помимо solaris что-то рассматривали еще мог я хотел",
+            "avg_logprob": -0.4372
+          },
+          {
+            "index": 35,
+            "start": 315.34,
+            "end": 330.24,
+            "speaker": "SPEAKER_01",
+            "text": "это чех словакия",
+            "avg_logprob": -0.4372
+          },
+          {
+            "index": 42,
+            "start": 384.86,
+            "end": 387.38,
+            "speaker": "SPEAKER_01",
+            "text": "Давайте тогда попробуем тест-драйв провести.",
+            "avg_logprob": -0.5063
+          }
+        ],
+        "low_confidence_segments": [
+          {
+            "index": 8,
+            "start": 35.0,
+            "end": 38.88,
+            "speaker": "SPEAKER_01",
+            "text": "практически 0 человек 40",
+            "mean_word_probability": 0.3904
+          },
+          {
+            "index": 26,
+            "start": 238.78,
+            "end": 243.02,
+            "speaker": "SPEAKER_01",
+            "text": "у друга с нами было такое что багажник большая",
+            "mean_word_probability": 0.5242
+          },
+          {
+            "index": 35,
+            "start": 315.34,
+            "end": 330.24,
+            "speaker": "SPEAKER_01",
+            "text": "это чех словакия",
+            "mean_word_probability": 0.4307
+          }
+        ],
+        "high_compression_segments": [],
+        "high_no_speech_segments": [
+          {
+            "index": 42,
+            "start": 384.86,
+            "end": 387.38,
+            "speaker": "SPEAKER_01",
+            "text": "Давайте тогда попробуем тест-драйв провести.",
+            "no_speech_prob": 0.4561
+          }
+        ],
+        "duplicate_segments": [],
+        "repeated_ngrams": [],
+        "tiny_segments": []
+      },
+      "summary": "ASR quality=fail, risk=43.1, coverage=84.4%, gaps=1 (max 17.04s), low_conf=3, low_logprob=16, repeats=0"
+    },
+    {
+      "stage": "rescue_merged",
+      "quality": {
+        "schema_version": 1,
+        "status": "warn",
+        "risk_score": 33.24,
+        "thresholds": {
+          "gap_warn_sec": 6.0,
+          "gap_fail_sec": 12.0,
+          "gap_rescue_sec": 8.0,
+          "coverage_warn_lt": 82.0,
+          "coverage_fail_lt": 70.0,
+          "low_mean_word_prob_lt": 0.55,
+          "low_word_prob_lt": 0.5,
+          "low_logprob_lt": -0.38,
+          "high_compression_gt": 2.4,
+          "high_no_speech_gt": 0.35,
+          "tiny_segment_sec": 0.6,
+          "max_warn_score": 18.0,
+          "max_fail_score": 32.0,
+          "repeat_ngram_min_count": 4
+        },
+        "summary": {
+          "segments_count": 44,
+          "duration_sec": 389.862,
+          "covered_sec": 336.71,
+          "coverage_pct": 86.37,
+          "gaps_count": 1,
+          "max_gap_sec": 8.92,
+          "low_logprob_segments_count": 16,
+          "low_confidence_segments_count": 3,
+          "low_word_probability_count": 48,
+          "words_count": 447,
+          "high_compression_segments_count": 0,
+          "high_no_speech_segments_count": 1,
+          "repeated_ngrams_count": 0,
+          "duplicate_segments_count": 0,
+          "tiny_segments_count": 0,
+          "speakers_count": 1,
+          "expected_speaker_count": 2,
+          "extra_speakers_count": 0
+        },
+        "gaps": [
+          {
+            "start": 46.2,
+            "end": 55.12,
+            "duration_sec": 8.92,
+            "kind": "middle"
+          }
+        ],
+        "low_logprob_segments": [
+          {
+            "index": 0,
+            "start": 4.48,
+            "end": 8.58,
+            "speaker": "SPEAKER_01",
+            "text": "Михаил, здравствуйте. Какой автомобиль вы здесь подобрали?",
+            "avg_logprob": -0.5719
+          },
+          {
+            "index": 1,
+            "start": 8.92,
+            "end": 13.56,
+            "speaker": "SPEAKER_01",
+            "text": "Ну я вообще хотел рассмотреть дилер нового, седана, автомобиль.",
+            "avg_logprob": -0.5719
+          },
+          {
+            "index": 2,
+            "start": 14.1,
+            "end": 20.48,
+            "speaker": "SPEAKER_01",
+            "text": "Вообще смотрел самарис, георгий, смотрел.",
+            "avg_logprob": -0.5719
+          },
+          {
+            "index": 3,
+            "start": 20.58,
+            "end": 21.18,
+            "speaker": "SPEAKER_01",
+            "text": "Я понял.",
+            "avg_logprob": -0.5719
+          },
+          {
+            "index": 4,
+            "start": 21.54,
+            "end": 22.78,
+            "speaker": "SPEAKER_01",
+            "text": "Что вообще у вас?",
+            "avg_logprob": -0.5719
+          },
+          {
+            "index": 5,
+            "start": 23.4,
+            "end": 27.48,
+            "speaker": "SPEAKER_01",
+            "text": "У нас есть бездельный снижение.",
+            "avg_logprob": -0.5719
+          },
+          {
+            "index": 6,
+            "start": 28.14,
+            "end": 30.46,
+            "speaker": "SPEAKER_01",
+            "text": "Ну от китайцев мы как-то не особо.",
+            "avg_logprob": -0.5719
+          },
+          {
+            "index": 7,
+            "start": 30.46,
+            "end": 35.0,
+            "speaker": "SPEAKER_01",
+            "text": "будет получше чем солярик",
+            "avg_logprob": -0.9964
+          },
+          {
+            "index": 8,
+            "start": 35.0,
+            "end": 38.88,
+            "speaker": "SPEAKER_01",
+            "text": "практически 0 человек 40",
+            "avg_logprob": -0.9964
+          },
+          {
+            "index": 9,
+            "start": 38.88,
+            "end": 46.2,
+            "speaker": "SPEAKER_01",
+            "text": "на классическом автомате айсин",
+            "avg_logprob": -0.9964
+          },
+          {
+            "index": 26,
+            "start": 228.74,
+            "end": 238.02,
+            "speaker": "SPEAKER_01",
+            "text": "бэк багажнику этого автомобиля огромный то есть удобная удобный угол носа скажем так",
+            "avg_logprob": -0.4753
+          },
+          {
+            "index": 27,
+            "start": 238.78,
+            "end": 243.02,
+            "speaker": "SPEAKER_01",
+            "text": "у друга с нами было такое что багажник большая",
+            "avg_logprob": -0.4753
+          },
+          {
+            "index": 28,
+            "start": 245.48,
+            "end": 250.98,
+            "speaker": "SPEAKER_01",
+            "text": "она намного длиннее это такой переходной вариант из",
+            "avg_logprob": -0.4753
+          },
+          {
+            "index": 35,
+            "start": 307.36,
+            "end": 315.34,
+            "speaker": "SPEAKER_01",
+            "text": "вообще помимо solaris что-то рассматривали еще мог я хотел",
+            "avg_logprob": -0.4372
+          },
+          {
+            "index": 36,
+            "start": 315.34,
+            "end": 330.24,
+            "speaker": "SPEAKER_01",
+            "text": "это чех словакия",
+            "avg_logprob": -0.4372
+          },
+          {
+            "index": 43,
+            "start": 384.86,
+            "end": 387.38,
+            "speaker": "SPEAKER_01",
+            "text": "Давайте тогда попробуем тест-драйв провести.",
+            "avg_logprob": -0.5063
+          }
+        ],
+        "low_confidence_segments": [
+          {
+            "index": 8,
+            "start": 35.0,
+            "end": 38.88,
+            "speaker": "SPEAKER_01",
+            "text": "практически 0 человек 40",
+            "mean_word_probability": 0.3904
+          },
+          {
+            "index": 27,
+            "start": 238.78,
+            "end": 243.02,
+            "speaker": "SPEAKER_01",
+            "text": "у друга с нами было такое что багажник большая",
+            "mean_word_probability": 0.5242
+          },
+          {
+            "index": 36,
+            "start": 315.34,
+            "end": 330.24,
+            "speaker": "SPEAKER_01",
+            "text": "это чех словакия",
+            "mean_word_probability": 0.4307
+          }
+        ],
+        "high_compression_segments": [],
+        "high_no_speech_segments": [
+          {
+            "index": 43,
+            "start": 384.86,
+            "end": 387.38,
+            "speaker": "SPEAKER_01",
+            "text": "Давайте тогда попробуем тест-драйв провести.",
+            "no_speech_prob": 0.4561
+          }
+        ],
+        "duplicate_segments": [],
+        "repeated_ngrams": [],
+        "tiny_segments": []
+      },
+      "summary": "ASR quality=warn, risk=33.24, coverage=86.37%, gaps=1 (max 8.92s), low_conf=3, low_logprob=16, repeats=0"
+    }
+  ],
+  "asr_rescue_applied": true,
+  "asr_rescue": {
+    "attempted": true,
+    "profile": "rescue",
+    "source_windows": [
+      {
+        "start": 44.2,
+        "end": 65.24,
+        "gap_start": 46.2,
+        "gap_end": 63.24
+      }
+    ],
+    "windows": [
+      {
+        "window": {
+          "start": 46.2,
+          "end": 63.74,
+          "parent_start": 44.2,
+          "parent_end": 65.24,
+          "gap_start": 46.2,
+          "gap_end": 63.24
+        },
+        "profile": {
+          "name": "rescue",
+          "description": "short-window gap recovery",
+          "transcribe_options": {
+            "word_timestamps": true,
+            "vad_filter": false,
+            "condition_on_previous_text": false,
+            "beam_size": 3,
+            "best_of": 3,
+            "temperature": [
+              0.0,
+              0.2
+            ],
+            "compression_ratio_threshold": 2.8,
+            "log_prob_threshold": -1.6,
+            "no_speech_threshold": 0.8,
+            "language": "ru",
+            "initial_prompt_present": true
+          }
+        },
+        "candidates": 1,
+        "accepted": 1,
+        "accepted_ranges": [
+          {
+            "start": 55.12,
+            "end": 62.8
+          }
+        ]
+      }
+    ],
+    "accepted_segments": 1
+  },
+  "asr_failures": [],
+  "asr_quality": {
+    "schema_version": 1,
+    "status": "warn",
+    "risk_score": 61.37,
+    "thresholds": {
+      "gap_warn_sec": 6.0,
+      "gap_fail_sec": 12.0,
+      "gap_rescue_sec": 8.0,
+      "coverage_warn_lt": 82.0,
+      "coverage_fail_lt": 70.0,
+      "low_mean_word_prob_lt": 0.55,
+      "low_word_prob_lt": 0.5,
+      "low_logprob_lt": -0.38,
+      "high_compression_gt": 2.4,
+      "high_no_speech_gt": 0.35,
+      "tiny_segment_sec": 0.6,
+      "max_warn_score": 18.0,
+      "max_fail_score": 32.0,
+      "repeat_ngram_min_count": 4
+    },
+    "summary": {
+      "segments_count": 65,
+      "duration_sec": 387.38,
+      "covered_sec": 309.12,
+      "coverage_pct": 79.8,
+      "gaps_count": 4,
+      "max_gap_sec": 10.75,
+      "low_logprob_segments_count": 25,
+      "low_confidence_segments_count": 9,
+      "low_word_probability_count": 48,
+      "words_count": 447,
+      "high_compression_segments_count": 0,
+      "high_no_speech_segments_count": 1,
+      "repeated_ngrams_count": 0,
+      "duplicate_segments_count": 0,
+      "tiny_segments_count": 7,
+      "speakers_count": 3,
+      "expected_speaker_count": 2,
+      "extra_speakers_count": 1
+    },
+    "gaps": [
+      {
+        "start": 46.2,
+        "end": 55.12,
+        "duration_sec": 8.92,
+        "kind": "middle"
+      },
+      {
+        "start": 64.44,
+        "end": 74.42,
+        "duration_sec": 9.98,
+        "kind": "middle"
+      },
+      {
+        "start": 143.39,
+        "end": 154.14,
+        "duration_sec": 10.75,
+        "kind": "middle"
+      },
+      {
+        "start": 213.28,
+        "end": 219.6,
+        "duration_sec": 6.32,
+        "kind": "middle"
+      }
+    ],
+    "low_logprob_segments": [
+      {
+        "index": 0,
+        "start": 4.48,
+        "end": 8.58,
+        "speaker": "SPEAKER_01",
+        "text": "Михаил, здравствуйте. Какой автомобиль вы здесь подобрали?",
+        "avg_logprob": -0.5719
+      },
+      {
+        "index": 1,
+        "start": 8.92,
+        "end": 13.56,
+        "speaker": "SPEAKER_02",
+        "text": "Ну я вообще хотел рассмотреть дилер нового, седана, автомобиль.",
+        "avg_logprob": -0.5719
+      },
+      {
+        "index": 2,
+        "start": 14.1,
+        "end": 20.48,
+        "speaker": "SPEAKER_02",
+        "text": "Вообще смотрел самарис, георгий, смотрел.",
+        "avg_logprob": -0.5719
+      },
+      {
+        "index": 3,
+        "start": 20.58,
+        "end": 21.18,
+        "speaker": "SPEAKER_03",
+        "text": "Я понял.",
+        "avg_logprob": -0.5719
+      },
+      {
+        "index": 4,
+        "start": 21.54,
+        "end": 22.78,
+        "speaker": "SPEAKER_03",
+        "text": "Что вообще у вас?",
+        "avg_logprob": -0.5719
+      },
+      {
+        "index": 5,
+        "start": 23.4,
+        "end": 26.9,
+        "speaker": "SPEAKER_03",
+        "text": "У нас есть бездельный",
+        "avg_logprob": -0.5719
+      },
+      {
+        "index": 6,
+        "start": 26.9,
+        "end": 27.48,
+        "speaker": "SPEAKER_01",
+        "text": "снижение.",
+        "avg_logprob": -0.5719
+      },
+      {
+        "index": 7,
+        "start": 28.14,
+        "end": 28.84,
+        "speaker": "SPEAKER_03",
+        "text": "Ну",
+        "avg_logprob": -0.5719
+      },
+      {
+        "index": 8,
+        "start": 28.84,
+        "end": 30.46,
+        "speaker": "SPEAKER_02",
+        "text": "от китайцев мы как-то не особо.",
+        "avg_logprob": -0.5719
+      },
+      {
+        "index": 9,
+        "start": 30.46,
+        "end": 32.84,
+        "speaker": "SPEAKER_02",
+        "text": "будет",
+        "avg_logprob": -0.9964
+      },
+      {
+        "index": 10,
+        "start": 32.84,
+        "end": 35.0,
+        "speaker": "SPEAKER_01",
+        "text": "получше чем солярик",
+        "avg_logprob": -0.9964
+      },
+      {
+        "index": 11,
+        "start": 35.0,
+        "end": 38.88,
+        "speaker": "SPEAKER_01",
+        "text": "практически 0 человек 40",
+        "avg_logprob": -0.9964
+      },
+      {
+        "index": 12,
+        "start": 38.88,
+        "end": 46.2,
+        "speaker": "SPEAKER_01",
+        "text": "на классическом автомате айсин",
+        "avg_logprob": -0.9964
+      },
+      {
+        "index": 41,
+        "start": 228.74,
+        "end": 238.02,
+        "speaker": "SPEAKER_01",
+        "text": "бэк багажнику этого автомобиля огромный то есть удобная удобный угол носа скажем так",
+        "avg_logprob": -0.4753
+      },
+      {
+        "index": 42,
+        "start": 238.78,
+        "end": 239.56,
+        "speaker": "SPEAKER_01",
+        "text": "у",
+        "avg_logprob": -0.4753
+      },
+      {
+        "index": 43,
+        "start": 239.56,
+        "end": 240.1,
+        "speaker": "SPEAKER_02",
+        "text": "друга",
+        "avg_logprob": -0.4753
+      },
+      {
+        "index": 44,
+        "start": 240.1,
+        "end": 240.2,
+        "speaker": "SPEAKER_02",
+        "text": "с",
+        "avg_logprob": -0.4753
+      },
+      {
+        "index": 45,
+        "start": 240.2,
+        "end": 241.26,
+        "speaker": "SPEAKER_02",
+        "text": "нами было такое",
+        "avg_logprob": -0.4753
+      },
+      {
+        "index": 46,
+        "start": 241.26,
+        "end": 243.02,
+        "speaker": "SPEAKER_01",
+        "text": "что багажник большая",
+        "avg_logprob": -0.4753
+      },
+      {
+        "index": 47,
+        "start": 245.48,
+        "end": 246.52,
+        "speaker": "SPEAKER_01",
+        "text": "она",
+        "avg_logprob": -0.4753
+      },
+      {
+        "index": 48,
+        "start": 246.52,
+        "end": 250.98,
+        "speaker": "SPEAKER_01",
+        "text": "намного длиннее это такой переходной вариант из",
+        "avg_logprob": -0.4753
+      },
+      {
+        "index": 55,
+        "start": 307.36,
+        "end": 314.88,
+        "speaker": "SPEAKER_01",
+        "text": "вообще помимо solaris что-то рассматривали еще мог",
+        "avg_logprob": -0.4372
+      },
+      {
+        "index": 56,
+        "start": 314.88,
+        "end": 315.34,
+        "speaker": "SPEAKER_02",
+        "text": "я хотел",
+        "avg_logprob": -0.4372
+      },
+      {
+        "index": 57,
+        "start": 315.34,
+        "end": 330.24,
+        "speaker": "SPEAKER_02",
+        "text": "это чех словакия",
+        "avg_logprob": -0.4372
+      },
+      {
+        "index": 64,
+        "start": 384.86,
+        "end": 387.38,
+        "speaker": "SPEAKER_01",
+        "text": "Давайте тогда попробуем тест-драйв провести.",
+        "avg_logprob": -0.5063
+      }
+    ],
+    "low_confidence_segments": [
+      {
+        "index": 6,
+        "start": 26.9,
+        "end": 27.48,
+        "speaker": "SPEAKER_01",
+        "text": "снижение.",
+        "mean_word_probability": 0.4426
+      },
+      {
+        "index": 9,
+        "start": 30.46,
+        "end": 32.84,
+        "speaker": "SPEAKER_02",
+        "text": "будет",
+        "mean_word_probability": 0.0239
+      },
+      {
+        "index": 11,
+        "start": 35.0,
+        "end": 38.88,
+        "speaker": "SPEAKER_01",
+        "text": "практически 0 человек 40",
+        "mean_word_probability": 0.3904
+      },
+      {
+        "index": 26,
+        "start": 142.31,
+        "end": 143.39,
+        "speaker": "SPEAKER_03",
+        "text": "основные",
+        "mean_word_probability": 0.3285
+      },
+      {
+        "index": 42,
+        "start": 238.78,
+        "end": 239.56,
+        "speaker": "SPEAKER_01",
+        "text": "у",
+        "mean_word_probability": 0.1353
+      },
+      {
+        "index": 44,
+        "start": 240.1,
+        "end": 240.2,
+        "speaker": "SPEAKER_02",
+        "text": "с",
+        "mean_word_probability": 0.3867
+      },
+      {
+        "index": 45,
+        "start": 240.2,
+        "end": 241.26,
+        "speaker": "SPEAKER_02",
+        "text": "нами было такое",
+        "mean_word_probability": 0.5472
+      },
+      {
+        "index": 47,
+        "start": 245.48,
+        "end": 246.52,
+        "speaker": "SPEAKER_01",
+        "text": "она",
+        "mean_word_probability": 0.5142
+      },
+      {
+        "index": 57,
+        "start": 315.34,
+        "end": 330.24,
+        "speaker": "SPEAKER_02",
+        "text": "это чех словакия",
+        "mean_word_probability": 0.4307
+      }
+    ],
+    "high_compression_segments": [],
+    "high_no_speech_segments": [
+      {
+        "index": 64,
+        "start": 384.86,
+        "end": 387.38,
+        "speaker": "SPEAKER_01",
+        "text": "Давайте тогда попробуем тест-драйв провести.",
+        "no_speech_prob": 0.4561
+      }
+    ],
+    "duplicate_segments": [],
+    "repeated_ngrams": [],
+    "tiny_segments": [
+      {
+        "index": 6,
+        "start": 26.9,
+        "end": 27.48
+      },
+      {
+        "index": 14,
+        "start": 62.32,
+        "end": 62.8
+      },
+      {
+        "index": 31,
+        "start": 184.98,
+        "end": 185.22
+      },
+      {
+        "index": 32,
+        "start": 185.22,
+        "end": 185.72
+      },
+      {
+        "index": 43,
+        "start": 239.56,
+        "end": 240.1
+      },
+      {
+        "index": 44,
+        "start": 240.1,
+        "end": 240.2
+      },
+      {
+        "index": 56,
+        "start": 314.88,
+        "end": 315.34
+      }
+    ]
+  },
+  "asr_quality_summary": "ASR quality=warn, risk=61.37, coverage=79.8%, gaps=4 (max 10.75s), low_conf=9, low_logprob=25, repeats=0",
+  "whisper_initial_prompt_source": "database_glossary",
+  "whisper_condition_on_previous_text": false,
+  "language": "ru",
+  "diarization": true,
+  "diarization_backend": "pyannote",
+  "diarization_method": "pyannote",
+  "diarization_model": "pyannote/speaker-diarization-community-1",
+  "expected_speaker_count": 2,
+  "duration_sec": 387.38,
+  "speakers": [
+    "SPEAKER_01",
+    "SPEAKER_02",
+    "SPEAKER_03"
+  ],
+  "pyannote_device": "cuda",
+  "nemo_device": null,
+  "segments": [
+    {
+      "start": 4.48,
+      "end": 8.58,
+      "speaker": "SPEAKER_01",
+      "text": "Михаил, здравствуйте. Какой автомобиль вы здесь подобрали?",
+      "words": [
+        {
+          "start": 4.48,
+          "end": 5.18,
+          "word": "Михаил,",
+          "probability": 0.6435,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 5.18,
+          "end": 5.88,
+          "word": "здравствуйте.",
+          "probability": 0.9016,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 6.6,
+          "end": 7.3,
+          "word": "Какой",
+          "probability": 0.9463,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 7.3,
+          "end": 7.72,
+          "word": "автомобиль",
+          "probability": 0.9873,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 7.72,
+          "end": 7.8,
+          "word": "вы",
+          "probability": 0.5537,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 7.8,
+          "end": 7.98,
+          "word": "здесь",
+          "probability": 0.0861,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 7.98,
+          "end": 8.58,
+          "word": "подобрали?",
+          "probability": 0.7776,
+          "speaker": "SPEAKER_01"
+        }
+      ],
+      "delivery": {
+        "duration_sec": 4.1,
+        "words_per_sec": 1.71,
+        "syllables_per_sec_est": 4.39,
+        "chars_per_sec": 14.15,
+        "avg_logprob": -0.5719,
+        "compression_ratio": 1.82,
+        "no_speech_prob": 0.1161,
+        "mean_word_probability": 0.6994,
+        "min_word_probability": 0.0861,
+        "flags": [
+          "low_asr_logprob",
+          "some_words_uncertain"
+        ],
+        "thresholds_used": {
+          "fast_wps_gte": 3.4,
+          "fast_sps_gte": 6.5,
+          "low_logprob_lt": -0.38,
+          "low_mean_word_prob_lt": 0.42,
+          "high_no_speech_gt": 0.35
+        }
+      },
+      "audio_tone": {
+        "mean_f0_hz": 103.4,
+        "f0_std_hz": 10.6,
+        "rms_energy_mean": 0.01998,
+        "rms_energy_std": 0.00583,
+        "spectral_centroid_mean_hz": 1690.9,
+        "spectral_centroid_std_hz": 381.2,
+        "zero_crossing_rate_mean": 0.0994,
+        "flags": [
+          "monotone_pitch"
+        ]
+      },
+      "speaker_role": "EMPLOYEE"
+    },
+    {
+      "start": 8.92,
+      "end": 13.56,
+      "speaker": "SPEAKER_02",
+      "text": "Ну я вообще хотел рассмотреть дилер нового, седана, автомобиль.",
+      "words": [
+        {
+          "start": 8.92,
+          "end": 9.26,
+          "word": "Ну",
+          "probability": 0.2583,
+          "speaker": "SPEAKER_02"
+        },
+        {
+          "start": 9.26,
+          "end": 9.42,
+          "word": "я",
+          "probability": 0.5859,
+          "speaker": "SPEAKER_02"
+        },
+        {
+          "start": 9.42,
+          "end": 9.7,
+          "word": "вообще",
+          "probability": 0.8955,
+          "speaker": "SPEAKER_02"
+        },
+        {
+          "start": 9.7,
+          "end": 9.92,
+          "word": "хотел",
+          "probability": 0.9561,
+          "speaker": "SPEAKER_02"
+        },
+        {
+          "start": 9.92,
+          "end": 10.46,
+          "word": "рассмотреть",
+          "probability": 0.8866,
+          "speaker": "SPEAKER_02"
+        },
+        {
+          "start": 10.46,
+          "end": 10.72,
+          "word": "дилер",
+          "probability": 0.0707,
+          "speaker": "SPEAKER_02"
+        },
+        {
+          "start": 10.72,
+          "end": 11.28,
+          "word": "нового,",
+          "probability": 0.6327,
+          "speaker": "SPEAKER_02"
+        },
+        {
+          "start": 11.28,
+          "end": 12.5,
+          "word": "седана,",
+          "probability": 0.5837,
+          "speaker": "SPEAKER_02"
+        },
+        {
+          "start": 12.5,
+          "end": 13.56,
+          "word": "автомобиль.",
+          "probability": 0.2326,
+          "speaker": "SPEAKER_02"
+        }
+      ],
+      "delivery": {
+        "duration_sec": 4.64,
+        "words_per_sec": 1.94,
+        "syllables_per_sec_est": 4.74,
+        "chars_per_sec": 13.58,
+        "avg_logprob": -0.5719,
+        "compression_ratio": 1.82,
+        "no_speech_prob": 0.1161,
+        "mean_word_probability": 0.5669,
+        "min_word_probability": 0.0707,
+        "flags": [
+          "low_asr_logprob",
+          "some_words_uncertain"
+        ],
+        "thresholds_used": {
+          "fast_wps_gte": 3.4,
+          "fast_sps_gte": 6.5,
+          "low_logprob_lt": -0.38,
+          "low_mean_word_prob_lt": 0.42,
+          "high_no_speech_gt": 0.35
+        }
+      },
+      "audio_tone": {
+        "mean_f0_hz": 153.6,
+        "f0_std_hz": 21.1,
+        "rms_energy_mean": 0.02394,
+        "rms_energy_std": 0.00717,
+        "spectral_centroid_mean_hz": 1480.8,
+        "spectral_centroid_std_hz": 394.2,
+        "zero_crossing_rate_mean": 0.0791,
+        "flags": [
+          "warm_dark_timbral"
+        ]
+      },
+      "speaker_role": "CLIENT"
+    },
+    {
+      "start": 14.1,
+      "end": 20.48,
+      "speaker": "SPEAKER_02",
+      "text": "Вообще смотрел самарис, георгий, смотрел.",
+      "words": [
+        {
+          "start": 14.1,
+          "end": 14.8,
+          "word": "Вообще",
+          "probability": 0.6517,
+          "speaker": "SPEAKER_02"
+        },
+        {
+          "start": 14.8,
+          "end": 16.12,
+          "word": "смотрел",
+          "probability": 0.7041,
+          "speaker": "SPEAKER_02"
+        },
+        {
+          "start": 16.12,
+          "end": 17.08,
+          "word": "самарис,",
+          "probability": 0.7196,
+          "speaker": "SPEAKER_02"
+        },
+        {
+          "start": 17.1,
+          "end": 19.78,
+          "word": "георгий,",
+          "probability": 0.5984,
+          "speaker": "SPEAKER_02"
+        },
+        {
+          "start": 19.82,
+          "end": 20.48,
+          "word": "смотрел.",
+          "probability": 0.4044,
+          "speaker": "SPEAKER_02"
+        }
+      ],
+      "delivery": {
+        "duration_sec": 6.38,
+        "words_per_sec": 0.78,
+        "syllables_per_sec_est": 2.04,
+        "chars_per_sec": 6.43,
+        "avg_logprob": -0.5719,
+        "compression_ratio": 1.82,
+        "no_speech_prob": 0.1161,
+        "mean_word_probability": 0.6157,
+        "min_word_probability": 0.4044,
+        "flags": [
+          "low_asr_logprob"
+        ],
+        "thresholds_used": {
+          "fast_wps_gte": 3.4,
+          "fast_sps_gte": 6.5,
+          "low_logprob_lt": -0.38,
+          "low_mean_word_prob_lt": 0.42,
+          "high_no_speech_gt": 0.35
+        }
+      },
+      "audio_tone": {
+        "mean_f0_hz": 133.8,
+        "f0_std_hz": 22.8,
+        "rms_energy_mean": 0.02395,
+        "rms_energy_std": 0.0082,
+        "spectral_centroid_mean_hz": 1789.6,
+        "spectral_centroid_std_hz": 360.5,
+        "zero_crossing_rate_mean": 0.1099,
+        "flags": []
+      },
+      "speaker_role": "CLIENT"
+    },
+    {
+      "start": 20.58,
+      "end": 21.18,
+      "speaker": "SPEAKER_03",
+      "text": "Я понял.",
+      "words": [
+        {
+          "start": 20.58,
+          "end": 21.02,
+          "word": "Я",
+          "probability": 0.521,
+          "speaker": "SPEAKER_03"
+        },
+        {
+          "start": 21.02,
+          "end": 21.18,
+          "word": "понял.",
+          "probability": 0.9019,
+          "speaker": "SPEAKER_03"
+        }
+      ],
+      "delivery": {
+        "duration_sec": 0.6,
+        "words_per_sec": 3.33,
+        "syllables_per_sec_est": 5.0,
+        "chars_per_sec": 13.33,
+        "avg_logprob": -0.5719,
+        "compression_ratio": 1.82,
+        "no_speech_prob": 0.1161,
+        "mean_word_probability": 0.7114,
+        "min_word_probability": 0.521,
+        "flags": [
+          "low_asr_logprob"
+        ],
+        "thresholds_used": {
+          "fast_wps_gte": 3.4,
+          "fast_sps_gte": 6.5,
+          "low_logprob_lt": -0.38,
+          "low_mean_word_prob_lt": 0.42,
+          "high_no_speech_gt": 0.35
+        }
+      },
+      "audio_tone": {
+        "mean_f0_hz": null,
+        "f0_std_hz": null,
+        "rms_energy_mean": 0.01707,
+        "rms_energy_std": 0.00154,
+        "spectral_centroid_mean_hz": 1559.0,
+        "spectral_centroid_std_hz": 208.4,
+        "zero_crossing_rate_mean": 0.0697,
+        "flags": []
+      },
+      "speaker_role": "EMPLOYEE"
+    },
+    {
+      "start": 21.54,
+      "end": 22.78,
+      "speaker": "SPEAKER_03",
+      "text": "Что вообще у вас?",
+      "words": [
+        {
+          "start": 21.54,
+          "end": 21.86,
+          "word": "Что",
+          "probability": 0.8218,
+          "speaker": "SPEAKER_03"
+        },
+        {
+          "start": 21.86,
+          "end": 22.16,
+          "word": "вообще",
+          "probability": 0.6748,
+          "speaker": "SPEAKER_03"
+        },
+        {
+          "start": 22.16,
+          "end": 22.42,
+          "word": "у",
+          "probability": 0.6074,
+          "speaker": "SPEAKER_03"
+        },
+        {
+          "start": 22.42,
+          "end": 22.78,
+          "word": "вас?",
+          "probability": 0.6851,
+          "speaker": "SPEAKER_03"
+        }
+      ],
+      "delivery": {
+        "duration_sec": 1.24,
+        "words_per_sec": 3.23,
+        "syllables_per_sec_est": 4.84,
+        "chars_per_sec": 13.71,
+        "avg_logprob": -0.5719,
+        "compression_ratio": 1.82,
+        "no_speech_prob": 0.1161,
+        "mean_word_probability": 0.6973,
+        "min_word_probability": 0.6074,
+        "flags": [
+          "low_asr_logprob"
+        ],
+        "thresholds_used": {
+          "fast_wps_gte": 3.4,
+          "fast_sps_gte": 6.5,
+          "low_logprob_lt": -0.38,
+          "low_mean_word_prob_lt": 0.42,
+          "high_no_speech_gt": 0.35
+        }
+      },
+      "audio_tone": {
+        "mean_f0_hz": null,
+        "f0_std_hz": null,
+        "rms_energy_mean": 0.01897,
+        "rms_energy_std": 0.00457,
+        "spectral_centroid_mean_hz": 1747.6,
+        "spectral_centroid_std_hz": 508.0,
+        "zero_crossing_rate_mean": 0.104,
+        "flags": []
+      },
+      "speaker_role": "EMPLOYEE"
+    },
+    {
+      "start": 23.4,
+      "end": 26.9,
+      "speaker": "SPEAKER_03",
+      "text": "У нас есть бездельный",
+      "words": [
+        {
+          "start": 23.4,
+          "end": 24.1,
+          "word": "У",
+          "probability": 0.9917,
+          "speaker": "SPEAKER_03"
+        },
+        {
+          "start": 24.1,
+          "end": 24.54,
+          "word": "нас",
+          "probability": 0.9995,
+          "speaker": "SPEAKER_03"
+        },
+        {
+          "start": 24.54,
+          "end": 25.46,
+          "word": "есть",
+          "probability": 0.9966,
+          "speaker": "SPEAKER_03"
+        },
+        {
+          "start": 25.46,
+          "end": 26.9,
+          "word": "бездельный",
+          "probability": 0.3133,
+          "speaker": "SPEAKER_03"
+        }
+      ],
+      "delivery": {
+        "duration_sec": 3.5,
+        "words_per_sec": 1.14,
+        "syllables_per_sec_est": 1.71,
+        "chars_per_sec": 6.0,
+        "avg_logprob": -0.5719,
+        "compression_ratio": 1.82,
+        "no_speech_prob": 0.1161,
+        "mean_word_probability": 0.8253,
+        "min_word_probability": 0.3133,
+        "flags": [
+          "low_asr_logprob",
+          "some_words_uncertain"
+        ],
+        "thresholds_used": {
+          "fast_wps_gte": 3.4,
+          "fast_sps_gte": 6.5,
+          "low_logprob_lt": -0.38,
+          "low_mean_word_prob_lt": 0.42,
+          "high_no_speech_gt": 0.35
+        }
+      },
+      "audio_tone": {
+        "mean_f0_hz": 109.7,
+        "f0_std_hz": 9.8,
+        "rms_energy_mean": 0.02056,
+        "rms_energy_std": 0.00594,
+        "spectral_centroid_mean_hz": 1931.7,
+        "spectral_centroid_std_hz": 425.2,
+        "zero_crossing_rate_mean": 0.1285,
+        "flags": [
+          "monotone_pitch"
+        ]
+      },
+      "speaker_role": "EMPLOYEE"
+    },
+    {
+      "start": 26.9,
+      "end": 27.48,
+      "speaker": "SPEAKER_01",
+      "text": "снижение.",
+      "words": [
+        {
+          "start": 26.9,
+          "end": 27.48,
+          "word": "снижение.",
+          "probability": 0.4426,
+          "speaker": "SPEAKER_01"
+        }
+      ],
+      "delivery": {
+        "duration_sec": 0.58,
+        "words_per_sec": 1.72,
+        "syllables_per_sec_est": 6.9,
+        "chars_per_sec": 15.52,
+        "avg_logprob": -0.5719,
+        "compression_ratio": 1.82,
+        "no_speech_prob": 0.1161,
+        "mean_word_probability": 0.4426,
+        "min_word_probability": 0.4426,
+        "flags": [
+          "fast_and_unclear_asr",
+          "fast_pace",
+          "low_asr_logprob"
+        ],
+        "thresholds_used": {
+          "fast_wps_gte": 3.4,
+          "fast_sps_gte": 6.5,
+          "low_logprob_lt": -0.38,
+          "low_mean_word_prob_lt": 0.42,
+          "high_no_speech_gt": 0.35
+        }
+      },
+      "audio_tone": {
+        "mean_f0_hz": null,
+        "f0_std_hz": null,
+        "rms_energy_mean": 0.02726,
+        "rms_energy_std": 0.00475,
+        "spectral_centroid_mean_hz": 2043.5,
+        "spectral_centroid_std_hz": 224.3,
+        "zero_crossing_rate_mean": 0.1292,
+        "flags": []
+      },
+      "speaker_role": "EMPLOYEE"
+    },
+    {
+      "start": 28.14,
+      "end": 28.84,
+      "speaker": "SPEAKER_03",
+      "text": "Ну",
+      "words": [
+        {
+          "start": 28.14,
+          "end": 28.84,
+          "word": "Ну",
+          "probability": 0.6875,
+          "speaker": "SPEAKER_03"
+        }
+      ],
+      "delivery": {
+        "duration_sec": 0.7,
+        "words_per_sec": 1.43,
+        "syllables_per_sec_est": 1.43,
+        "chars_per_sec": 2.86,
+        "avg_logprob": -0.5719,
+        "compression_ratio": 1.82,
+        "no_speech_prob": 0.1161,
+        "mean_word_probability": 0.6875,
+        "min_word_probability": 0.6875,
+        "flags": [
+          "low_asr_logprob"
+        ],
+        "thresholds_used": {
+          "fast_wps_gte": 3.4,
+          "fast_sps_gte": 6.5,
+          "low_logprob_lt": -0.38,
+          "low_mean_word_prob_lt": 0.42,
+          "high_no_speech_gt": 0.35
+        }
+      },
+      "audio_tone": {
+        "mean_f0_hz": null,
+        "f0_std_hz": null,
+        "rms_energy_mean": 0.01454,
+        "rms_energy_std": 0.00285,
+        "spectral_centroid_mean_hz": 1892.1,
+        "spectral_centroid_std_hz": 103.0,
+        "zero_crossing_rate_mean": 0.1032,
+        "flags": []
+      },
+      "speaker_role": "EMPLOYEE"
+    },
+    {
+      "start": 28.84,
+      "end": 30.46,
+      "speaker": "SPEAKER_02",
+      "text": "от китайцев мы как-то не особо.",
+      "words": [
+        {
+          "start": 28.84,
+          "end": 28.94,
+          "word": "от",
+          "probability": 0.7764,
+          "speaker": "SPEAKER_02"
+        },
+        {
+          "start": 28.94,
+          "end": 29.44,
+          "word": "китайцев",
+          "probability": 0.8335,
+          "speaker": "SPEAKER_02"
+        },
+        {
+          "start": 29.44,
+          "end": 29.56,
+          "word": "мы",
+          "probability": 0.7139,
+          "speaker": "SPEAKER_02"
+        },
+        {
+          "start": 29.56,
+          "end": 29.72,
+          "word": "как",
+          "probability": 0.9937,
+          "speaker": "SPEAKER_02"
+        },
+        {
+          "start": 29.72,
+          "end": 29.84,
+          "word": "-то",
+          "probability": 0.9949,
+          "speaker": "SPEAKER_02"
+        },
+        {
+          "start": 29.84,
+          "end": 29.92,
+          "word": "не",
+          "probability": 0.9995,
+          "speaker": "SPEAKER_02"
+        },
+        {
+          "start": 29.92,
+          "end": 30.46,
+          "word": "особо.",
+          "probability": 0.9954,
+          "speaker": "SPEAKER_02"
+        }
+      ],
+      "delivery": {
+        "duration_sec": 1.62,
+        "words_per_sec": 3.7,
+        "syllables_per_sec_est": 6.79,
+        "chars_per_sec": 19.14,
+        "avg_logprob": -0.5719,
+        "compression_ratio": 1.82,
+        "no_speech_prob": 0.1161,
+        "mean_word_probability": 0.901,
+        "min_word_probability": 0.7139,
+        "flags": [
+          "fast_and_unclear_asr",
+          "fast_pace",
+          "low_asr_logprob"
+        ],
+        "thresholds_used": {
+          "fast_wps_gte": 3.4,
+          "fast_sps_gte": 6.5,
+          "low_logprob_lt": -0.38,
+          "low_mean_word_prob_lt": 0.42,
+          "high_no_speech_gt": 0.35
+        }
+      },
+      "audio_tone": {
+        "mean_f0_hz": 176.4,
+        "f0_std_hz": 18.5,
+        "rms_energy_mean": 0.03095,
+        "rms_energy_std": 0.01198,
+        "spectral_centroid_mean_hz": 1671.0,
+        "spectral_centroid_std_hz": 328.4,
+        "zero_crossing_rate_mean": 0.0978,
+        "flags": []
+      },
+      "speaker_role": "CLIENT"
+    },
+    {
+      "start": 30.46,
+      "end": 32.84,
+      "speaker": "SPEAKER_02",
+      "text": "будет",
+      "words": [
+        {
+          "start": 30.46,
+          "end": 32.84,
+          "word": "будет",
+          "probability": 0.0239,
+          "speaker": "SPEAKER_02"
+        }
+      ],
+      "delivery": {
+        "duration_sec": 2.38,
+        "words_per_sec": 0.42,
+        "syllables_per_sec_est": 0.84,
+        "chars_per_sec": 2.1,
+        "avg_logprob": -0.9964,
+        "compression_ratio": 1.358,
+        "no_speech_prob": 0.2712,
+        "mean_word_probability": 0.0239,
+        "min_word_probability": 0.0239,
+        "flags": [
+          "low_asr_logprob",
+          "low_word_confidence",
+          "some_words_uncertain"
+        ],
+        "thresholds_used": {
+          "fast_wps_gte": 3.4,
+          "fast_sps_gte": 6.5,
+          "low_logprob_lt": -0.38,
+          "low_mean_word_prob_lt": 0.42,
+          "high_no_speech_gt": 0.35
+        }
+      },
+      "audio_tone": {
+        "mean_f0_hz": 143.3,
+        "f0_std_hz": 22.6,
+        "rms_energy_mean": 0.02401,
+        "rms_energy_std": 0.01099,
+        "spectral_centroid_mean_hz": 1546.7,
+        "spectral_centroid_std_hz": 298.1,
+        "zero_crossing_rate_mean": 0.0777,
+        "flags": []
+      },
+      "speaker_role": "CLIENT"
+    },
+    {
+      "start": 32.84,
+      "end": 35.0,
+      "speaker": "SPEAKER_01",
+      "text": "получше чем солярик",
+      "words": [
+        {
+          "start": 32.84,
+          "end": 34.48,
+          "word": "получше",
+          "probability": 0.875,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 34.48,
+          "end": 34.64,
+          "word": "чем",
+          "probability": 0.8867,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 34.64,
+          "end": 35.0,
+          "word": "солярик",
+          "probability": 0.4978,
+          "speaker": "SPEAKER_01"
+        }
+      ],
+      "delivery": {
+        "duration_sec": 2.16,
+        "words_per_sec": 1.39,
+        "syllables_per_sec_est": 3.24,
+        "chars_per_sec": 8.8,
+        "avg_logprob": -0.9964,
+        "compression_ratio": 1.358,
+        "no_speech_prob": 0.2712,
+        "mean_word_probability": 0.7532,
+        "min_word_probability": 0.4978,
+        "flags": [
+          "low_asr_logprob"
+        ],
+        "thresholds_used": {
+          "fast_wps_gte": 3.4,
+          "fast_sps_gte": 6.5,
+          "low_logprob_lt": -0.38,
+          "low_mean_word_prob_lt": 0.42,
+          "high_no_speech_gt": 0.35
+        }
+      },
+      "audio_tone": {
+        "mean_f0_hz": 89.3,
+        "f0_std_hz": 1.6,
+        "rms_energy_mean": 0.02684,
+        "rms_energy_std": 0.00908,
+        "spectral_centroid_mean_hz": 1830.6,
+        "spectral_centroid_std_hz": 449.7,
+        "zero_crossing_rate_mean": 0.1099,
+        "flags": [
+          "monotone_pitch"
+        ]
+      },
+      "speaker_role": "EMPLOYEE"
+    },
+    {
+      "start": 35.0,
+      "end": 38.88,
+      "speaker": "SPEAKER_01",
+      "text": "практически 0 человек 40",
+      "words": [
+        {
+          "start": 35.0,
+          "end": 36.96,
+          "word": "практически",
+          "probability": 0.5728,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 36.96,
+          "end": 38.0,
+          "word": "0",
+          "probability": 0.582,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 38.0,
+          "end": 38.36,
+          "word": "человек",
+          "probability": 0.1663,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 38.36,
+          "end": 38.88,
+          "word": "40",
+          "probability": 0.2405,
+          "speaker": "SPEAKER_01"
+        }
+      ],
+      "delivery": {
+        "duration_sec": 3.88,
+        "words_per_sec": 1.03,
+        "syllables_per_sec_est": 1.8,
+        "chars_per_sec": 6.19,
+        "avg_logprob": -0.9964,
+        "compression_ratio": 1.358,
+        "no_speech_prob": 0.2712,
+        "mean_word_probability": 0.3904,
+        "min_word_probability": 0.1663,
+        "flags": [
+          "low_asr_logprob",
+          "low_word_confidence",
+          "some_words_uncertain"
+        ],
+        "thresholds_used": {
+          "fast_wps_gte": 3.4,
+          "fast_sps_gte": 6.5,
+          "low_logprob_lt": -0.38,
+          "low_mean_word_prob_lt": 0.42,
+          "high_no_speech_gt": 0.35
+        }
+      },
+      "audio_tone": {
+        "mean_f0_hz": 115.0,
+        "f0_std_hz": 15.8,
+        "rms_energy_mean": 0.02155,
+        "rms_energy_std": 0.00735,
+        "spectral_centroid_mean_hz": 1939.2,
+        "spectral_centroid_std_hz": 487.2,
+        "zero_crossing_rate_mean": 0.1275,
+        "flags": [
+          "monotone_pitch"
+        ]
+      },
+      "speaker_role": "EMPLOYEE"
+    },
+    {
+      "start": 38.88,
+      "end": 46.2,
+      "speaker": "SPEAKER_01",
+      "text": "на классическом автомате айсин",
+      "words": [
+        {
+          "start": 38.88,
+          "end": 39.7,
+          "word": "на",
+          "probability": 0.2305,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 39.72,
+          "end": 45.06,
+          "word": "классическом",
+          "probability": 0.5815,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 45.24,
+          "end": 45.7,
+          "word": "автомате",
+          "probability": 0.8716,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 45.7,
+          "end": 46.2,
+          "word": "айсин",
+          "probability": 0.6074,
+          "speaker": "SPEAKER_01"
+        }
+      ],
+      "delivery": {
+        "duration_sec": 7.32,
+        "words_per_sec": 0.55,
+        "syllables_per_sec_est": 1.5,
+        "chars_per_sec": 4.1,
+        "avg_logprob": -0.9964,
+        "compression_ratio": 1.358,
+        "no_speech_prob": 0.2712,
+        "mean_word_probability": 0.5727,
+        "min_word_probability": 0.2305,
+        "flags": [
+          "low_asr_logprob",
+          "some_words_uncertain"
+        ],
+        "thresholds_used": {
+          "fast_wps_gte": 3.4,
+          "fast_sps_gte": 6.5,
+          "low_logprob_lt": -0.38,
+          "low_mean_word_prob_lt": 0.42,
+          "high_no_speech_gt": 0.35
+        }
+      },
+      "audio_tone": {
+        "mean_f0_hz": 106.3,
+        "f0_std_hz": 10.5,
+        "rms_energy_mean": 0.02071,
+        "rms_energy_std": 0.00658,
+        "spectral_centroid_mean_hz": 1847.2,
+        "spectral_centroid_std_hz": 430.8,
+        "zero_crossing_rate_mean": 0.1165,
+        "flags": [
+          "monotone_pitch"
+        ]
+      },
+      "speaker_role": "EMPLOYEE"
+    },
+    {
+      "start": 55.12,
+      "end": 62.32,
+      "speaker": "SPEAKER_03",
+      "text": "Техническое обслуживание, архивы безопасности, посмотрим, как оно",
+      "words": [
+        {
+          "start": 55.12,
+          "end": 56.2,
+          "word": "Техническое",
+          "probability": 0.6471,
+          "speaker": "SPEAKER_03"
+        },
+        {
+          "start": 56.2,
+          "end": 56.82,
+          "word": "обслуживание,",
+          "probability": 0.656,
+          "speaker": "SPEAKER_03"
+        },
+        {
+          "start": 56.92,
+          "end": 57.78,
+          "word": "архивы",
+          "probability": 0.6984,
+          "speaker": "SPEAKER_03"
+        },
+        {
+          "start": 57.78,
+          "end": 58.32,
+          "word": "безопасности,",
+          "probability": 0.2618,
+          "speaker": "SPEAKER_03"
+        },
+        {
+          "start": 58.34,
+          "end": 59.46,
+          "word": "посмотрим,",
+          "probability": 0.6479,
+          "speaker": "SPEAKER_03"
+        },
+        {
+          "start": 61.36,
+          "end": 62.1,
+          "word": "как",
+          "probability": 0.9956,
+          "speaker": "SPEAKER_03"
+        },
+        {
+          "start": 62.1,
+          "end": 62.32,
+          "word": "оно",
+          "probability": 0.436,
+          "speaker": "SPEAKER_03"
+        }
+      ],
+      "delivery": {
+        "duration_sec": 7.2,
+        "words_per_sec": 0.97,
+        "syllables_per_sec_est": 3.47,
+        "chars_per_sec": 9.03,
+        "avg_logprob": -0.3502,
+        "compression_ratio": 1.291,
+        "no_speech_prob": 0.043,
+        "mean_word_probability": 0.6204,
+        "min_word_probability": 0.2618,
+        "flags": [
+          "some_words_uncertain"
+        ],
+        "thresholds_used": {
+          "fast_wps_gte": 3.4,
+          "fast_sps_gte": 6.5,
+          "low_logprob_lt": -0.38,
+          "low_mean_word_prob_lt": 0.42,
+          "high_no_speech_gt": 0.35
+        }
+      },
+      "audio_tone": {
+        "mean_f0_hz": 106.5,
+        "f0_std_hz": 16.1,
+        "rms_energy_mean": 0.02178,
+        "rms_energy_std": 0.01953,
+        "spectral_centroid_mean_hz": 1852.3,
+        "spectral_centroid_std_hz": 387.9,
+        "zero_crossing_rate_mean": 0.1155,
+        "flags": [
+          "monotone_pitch"
+        ]
+      },
+      "speaker_role": "EMPLOYEE"
+    },
+    {
+      "start": 62.32,
+      "end": 62.8,
+      "speaker": "SPEAKER_01",
+      "text": "там вообще.",
+      "words": [
+        {
+          "start": 62.32,
+          "end": 62.52,
+          "word": "там",
+          "probability": 0.9951,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 62.52,
+          "end": 62.8,
+          "word": "вообще.",
+          "probability": 0.9941,
+          "speaker": "SPEAKER_01"
+        }
+      ],
+      "delivery": {
+        "duration_sec": 0.48,
+        "words_per_sec": 4.17,
+        "syllables_per_sec_est": 8.33,
+        "chars_per_sec": 22.92,
+        "avg_logprob": -0.3502,
+        "compression_ratio": 1.291,
+        "no_speech_prob": 0.043,
+        "mean_word_probability": 0.9946,
+        "min_word_probability": 0.9941,
+        "flags": [
+          "fast_pace"
+        ],
+        "thresholds_used": {
+          "fast_wps_gte": 3.4,
+          "fast_sps_gte": 6.5,
+          "low_logprob_lt": -0.38,
+          "low_mean_word_prob_lt": 0.42,
+          "high_no_speech_gt": 0.35
+        }
+      },
+      "audio_tone": {
+        "mean_f0_hz": null,
+        "f0_std_hz": null,
+        "rms_energy_mean": 0.02056,
+        "rms_energy_std": 0.00483,
+        "spectral_centroid_mean_hz": 1836.3,
+        "spectral_centroid_std_hz": 282.3,
+        "zero_crossing_rate_mean": 0.101,
+        "flags": []
+      },
+      "speaker_role": "EMPLOYEE"
+    },
+    {
+      "start": 63.24,
+      "end": 64.44,
+      "speaker": "SPEAKER_03",
+      "text": "обращу",
+      "words": [
+        {
+          "start": 63.24,
+          "end": 64.44,
+          "word": "обращу",
+          "probability": 0.6487,
+          "speaker": "SPEAKER_03"
+        }
+      ],
+      "delivery": {
+        "duration_sec": 1.2,
+        "words_per_sec": 0.83,
+        "syllables_per_sec_est": 2.5,
+        "chars_per_sec": 5.0,
+        "avg_logprob": -0.3284,
+        "compression_ratio": 1.459,
+        "no_speech_prob": 0.0493,
+        "mean_word_probability": 0.6487,
+        "min_word_probability": 0.6487,
+        "flags": [],
+        "thresholds_used": {
+          "fast_wps_gte": 3.4,
+          "fast_sps_gte": 6.5,
+          "low_logprob_lt": -0.38,
+          "low_mean_word_prob_lt": 0.42,
+          "high_no_speech_gt": 0.35
+        }
+      },
+      "audio_tone": {
+        "mean_f0_hz": null,
+        "f0_std_hz": null,
+        "rms_energy_mean": 0.01845,
+        "rms_energy_std": 0.00394,
+        "spectral_centroid_mean_hz": 1929.8,
+        "spectral_centroid_std_hz": 346.3,
+        "zero_crossing_rate_mean": 0.1227,
+        "flags": []
+      },
+      "speaker_role": "EMPLOYEE"
+    },
+    {
+      "start": 74.42,
+      "end": 82.92,
+      "speaker": "SPEAKER_01",
+      "text": "внимание пробег 40 километров повторюсь здесь практически нет никакого износа не коррозии",
+      "words": [
+        {
+          "start": 74.42,
+          "end": 74.6,
+          "word": "внимание",
+          "probability": 0.9805,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 74.6,
+          "end": 76.58,
+          "word": "пробег",
+          "probability": 0.6503,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 76.76,
+          "end": 77.16,
+          "word": "40",
+          "probability": 0.936,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 77.16,
+          "end": 77.88,
+          "word": "километров",
+          "probability": 0.9744,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 77.88,
+          "end": 78.84,
+          "word": "повторюсь",
+          "probability": 0.8604,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 78.84,
+          "end": 80.06,
+          "word": "здесь",
+          "probability": 0.937,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 80.06,
+          "end": 80.66,
+          "word": "практически",
+          "probability": 0.9751,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 80.66,
+          "end": 81.2,
+          "word": "нет",
+          "probability": 0.873,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 81.2,
+          "end": 81.82,
+          "word": "никакого",
+          "probability": 0.9539,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 81.82,
+          "end": 82.2,
+          "word": "износа",
+          "probability": 0.8122,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 82.2,
+          "end": 82.36,
+          "word": "не",
+          "probability": 0.3796,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 82.36,
+          "end": 82.92,
+          "word": "коррозии",
+          "probability": 0.7649,
+          "speaker": "SPEAKER_01"
+        }
+      ],
+      "delivery": {
+        "duration_sec": 8.5,
+        "words_per_sec": 1.41,
+        "syllables_per_sec_est": 3.65,
+        "chars_per_sec": 10.47,
+        "avg_logprob": -0.3284,
+        "compression_ratio": 1.459,
+        "no_speech_prob": 0.0493,
+        "mean_word_probability": 0.8414,
+        "min_word_probability": 0.3796,
+        "flags": [],
+        "thresholds_used": {
+          "fast_wps_gte": 3.4,
+          "fast_sps_gte": 6.5,
+          "low_logprob_lt": -0.38,
+          "low_mean_word_prob_lt": 0.42,
+          "high_no_speech_gt": 0.35
+        }
+      },
+      "audio_tone": {
+        "mean_f0_hz": 104.9,
+        "f0_std_hz": 13.2,
+        "rms_energy_mean": 0.02645,
+        "rms_energy_std": 0.01292,
+        "spectral_centroid_mean_hz": 1528.8,
+        "spectral_centroid_std_hz": 390.8,
+        "zero_crossing_rate_mean": 0.0819,
+        "flags": [
+          "monotone_pitch"
+        ]
+      },
+      "speaker_role": "EMPLOYEE"
+    },
+    {
+      "start": 82.92,
+      "end": 90.94,
+      "speaker": "SPEAKER_01",
+      "text": "Есть защита на турбине. Будет удобно обслуживать турбину, поскольку она находится сверху выпускного коллектора.",
+      "words": [
+        {
+          "start": 82.92,
+          "end": 83.92,
+          "word": "Есть",
+          "probability": 0.6548,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 83.92,
+          "end": 84.8,
+          "word": "защита",
+          "probability": 0.7903,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 84.8,
+          "end": 84.92,
+          "word": "на",
+          "probability": 0.9961,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 84.92,
+          "end": 85.36,
+          "word": "турбине.",
+          "probability": 0.9862,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 85.5,
+          "end": 86.36,
+          "word": "Будет",
+          "probability": 0.9993,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 86.36,
+          "end": 86.88,
+          "word": "удобно",
+          "probability": 1.0,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 86.88,
+          "end": 87.66,
+          "word": "обслуживать",
+          "probability": 0.998,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 87.66,
+          "end": 88.06,
+          "word": "турбину,",
+          "probability": 0.9989,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 88.12,
+          "end": 88.46,
+          "word": "поскольку",
+          "probability": 0.9998,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 88.46,
+          "end": 88.74,
+          "word": "она",
+          "probability": 0.9995,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 88.74,
+          "end": 89.16,
+          "word": "находится",
+          "probability": 0.9995,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 89.16,
+          "end": 89.8,
+          "word": "сверху",
+          "probability": 0.9998,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 89.8,
+          "end": 90.36,
+          "word": "выпускного",
+          "probability": 0.9856,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 90.36,
+          "end": 90.94,
+          "word": "коллектора.",
+          "probability": 0.9884,
+          "speaker": "SPEAKER_01"
+        }
+      ],
+      "delivery": {
+        "duration_sec": 8.02,
+        "words_per_sec": 1.75,
+        "syllables_per_sec_est": 4.86,
+        "chars_per_sec": 13.84,
+        "avg_logprob": -0.1595,
+        "compression_ratio": 1.834,
+        "no_speech_prob": 0.0171,
+        "mean_word_probability": 0.9569,
+        "min_word_probability": 0.6548,
+        "flags": [],
+        "thresholds_used": {
+          "fast_wps_gte": 3.4,
+          "fast_sps_gte": 6.5,
+          "low_logprob_lt": -0.38,
+          "low_mean_word_prob_lt": 0.42,
+          "high_no_speech_gt": 0.35
+        }
+      },
+      "audio_tone": {
+        "mean_f0_hz": 109.2,
+        "f0_std_hz": 15.2,
+        "rms_energy_mean": 0.02732,
+        "rms_energy_std": 0.0092,
+        "spectral_centroid_mean_hz": 1690.9,
+        "spectral_centroid_std_hz": 479.5,
+        "zero_crossing_rate_mean": 0.091,
+        "flags": [
+          "monotone_pitch"
+        ]
+      },
+      "speaker_role": "EMPLOYEE"
+    },
+    {
+      "start": 91.18,
+      "end": 96.08,
+      "speaker": "SPEAKER_01",
+      "text": "То есть это будет дешевое обслуживание данного автомобиля.",
+      "words": [
+        {
+          "start": 91.18,
+          "end": 91.8,
+          "word": "То",
+          "probability": 0.9131,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 91.8,
+          "end": 91.94,
+          "word": "есть",
+          "probability": 1.0,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 91.94,
+          "end": 92.18,
+          "word": "это",
+          "probability": 0.8765,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 92.18,
+          "end": 93.22,
+          "word": "будет",
+          "probability": 1.0,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 93.22,
+          "end": 94.3,
+          "word": "дешевое",
+          "probability": 0.9918,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 94.3,
+          "end": 95.02,
+          "word": "обслуживание",
+          "probability": 0.9999,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 95.02,
+          "end": 95.6,
+          "word": "данного",
+          "probability": 0.9988,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 95.6,
+          "end": 96.08,
+          "word": "автомобиля.",
+          "probability": 0.9983,
+          "speaker": "SPEAKER_01"
+        }
+      ],
+      "delivery": {
+        "duration_sec": 4.9,
+        "words_per_sec": 1.63,
+        "syllables_per_sec_est": 4.9,
+        "chars_per_sec": 11.84,
+        "avg_logprob": -0.1595,
+        "compression_ratio": 1.834,
+        "no_speech_prob": 0.0171,
+        "mean_word_probability": 0.9723,
+        "min_word_probability": 0.8765,
+        "flags": [],
+        "thresholds_used": {
+          "fast_wps_gte": 3.4,
+          "fast_sps_gte": 6.5,
+          "low_logprob_lt": -0.38,
+          "low_mean_word_prob_lt": 0.42,
+          "high_no_speech_gt": 0.35
+        }
+      },
+      "audio_tone": {
+        "mean_f0_hz": 98.6,
+        "f0_std_hz": 10.9,
+        "rms_energy_mean": 0.0255,
+        "rms_energy_std": 0.00974,
+        "spectral_centroid_mean_hz": 1587.2,
+        "spectral_centroid_std_hz": 557.5,
+        "zero_crossing_rate_mean": 0.0965,
+        "flags": [
+          "monotone_pitch"
+        ]
+      },
+      "speaker_role": "EMPLOYEE"
+    },
+    {
+      "start": 97.72,
+      "end": 106.24,
+      "speaker": "SPEAKER_01",
+      "text": "Также хотел бы рассказать, что эта коробка передач i-SIM это японское производство, шестиступка.",
+      "words": [
+        {
+          "start": 97.72,
+          "end": 98.66,
+          "word": "Также",
+          "probability": 0.9971,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 98.66,
+          "end": 99.6,
+          "word": "хотел",
+          "probability": 0.9844,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 99.6,
+          "end": 99.8,
+          "word": "бы",
+          "probability": 0.9922,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 99.8,
+          "end": 100.28,
+          "word": "рассказать,",
+          "probability": 0.9983,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 100.32,
+          "end": 100.54,
+          "word": "что",
+          "probability": 1.0,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 100.54,
+          "end": 101.24,
+          "word": "эта",
+          "probability": 0.9648,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 101.24,
+          "end": 101.8,
+          "word": "коробка",
+          "probability": 0.9998,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 101.8,
+          "end": 102.34,
+          "word": "передач",
+          "probability": 1.0,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 102.34,
+          "end": 102.64,
+          "word": "i",
+          "probability": 0.688,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 102.64,
+          "end": 102.9,
+          "word": "-SIM",
+          "probability": 0.7399,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 102.9,
+          "end": 103.3,
+          "word": "это",
+          "probability": 0.8047,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 103.3,
+          "end": 104.14,
+          "word": "японское",
+          "probability": 0.9997,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 104.14,
+          "end": 105.18,
+          "word": "производство,",
+          "probability": 0.9998,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 105.2,
+          "end": 106.24,
+          "word": "шестиступка.",
+          "probability": 0.9071,
+          "speaker": "SPEAKER_01"
+        }
+      ],
+      "delivery": {
+        "duration_sec": 8.52,
+        "words_per_sec": 1.53,
+        "syllables_per_sec_est": 3.64,
+        "chars_per_sec": 11.27,
+        "avg_logprob": -0.1595,
+        "compression_ratio": 1.834,
+        "no_speech_prob": 0.0171,
+        "mean_word_probability": 0.934,
+        "min_word_probability": 0.688,
+        "flags": [],
+        "thresholds_used": {
+          "fast_wps_gte": 3.4,
+          "fast_sps_gte": 6.5,
+          "low_logprob_lt": -0.38,
+          "low_mean_word_prob_lt": 0.42,
+          "high_no_speech_gt": 0.35
+        }
+      },
+      "audio_tone": {
+        "mean_f0_hz": 109.1,
+        "f0_std_hz": 15.2,
+        "rms_energy_mean": 0.02328,
+        "rms_energy_std": 0.00698,
+        "spectral_centroid_mean_hz": 1558.6,
+        "spectral_centroid_std_hz": 474.3,
+        "zero_crossing_rate_mean": 0.086,
+        "flags": [
+          "monotone_pitch"
+        ]
+      },
+      "speaker_role": "EMPLOYEE"
+    },
+    {
+      "start": 106.36,
+      "end": 112.02,
+      "speaker": "SPEAKER_01",
+      "text": "Такие стоят в Camry, в Corolla, во всяких таких автомобилях.",
+      "words": [
+        {
+          "start": 106.36,
+          "end": 107.3,
+          "word": "Такие",
+          "probability": 0.999,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 107.3,
+          "end": 107.66,
+          "word": "стоят",
+          "probability": 0.9993,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 107.66,
+          "end": 108.0,
+          "word": "в",
+          "probability": 0.999,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 108.0,
+          "end": 108.82,
+          "word": "Camry,",
+          "probability": 0.9414,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 109.02,
+          "end": 109.4,
+          "word": "в",
+          "probability": 0.8481,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 109.4,
+          "end": 109.86,
+          "word": "Corolla,",
+          "probability": 0.9028,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 109.94,
+          "end": 110.7,
+          "word": "во",
+          "probability": 0.9971,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 110.7,
+          "end": 111.06,
+          "word": "всяких",
+          "probability": 0.9998,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 111.06,
+          "end": 111.24,
+          "word": "таких",
+          "probability": 0.998,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 111.24,
+          "end": 112.02,
+          "word": "автомобилях.",
+          "probability": 0.9995,
+          "speaker": "SPEAKER_01"
+        }
+      ],
+      "delivery": {
+        "duration_sec": 5.66,
+        "words_per_sec": 1.77,
+        "syllables_per_sec_est": 2.65,
+        "chars_per_sec": 10.6,
+        "avg_logprob": -0.1595,
+        "compression_ratio": 1.834,
+        "no_speech_prob": 0.0171,
+        "mean_word_probability": 0.9684,
+        "min_word_probability": 0.8481,
+        "flags": [],
+        "thresholds_used": {
+          "fast_wps_gte": 3.4,
+          "fast_sps_gte": 6.5,
+          "low_logprob_lt": -0.38,
+          "low_mean_word_prob_lt": 0.42,
+          "high_no_speech_gt": 0.35
+        }
+      },
+      "audio_tone": {
+        "mean_f0_hz": 105.5,
+        "f0_std_hz": 16.0,
+        "rms_energy_mean": 0.02817,
+        "rms_energy_std": 0.00968,
+        "spectral_centroid_mean_hz": 1346.5,
+        "spectral_centroid_std_hz": 384.2,
+        "zero_crossing_rate_mean": 0.075,
+        "flags": [
+          "monotone_pitch",
+          "warm_dark_timbral"
+        ]
+      },
+      "speaker_role": "EMPLOYEE"
+    },
+    {
+      "start": 112.02,
+      "end": 117.55,
+      "speaker": "SPEAKER_01",
+      "text": "японских. Давайте пока обратим внимание на переднюю",
+      "words": [
+        {
+          "start": 112.02,
+          "end": 113.26,
+          "word": "японских.",
+          "probability": 0.7074,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 114.13,
+          "end": 115.19,
+          "word": "Давайте",
+          "probability": 0.7183,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 115.19,
+          "end": 115.51,
+          "word": "пока",
+          "probability": 0.6455,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 115.51,
+          "end": 116.01,
+          "word": "обратим",
+          "probability": 0.9832,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 116.01,
+          "end": 116.31,
+          "word": "внимание",
+          "probability": 0.9858,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 116.31,
+          "end": 116.89,
+          "word": "на",
+          "probability": 0.9868,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 116.89,
+          "end": 117.55,
+          "word": "переднюю",
+          "probability": 0.9927,
+          "speaker": "SPEAKER_01"
+        }
+      ],
+      "delivery": {
+        "duration_sec": 5.53,
+        "words_per_sec": 1.27,
+        "syllables_per_sec_est": 3.62,
+        "chars_per_sec": 9.22,
+        "avg_logprob": -0.317,
+        "compression_ratio": 1.635,
+        "no_speech_prob": 0.0359,
+        "mean_word_probability": 0.8599,
+        "min_word_probability": 0.6455,
+        "flags": [],
+        "thresholds_used": {
+          "fast_wps_gte": 3.4,
+          "fast_sps_gte": 6.5,
+          "low_logprob_lt": -0.38,
+          "low_mean_word_prob_lt": 0.42,
+          "high_no_speech_gt": 0.35
+        }
+      },
+      "audio_tone": {
+        "mean_f0_hz": 100.8,
+        "f0_std_hz": 8.2,
+        "rms_energy_mean": 0.02068,
+        "rms_energy_std": 0.00731,
+        "spectral_centroid_mean_hz": 1417.9,
+        "spectral_centroid_std_hz": 287.4,
+        "zero_crossing_rate_mean": 0.0765,
+        "flags": [
+          "monotone_pitch",
+          "warm_dark_timbral"
+        ]
+      },
+      "speaker_role": "EMPLOYEE"
+    },
+    {
+      "start": 117.99,
+      "end": 125.71,
+      "speaker": "SPEAKER_03",
+      "text": "оптику. Сдвоенная LED оптика с подсветкой",
+      "words": [
+        {
+          "start": 117.99,
+          "end": 119.97,
+          "word": "оптику.",
+          "probability": 0.9912,
+          "speaker": "SPEAKER_03"
+        },
+        {
+          "start": 123.13,
+          "end": 124.19,
+          "word": "Сдвоенная",
+          "probability": 0.7467,
+          "speaker": "SPEAKER_03"
+        },
+        {
+          "start": 124.19,
+          "end": 124.53,
+          "word": "LED",
+          "probability": 0.875,
+          "speaker": "SPEAKER_03"
+        },
+        {
+          "start": 124.53,
+          "end": 124.97,
+          "word": "оптика",
+          "probability": 0.8576,
+          "speaker": "SPEAKER_03"
+        },
+        {
+          "start": 124.97,
+          "end": 125.17,
+          "word": "с",
+          "probability": 0.9297,
+          "speaker": "SPEAKER_03"
+        },
+        {
+          "start": 125.17,
+          "end": 125.71,
+          "word": "подсветкой",
+          "probability": 0.9948,
+          "speaker": "SPEAKER_03"
+        }
+      ],
+      "delivery": {
+        "duration_sec": 7.72,
+        "words_per_sec": 0.78,
+        "syllables_per_sec_est": 1.68,
+        "chars_per_sec": 5.31,
+        "avg_logprob": -0.317,
+        "compression_ratio": 1.635,
+        "no_speech_prob": 0.0359,
+        "mean_word_probability": 0.8992,
+        "min_word_probability": 0.7467,
+        "flags": [],
+        "thresholds_used": {
+          "fast_wps_gte": 3.4,
+          "fast_sps_gte": 6.5,
+          "low_logprob_lt": -0.38,
+          "low_mean_word_prob_lt": 0.42,
+          "high_no_speech_gt": 0.35
+        }
+      },
+      "audio_tone": {
+        "mean_f0_hz": 109.5,
+        "f0_std_hz": 15.2,
+        "rms_energy_mean": 0.02963,
+        "rms_energy_std": 0.0352,
+        "spectral_centroid_mean_hz": 1631.3,
+        "spectral_centroid_std_hz": 329.5,
+        "zero_crossing_rate_mean": 0.0899,
+        "flags": [
+          "monotone_pitch"
+        ]
+      },
+      "speaker_role": "EMPLOYEE"
+    },
+    {
+      "start": 128.29,
+      "end": 132.95,
+      "speaker": "SPEAKER_01",
+      "text": "значка. Красивые хромированные элементы. Губа",
+      "words": [
+        {
+          "start": 128.29,
+          "end": 129.35,
+          "word": "значка.",
+          "probability": 0.9407,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 129.35,
+          "end": 130.41,
+          "word": "Красивые",
+          "probability": 0.9893,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 130.41,
+          "end": 130.93,
+          "word": "хромированные",
+          "probability": 0.8687,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 130.93,
+          "end": 131.51,
+          "word": "элементы.",
+          "probability": 0.9995,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 131.89,
+          "end": 132.95,
+          "word": "Губа",
+          "probability": 0.9977,
+          "speaker": "SPEAKER_01"
+        }
+      ],
+      "delivery": {
+        "duration_sec": 4.66,
+        "words_per_sec": 1.07,
+        "syllables_per_sec_est": 3.86,
+        "chars_per_sec": 9.66,
+        "avg_logprob": -0.317,
+        "compression_ratio": 1.635,
+        "no_speech_prob": 0.0359,
+        "mean_word_probability": 0.9592,
+        "min_word_probability": 0.8687,
+        "flags": [],
+        "thresholds_used": {
+          "fast_wps_gte": 3.4,
+          "fast_sps_gte": 6.5,
+          "low_logprob_lt": -0.38,
+          "low_mean_word_prob_lt": 0.42,
+          "high_no_speech_gt": 0.35
+        }
+      },
+      "audio_tone": {
+        "mean_f0_hz": 118.1,
+        "f0_std_hz": 10.9,
+        "rms_energy_mean": 0.02573,
+        "rms_energy_std": 0.01077,
+        "spectral_centroid_mean_hz": 1430.8,
+        "spectral_centroid_std_hz": 384.2,
+        "zero_crossing_rate_mean": 0.0757,
+        "flags": [
+          "monotone_pitch",
+          "warm_dark_timbral"
+        ]
+      },
+      "speaker_role": "EMPLOYEE"
+    },
+    {
+      "start": 132.95,
+      "end": 134.07,
+      "speaker": "SPEAKER_02",
+      "text": "тоже выполнена в",
+      "words": [
+        {
+          "start": 132.95,
+          "end": 133.13,
+          "word": "тоже",
+          "probability": 0.9966,
+          "speaker": "SPEAKER_02"
+        },
+        {
+          "start": 133.13,
+          "end": 133.79,
+          "word": "выполнена",
+          "probability": 0.999,
+          "speaker": "SPEAKER_02"
+        },
+        {
+          "start": 133.79,
+          "end": 134.07,
+          "word": "в",
+          "probability": 0.9985,
+          "speaker": "SPEAKER_02"
+        }
+      ],
+      "delivery": {
+        "duration_sec": 1.12,
+        "words_per_sec": 2.68,
+        "syllables_per_sec_est": 5.36,
+        "chars_per_sec": 14.29,
+        "avg_logprob": -0.317,
+        "compression_ratio": 1.635,
+        "no_speech_prob": 0.0359,
+        "mean_word_probability": 0.998,
+        "min_word_probability": 0.9966,
+        "flags": [],
+        "thresholds_used": {
+          "fast_wps_gte": 3.4,
+          "fast_sps_gte": 6.5,
+          "low_logprob_lt": -0.38,
+          "low_mean_word_prob_lt": 0.42,
+          "high_no_speech_gt": 0.35
+        }
+      },
+      "audio_tone": {
+        "mean_f0_hz": 103.4,
+        "f0_std_hz": 9.5,
+        "rms_energy_mean": 0.04629,
+        "rms_energy_std": 0.01688,
+        "spectral_centroid_mean_hz": 1172.6,
+        "spectral_centroid_std_hz": 239.7,
+        "zero_crossing_rate_mean": 0.0523,
+        "flags": [
+          "monotone_pitch",
+          "warm_dark_timbral"
+        ]
+      },
+      "speaker_role": "CLIENT"
+    },
+    {
+      "start": 134.07,
+      "end": 136.39,
+      "speaker": "SPEAKER_01",
+      "text": "качестве хрома.",
+      "words": [
+        {
+          "start": 134.07,
+          "end": 136.15,
+          "word": "качестве",
+          "probability": 0.999,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 136.15,
+          "end": 136.39,
+          "word": "хрома.",
+          "probability": 0.8262,
+          "speaker": "SPEAKER_01"
+        }
+      ],
+      "delivery": {
+        "duration_sec": 2.32,
+        "words_per_sec": 0.86,
+        "syllables_per_sec_est": 2.16,
+        "chars_per_sec": 6.47,
+        "avg_logprob": -0.317,
+        "compression_ratio": 1.635,
+        "no_speech_prob": 0.0359,
+        "mean_word_probability": 0.9126,
+        "min_word_probability": 0.8262,
+        "flags": [],
+        "thresholds_used": {
+          "fast_wps_gte": 3.4,
+          "fast_sps_gte": 6.5,
+          "low_logprob_lt": -0.38,
+          "low_mean_word_prob_lt": 0.42,
+          "high_no_speech_gt": 0.35
+        }
+      },
+      "audio_tone": {
+        "mean_f0_hz": 94.5,
+        "f0_std_hz": 1.7,
+        "rms_energy_mean": 0.02269,
+        "rms_energy_std": 0.00708,
+        "spectral_centroid_mean_hz": 1397.0,
+        "spectral_centroid_std_hz": 279.5,
+        "zero_crossing_rate_mean": 0.075,
+        "flags": [
+          "monotone_pitch",
+          "warm_dark_timbral"
+        ]
+      },
+      "speaker_role": "EMPLOYEE"
+    },
+    {
+      "start": 142.31,
+      "end": 143.39,
+      "speaker": "SPEAKER_03",
+      "text": "основные",
+      "words": [
+        {
+          "start": 142.31,
+          "end": 143.39,
+          "word": "основные",
+          "probability": 0.3285,
+          "speaker": "SPEAKER_03"
+        }
+      ],
+      "delivery": {
+        "duration_sec": 1.08,
+        "words_per_sec": 0.93,
+        "syllables_per_sec_est": 3.7,
+        "chars_per_sec": 7.41,
+        "avg_logprob": -0.2878,
+        "compression_ratio": 1.869,
+        "no_speech_prob": 0.0916,
+        "mean_word_probability": 0.3285,
+        "min_word_probability": 0.3285,
+        "flags": [
+          "low_word_confidence"
+        ],
+        "thresholds_used": {
+          "fast_wps_gte": 3.4,
+          "fast_sps_gte": 6.5,
+          "low_logprob_lt": -0.38,
+          "low_mean_word_prob_lt": 0.42,
+          "high_no_speech_gt": 0.35
+        }
+      },
+      "audio_tone": {
+        "mean_f0_hz": null,
+        "f0_std_hz": null,
+        "rms_energy_mean": 0.01499,
+        "rms_energy_std": 0.00153,
+        "spectral_centroid_mean_hz": 1770.6,
+        "spectral_centroid_std_hz": 175.5,
+        "zero_crossing_rate_mean": 0.1062,
+        "flags": []
+      },
+      "speaker_role": "EMPLOYEE"
+    },
+    {
+      "start": 154.14,
+      "end": 155.24,
+      "speaker": "SPEAKER_01",
+      "text": "функции здесь",
+      "words": [
+        {
+          "start": 154.14,
+          "end": 154.66,
+          "word": "функции",
+          "probability": 0.7451,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 154.66,
+          "end": 155.24,
+          "word": "здесь",
+          "probability": 0.9507,
+          "speaker": "SPEAKER_01"
+        }
+      ],
+      "delivery": {
+        "duration_sec": 1.1,
+        "words_per_sec": 1.82,
+        "syllables_per_sec_est": 3.64,
+        "chars_per_sec": 11.82,
+        "avg_logprob": -0.2878,
+        "compression_ratio": 1.869,
+        "no_speech_prob": 0.0916,
+        "mean_word_probability": 0.8479,
+        "min_word_probability": 0.7451,
+        "flags": [],
+        "thresholds_used": {
+          "fast_wps_gte": 3.4,
+          "fast_sps_gte": 6.5,
+          "low_logprob_lt": -0.38,
+          "low_mean_word_prob_lt": 0.42,
+          "high_no_speech_gt": 0.35
+        }
+      },
+      "audio_tone": {
+        "mean_f0_hz": 148.8,
+        "f0_std_hz": 14.6,
+        "rms_energy_mean": 0.02241,
+        "rms_energy_std": 0.00921,
+        "spectral_centroid_mean_hz": 1722.2,
+        "spectral_centroid_std_hz": 576.4,
+        "zero_crossing_rate_mean": 0.082,
+        "flags": [
+          "monotone_pitch"
+        ]
+      },
+      "speaker_role": "EMPLOYEE"
+    },
+    {
+      "start": 159.16,
+      "end": 165.32,
+      "speaker": "SPEAKER_01",
+      "text": "планшет так называемый здесь управление функциями здесь соответственно спидометр",
+      "words": [
+        {
+          "start": 159.16,
+          "end": 160.24,
+          "word": "планшет",
+          "probability": 0.6602,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 160.24,
+          "end": 160.8,
+          "word": "так",
+          "probability": 0.7471,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 160.8,
+          "end": 161.52,
+          "word": "называемый",
+          "probability": 0.9684,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 161.52,
+          "end": 162.46,
+          "word": "здесь",
+          "probability": 0.9819,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 162.46,
+          "end": 163.32,
+          "word": "управление",
+          "probability": 0.9099,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 163.32,
+          "end": 163.82,
+          "word": "функциями",
+          "probability": 0.984,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 163.82,
+          "end": 164.08,
+          "word": "здесь",
+          "probability": 0.8779,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 164.08,
+          "end": 164.8,
+          "word": "соответственно",
+          "probability": 0.9595,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 164.8,
+          "end": 165.32,
+          "word": "спидометр",
+          "probability": 0.902,
+          "speaker": "SPEAKER_01"
+        }
+      ],
+      "delivery": {
+        "duration_sec": 6.16,
+        "words_per_sec": 1.46,
+        "syllables_per_sec_est": 4.38,
+        "chars_per_sec": 12.99,
+        "avg_logprob": -0.2878,
+        "compression_ratio": 1.869,
+        "no_speech_prob": 0.0916,
+        "mean_word_probability": 0.8879,
+        "min_word_probability": 0.6602,
+        "flags": [],
+        "thresholds_used": {
+          "fast_wps_gte": 3.4,
+          "fast_sps_gte": 6.5,
+          "low_logprob_lt": -0.38,
+          "low_mean_word_prob_lt": 0.42,
+          "high_no_speech_gt": 0.35
+        }
+      },
+      "audio_tone": {
+        "mean_f0_hz": 118.8,
+        "f0_std_hz": 22.9,
+        "rms_energy_mean": 0.018,
+        "rms_energy_std": 0.00672,
+        "spectral_centroid_mean_hz": 1656.9,
+        "spectral_centroid_std_hz": 575.4,
+        "zero_crossing_rate_mean": 0.0971,
+        "flags": []
+      },
+      "speaker_role": "EMPLOYEE"
+    },
+    {
+      "start": 165.32,
+      "end": 172.92,
+      "speaker": "SPEAKER_01",
+      "text": "одометр и так далее включение паркинга с кнопки селектор который у нас выполнен",
+      "words": [
+        {
+          "start": 165.32,
+          "end": 165.8,
+          "word": "одометр",
+          "probability": 0.8345,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 165.8,
+          "end": 166.0,
+          "word": "и",
+          "probability": 0.998,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 166.0,
+          "end": 166.12,
+          "word": "так",
+          "probability": 0.9946,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 166.12,
+          "end": 166.32,
+          "word": "далее",
+          "probability": 0.9961,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 166.32,
+          "end": 167.62,
+          "word": "включение",
+          "probability": 0.9604,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 167.62,
+          "end": 168.16,
+          "word": "паркинга",
+          "probability": 0.989,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 168.16,
+          "end": 168.4,
+          "word": "с",
+          "probability": 0.8208,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 168.4,
+          "end": 169.5,
+          "word": "кнопки",
+          "probability": 0.9771,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 169.5,
+          "end": 171.58,
+          "word": "селектор",
+          "probability": 0.6227,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 171.58,
+          "end": 171.92,
+          "word": "который",
+          "probability": 0.2585,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 171.92,
+          "end": 172.16,
+          "word": "у",
+          "probability": 0.9229,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 172.16,
+          "end": 172.34,
+          "word": "нас",
+          "probability": 0.9971,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 172.34,
+          "end": 172.92,
+          "word": "выполнен",
+          "probability": 0.8986,
+          "speaker": "SPEAKER_01"
+        }
+      ],
+      "delivery": {
+        "duration_sec": 7.6,
+        "words_per_sec": 1.71,
+        "syllables_per_sec_est": 3.68,
+        "chars_per_sec": 10.39,
+        "avg_logprob": -0.2878,
+        "compression_ratio": 1.869,
+        "no_speech_prob": 0.0916,
+        "mean_word_probability": 0.8669,
+        "min_word_probability": 0.2585,
+        "flags": [
+          "some_words_uncertain"
+        ],
+        "thresholds_used": {
+          "fast_wps_gte": 3.4,
+          "fast_sps_gte": 6.5,
+          "low_logprob_lt": -0.38,
+          "low_mean_word_prob_lt": 0.42,
+          "high_no_speech_gt": 0.35
+        }
+      },
+      "audio_tone": {
+        "mean_f0_hz": 107.3,
+        "f0_std_hz": 17.8,
+        "rms_energy_mean": 0.01854,
+        "rms_energy_std": 0.00621,
+        "spectral_centroid_mean_hz": 1533.4,
+        "spectral_centroid_std_hz": 638.6,
+        "zero_crossing_rate_mean": 0.0853,
+        "flags": [
+          "monotone_pitch"
+        ]
+      },
+      "speaker_role": "EMPLOYEE"
+    },
+    {
+      "start": 172.92,
+      "end": 184.94,
+      "speaker": "SPEAKER_01",
+      "text": "в стиле Octavia V8, есть электроручник, автохолл, система автоматического, автосвет, датчик дождя,",
+      "words": [
+        {
+          "start": 172.92,
+          "end": 173.24,
+          "word": "в",
+          "probability": 0.4712,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 173.24,
+          "end": 173.94,
+          "word": "стиле",
+          "probability": 0.9811,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 173.94,
+          "end": 174.72,
+          "word": "Octavia",
+          "probability": 0.5863,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 174.72,
+          "end": 175.3,
+          "word": "V8,",
+          "probability": 0.7649,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 175.46,
+          "end": 176.1,
+          "word": "есть",
+          "probability": 0.2256,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 176.1,
+          "end": 178.96,
+          "word": "электроручник,",
+          "probability": 0.8678,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 179.04,
+          "end": 179.62,
+          "word": "автохолл,",
+          "probability": 0.7738,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 179.8,
+          "end": 180.84,
+          "word": "система",
+          "probability": 0.5249,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 180.84,
+          "end": 181.86,
+          "word": "автоматического,",
+          "probability": 0.9596,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 182.12,
+          "end": 183.4,
+          "word": "автосвет,",
+          "probability": 0.8134,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 183.58,
+          "end": 184.52,
+          "word": "датчик",
+          "probability": 0.9943,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 184.52,
+          "end": 184.94,
+          "word": "дождя,",
+          "probability": 0.9901,
+          "speaker": "SPEAKER_01"
+        }
+      ],
+      "delivery": {
+        "duration_sec": 12.02,
+        "words_per_sec": 1.0,
+        "syllables_per_sec_est": 2.33,
+        "chars_per_sec": 8.15,
+        "avg_logprob": -0.1763,
+        "compression_ratio": 1.919,
+        "no_speech_prob": 0.0354,
+        "mean_word_probability": 0.7461,
+        "min_word_probability": 0.2256,
+        "flags": [
+          "some_words_uncertain"
+        ],
+        "thresholds_used": {
+          "fast_wps_gte": 3.4,
+          "fast_sps_gte": 6.5,
+          "low_logprob_lt": -0.38,
+          "low_mean_word_prob_lt": 0.42,
+          "high_no_speech_gt": 0.35
+        }
+      },
+      "audio_tone": {
+        "mean_f0_hz": 112.0,
+        "f0_std_hz": 17.0,
+        "rms_energy_mean": 0.01943,
+        "rms_energy_std": 0.00653,
+        "spectral_centroid_mean_hz": 1520.5,
+        "spectral_centroid_std_hz": 605.1,
+        "zero_crossing_rate_mean": 0.0859,
+        "flags": [
+          "monotone_pitch"
+        ]
+      },
+      "speaker_role": "EMPLOYEE"
+    },
+    {
+      "start": 184.98,
+      "end": 185.22,
+      "speaker": "SPEAKER_01",
+      "text": "датчик",
+      "words": [
+        {
+          "start": 184.98,
+          "end": 185.22,
+          "word": "датчик",
+          "probability": 0.932,
+          "speaker": "SPEAKER_01"
+        }
+      ],
+      "delivery": {
+        "duration_sec": 0.24,
+        "words_per_sec": 4.17,
+        "syllables_per_sec_est": 8.33,
+        "chars_per_sec": 25.0,
+        "avg_logprob": -0.1763,
+        "compression_ratio": 1.919,
+        "no_speech_prob": 0.0354,
+        "mean_word_probability": 0.932,
+        "min_word_probability": 0.932,
+        "flags": [
+          "fast_pace"
+        ],
+        "thresholds_used": {
+          "fast_wps_gte": 3.4,
+          "fast_sps_gte": 6.5,
+          "low_logprob_lt": -0.38,
+          "low_mean_word_prob_lt": 0.42,
+          "high_no_speech_gt": 0.35
+        }
+      },
+      "audio_tone": {
+        "mean_f0_hz": null,
+        "f0_std_hz": null,
+        "rms_energy_mean": 0.02466,
+        "rms_energy_std": 0.00559,
+        "spectral_centroid_mean_hz": 1320.3,
+        "spectral_centroid_std_hz": 248.9,
+        "zero_crossing_rate_mean": 0.0627,
+        "flags": [
+          "warm_dark_timbral"
+        ]
+      },
+      "speaker_role": "EMPLOYEE"
+    },
+    {
+      "start": 185.22,
+      "end": 185.72,
+      "speaker": "SPEAKER_02",
+      "text": "света,",
+      "words": [
+        {
+          "start": 185.22,
+          "end": 185.72,
+          "word": "света,",
+          "probability": 0.9922,
+          "speaker": "SPEAKER_02"
+        }
+      ],
+      "delivery": {
+        "duration_sec": 0.5,
+        "words_per_sec": 2.0,
+        "syllables_per_sec_est": 4.0,
+        "chars_per_sec": 12.0,
+        "avg_logprob": -0.1763,
+        "compression_ratio": 1.919,
+        "no_speech_prob": 0.0354,
+        "mean_word_probability": 0.9922,
+        "min_word_probability": 0.9922,
+        "flags": [],
+        "thresholds_used": {
+          "fast_wps_gte": 3.4,
+          "fast_sps_gte": 6.5,
+          "low_logprob_lt": -0.38,
+          "low_mean_word_prob_lt": 0.42,
+          "high_no_speech_gt": 0.35
+        }
+      },
+      "audio_tone": {
+        "mean_f0_hz": 130.8,
+        "f0_std_hz": 13.1,
+        "rms_energy_mean": 0.02453,
+        "rms_energy_std": 0.00936,
+        "spectral_centroid_mean_hz": 1661.5,
+        "spectral_centroid_std_hz": 581.5,
+        "zero_crossing_rate_mean": 0.105,
+        "flags": []
+      },
+      "speaker_role": "CLIENT"
+    },
+    {
+      "start": 185.82,
+      "end": 191.66,
+      "speaker": "SPEAKER_01",
+      "text": "мультирует шикарно, управление мультимедией с руля тоже, старт-стоп, бесключевой",
+      "words": [
+        {
+          "start": 185.82,
+          "end": 186.5,
+          "word": "мультирует",
+          "probability": 0.8893,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 186.5,
+          "end": 186.94,
+          "word": "шикарно,",
+          "probability": 0.9055,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 187.1,
+          "end": 187.94,
+          "word": "управление",
+          "probability": 0.9766,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 187.94,
+          "end": 188.66,
+          "word": "мультимедией",
+          "probability": 0.9516,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 188.66,
+          "end": 188.74,
+          "word": "с",
+          "probability": 0.6221,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 188.74,
+          "end": 189.04,
+          "word": "руля",
+          "probability": 0.9722,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 189.04,
+          "end": 189.22,
+          "word": "тоже,",
+          "probability": 0.6392,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 189.56,
+          "end": 190.7,
+          "word": "старт",
+          "probability": 0.95,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 190.7,
+          "end": 190.94,
+          "word": "-стоп,",
+          "probability": 0.8786,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 191.06,
+          "end": 191.66,
+          "word": "бесключевой",
+          "probability": 0.9634,
+          "speaker": "SPEAKER_01"
+        }
+      ],
+      "delivery": {
+        "duration_sec": 5.84,
+        "words_per_sec": 1.54,
+        "syllables_per_sec_est": 4.62,
+        "chars_per_sec": 13.7,
+        "avg_logprob": -0.1763,
+        "compression_ratio": 1.919,
+        "no_speech_prob": 0.0354,
+        "mean_word_probability": 0.8748,
+        "min_word_probability": 0.6221,
+        "flags": [],
+        "thresholds_used": {
+          "fast_wps_gte": 3.4,
+          "fast_sps_gte": 6.5,
+          "low_logprob_lt": -0.38,
+          "low_mean_word_prob_lt": 0.42,
+          "high_no_speech_gt": 0.35
+        }
+      },
+      "audio_tone": {
+        "mean_f0_hz": 115.9,
+        "f0_std_hz": 15.6,
+        "rms_energy_mean": 0.01862,
+        "rms_energy_std": 0.00696,
+        "spectral_centroid_mean_hz": 1494.2,
+        "spectral_centroid_std_hz": 572.6,
+        "zero_crossing_rate_mean": 0.0813,
+        "flags": [
+          "monotone_pitch",
+          "warm_dark_timbral"
+        ]
+      },
+      "speaker_role": "EMPLOYEE"
+    },
+    {
+      "start": 191.66,
+      "end": 199.58,
+      "speaker": "SPEAKER_01",
+      "text": "доступ, подогревы боковых зеркал, электрорегулировки зеркал, руль тоже у нас регулируется в двух",
+      "words": [
+        {
+          "start": 191.66,
+          "end": 191.9,
+          "word": "доступ,",
+          "probability": 0.9966,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 192.24,
+          "end": 193.42,
+          "word": "подогревы",
+          "probability": 0.9718,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 193.42,
+          "end": 194.44,
+          "word": "боковых",
+          "probability": 0.8513,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 194.44,
+          "end": 194.94,
+          "word": "зеркал,",
+          "probability": 0.9952,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 194.94,
+          "end": 195.98,
+          "word": "электрорегулировки",
+          "probability": 0.9815,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 195.98,
+          "end": 196.5,
+          "word": "зеркал,",
+          "probability": 0.9948,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 196.52,
+          "end": 197.38,
+          "word": "руль",
+          "probability": 0.9639,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 197.38,
+          "end": 198.1,
+          "word": "тоже",
+          "probability": 0.9448,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 198.1,
+          "end": 198.32,
+          "word": "у",
+          "probability": 0.9209,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 198.32,
+          "end": 198.54,
+          "word": "нас",
+          "probability": 0.998,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 198.54,
+          "end": 199.24,
+          "word": "регулируется",
+          "probability": 0.9758,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 199.24,
+          "end": 199.4,
+          "word": "в",
+          "probability": 0.9727,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 199.4,
+          "end": 199.58,
+          "word": "двух",
+          "probability": 0.9844,
+          "speaker": "SPEAKER_01"
+        }
+      ],
+      "delivery": {
+        "duration_sec": 7.92,
+        "words_per_sec": 1.64,
+        "syllables_per_sec_est": 4.17,
+        "chars_per_sec": 12.12,
+        "avg_logprob": -0.1763,
+        "compression_ratio": 1.919,
+        "no_speech_prob": 0.0354,
+        "mean_word_probability": 0.9655,
+        "min_word_probability": 0.8513,
+        "flags": [],
+        "thresholds_used": {
+          "fast_wps_gte": 3.4,
+          "fast_sps_gte": 6.5,
+          "low_logprob_lt": -0.38,
+          "low_mean_word_prob_lt": 0.42,
+          "high_no_speech_gt": 0.35
+        }
+      },
+      "audio_tone": {
+        "mean_f0_hz": 121.2,
+        "f0_std_hz": 17.9,
+        "rms_energy_mean": 0.02155,
+        "rms_energy_std": 0.00908,
+        "spectral_centroid_mean_hz": 1252.0,
+        "spectral_centroid_std_hz": 419.6,
+        "zero_crossing_rate_mean": 0.0662,
+        "flags": [
+          "monotone_pitch",
+          "warm_dark_timbral"
+        ]
+      },
+      "speaker_role": "EMPLOYEE"
+    },
+    {
+      "start": 199.58,
+      "end": 204.96,
+      "speaker": "SPEAKER_01",
+      "text": "положения у вас вообще как может семья большая или один-два",
+      "words": [
+        {
+          "start": 199.58,
+          "end": 200.1,
+          "word": "положения",
+          "probability": 0.5713,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 200.1,
+          "end": 200.36,
+          "word": "у",
+          "probability": 0.3525,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 200.64,
+          "end": 201.72,
+          "word": "вас",
+          "probability": 0.9956,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 201.72,
+          "end": 202.0,
+          "word": "вообще",
+          "probability": 0.9985,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 202.0,
+          "end": 202.26,
+          "word": "как",
+          "probability": 0.9946,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 202.26,
+          "end": 202.92,
+          "word": "может",
+          "probability": 0.5801,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 202.92,
+          "end": 203.3,
+          "word": "семья",
+          "probability": 0.9929,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 203.3,
+          "end": 203.78,
+          "word": "большая",
+          "probability": 0.9626,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 203.78,
+          "end": 204.2,
+          "word": "или",
+          "probability": 0.6274,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 204.2,
+          "end": 204.78,
+          "word": "один",
+          "probability": 0.3633,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 204.78,
+          "end": 204.96,
+          "word": "-два",
+          "probability": 0.6233,
+          "speaker": "SPEAKER_01"
+        }
+      ],
+      "delivery": {
+        "duration_sec": 5.38,
+        "words_per_sec": 1.86,
+        "syllables_per_sec_est": 4.28,
+        "chars_per_sec": 10.97,
+        "avg_logprob": -0.2579,
+        "compression_ratio": 1.848,
+        "no_speech_prob": 0.1152,
+        "mean_word_probability": 0.7329,
+        "min_word_probability": 0.3525,
+        "flags": [],
+        "thresholds_used": {
+          "fast_wps_gte": 3.4,
+          "fast_sps_gte": 6.5,
+          "low_logprob_lt": -0.38,
+          "low_mean_word_prob_lt": 0.42,
+          "high_no_speech_gt": 0.35
+        }
+      },
+      "audio_tone": {
+        "mean_f0_hz": 120.7,
+        "f0_std_hz": 15.2,
+        "rms_energy_mean": 0.01879,
+        "rms_energy_std": 0.00774,
+        "spectral_centroid_mean_hz": 1391.3,
+        "spectral_centroid_std_hz": 519.8,
+        "zero_crossing_rate_mean": 0.074,
+        "flags": [
+          "monotone_pitch",
+          "warm_dark_timbral"
+        ]
+      },
+      "speaker_role": "EMPLOYEE"
+    },
+    {
+      "start": 204.96,
+      "end": 207.92,
+      "speaker": "SPEAKER_02",
+      "text": "семья двое детей багажник я",
+      "words": [
+        {
+          "start": 204.96,
+          "end": 205.38,
+          "word": "семья",
+          "probability": 0.7284,
+          "speaker": "SPEAKER_02"
+        },
+        {
+          "start": 205.38,
+          "end": 206.18,
+          "word": "двое",
+          "probability": 0.9563,
+          "speaker": "SPEAKER_02"
+        },
+        {
+          "start": 206.18,
+          "end": 206.44,
+          "word": "детей",
+          "probability": 0.9985,
+          "speaker": "SPEAKER_02"
+        },
+        {
+          "start": 206.44,
+          "end": 207.76,
+          "word": "багажник",
+          "probability": 0.8122,
+          "speaker": "SPEAKER_02"
+        },
+        {
+          "start": 207.76,
+          "end": 207.92,
+          "word": "я",
+          "probability": 0.2435,
+          "speaker": "SPEAKER_02"
+        }
+      ],
+      "delivery": {
+        "duration_sec": 2.96,
+        "words_per_sec": 1.69,
+        "syllables_per_sec_est": 3.38,
+        "chars_per_sec": 9.12,
+        "avg_logprob": -0.2579,
+        "compression_ratio": 1.848,
+        "no_speech_prob": 0.1152,
+        "mean_word_probability": 0.7478,
+        "min_word_probability": 0.2435,
+        "flags": [
+          "some_words_uncertain"
+        ],
+        "thresholds_used": {
+          "fast_wps_gte": 3.4,
+          "fast_sps_gte": 6.5,
+          "low_logprob_lt": -0.38,
+          "low_mean_word_prob_lt": 0.42,
+          "high_no_speech_gt": 0.35
+        }
+      },
+      "audio_tone": {
+        "mean_f0_hz": 168.9,
+        "f0_std_hz": 53.8,
+        "rms_energy_mean": 0.03037,
+        "rms_energy_std": 0.0176,
+        "spectral_centroid_mean_hz": 1200.0,
+        "spectral_centroid_std_hz": 424.7,
+        "zero_crossing_rate_mean": 0.0619,
+        "flags": [
+          "expressive_pitch_variation",
+          "warm_dark_timbral"
+        ]
+      },
+      "speaker_role": "CLIENT"
+    },
+    {
+      "start": 207.92,
+      "end": 209.4,
+      "speaker": "SPEAKER_01",
+      "text": "понял",
+      "words": [
+        {
+          "start": 207.92,
+          "end": 209.4,
+          "word": "понял",
+          "probability": 0.9863,
+          "speaker": "SPEAKER_01"
+        }
+      ],
+      "delivery": {
+        "duration_sec": 1.48,
+        "words_per_sec": 0.68,
+        "syllables_per_sec_est": 1.35,
+        "chars_per_sec": 3.38,
+        "avg_logprob": -0.2579,
+        "compression_ratio": 1.848,
+        "no_speech_prob": 0.1152,
+        "mean_word_probability": 0.9863,
+        "min_word_probability": 0.9863,
+        "flags": [],
+        "thresholds_used": {
+          "fast_wps_gte": 3.4,
+          "fast_sps_gte": 6.5,
+          "low_logprob_lt": -0.38,
+          "low_mean_word_prob_lt": 0.42,
+          "high_no_speech_gt": 0.35
+        }
+      },
+      "audio_tone": {
+        "mean_f0_hz": 122.7,
+        "f0_std_hz": 11.7,
+        "rms_energy_mean": 0.01975,
+        "rms_energy_std": 0.00665,
+        "spectral_centroid_mean_hz": 1079.9,
+        "spectral_centroid_std_hz": 161.8,
+        "zero_crossing_rate_mean": 0.0413,
+        "flags": [
+          "monotone_pitch",
+          "warm_dark_timbral"
+        ]
+      },
+      "speaker_role": "EMPLOYEE"
+    },
+    {
+      "start": 209.4,
+      "end": 213.28,
+      "speaker": "SPEAKER_01",
+      "text": "михаил вас смотрите так как пройдемся к багажнику",
+      "words": [
+        {
+          "start": 209.4,
+          "end": 209.78,
+          "word": "михаил",
+          "probability": 0.9402,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 209.78,
+          "end": 210.04,
+          "word": "вас",
+          "probability": 0.8013,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 210.04,
+          "end": 211.1,
+          "word": "смотрите",
+          "probability": 0.9399,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 211.1,
+          "end": 211.52,
+          "word": "так",
+          "probability": 0.9966,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 211.52,
+          "end": 211.68,
+          "word": "как",
+          "probability": 0.9956,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 211.68,
+          "end": 212.66,
+          "word": "пройдемся",
+          "probability": 0.8693,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 212.66,
+          "end": 212.82,
+          "word": "к",
+          "probability": 0.541,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 212.82,
+          "end": 213.28,
+          "word": "багажнику",
+          "probability": 0.9226,
+          "speaker": "SPEAKER_01"
+        }
+      ],
+      "delivery": {
+        "duration_sec": 3.88,
+        "words_per_sec": 2.06,
+        "syllables_per_sec_est": 4.12,
+        "chars_per_sec": 12.63,
+        "avg_logprob": -0.2579,
+        "compression_ratio": 1.848,
+        "no_speech_prob": 0.1152,
+        "mean_word_probability": 0.8758,
+        "min_word_probability": 0.541,
+        "flags": [],
+        "thresholds_used": {
+          "fast_wps_gte": 3.4,
+          "fast_sps_gte": 6.5,
+          "low_logprob_lt": -0.38,
+          "low_mean_word_prob_lt": 0.42,
+          "high_no_speech_gt": 0.35
+        }
+      },
+      "audio_tone": {
+        "mean_f0_hz": 109.6,
+        "f0_std_hz": 13.4,
+        "rms_energy_mean": 0.01952,
+        "rms_energy_std": 0.00892,
+        "spectral_centroid_mean_hz": 1308.1,
+        "spectral_centroid_std_hz": 448.2,
+        "zero_crossing_rate_mean": 0.0638,
+        "flags": [
+          "monotone_pitch",
+          "warm_dark_timbral"
+        ]
+      },
+      "speaker_role": "EMPLOYEE"
+    },
+    {
+      "start": 219.6,
+      "end": 223.94,
+      "speaker": "SPEAKER_02",
+      "text": "приятно так",
+      "words": [
+        {
+          "start": 219.6,
+          "end": 222.3,
+          "word": "приятно",
+          "probability": 0.7678,
+          "speaker": "SPEAKER_02"
+        },
+        {
+          "start": 222.3,
+          "end": 223.94,
+          "word": "так",
+          "probability": 0.8257,
+          "speaker": "SPEAKER_02"
+        }
+      ],
+      "delivery": {
+        "duration_sec": 4.34,
+        "words_per_sec": 0.46,
+        "syllables_per_sec_est": 0.92,
+        "chars_per_sec": 2.53,
+        "avg_logprob": -0.2579,
+        "compression_ratio": 1.848,
+        "no_speech_prob": 0.1152,
+        "mean_word_probability": 0.7968,
+        "min_word_probability": 0.7678,
+        "flags": [],
+        "thresholds_used": {
+          "fast_wps_gte": 3.4,
+          "fast_sps_gte": 6.5,
+          "low_logprob_lt": -0.38,
+          "low_mean_word_prob_lt": 0.42,
+          "high_no_speech_gt": 0.35
+        }
+      },
+      "audio_tone": {
+        "mean_f0_hz": 121.2,
+        "f0_std_hz": 23.7,
+        "rms_energy_mean": 0.0255,
+        "rms_energy_std": 0.01853,
+        "spectral_centroid_mean_hz": 1425.0,
+        "spectral_centroid_std_hz": 334.7,
+        "zero_crossing_rate_mean": 0.0748,
+        "flags": [
+          "warm_dark_timbral"
+        ]
+      },
+      "speaker_role": "CLIENT"
+    },
+    {
+      "start": 223.94,
+      "end": 228.74,
+      "speaker": "SPEAKER_01",
+      "text": "как форм-фактор этого кузова это лифт",
+      "words": [
+        {
+          "start": 223.94,
+          "end": 225.1,
+          "word": "как",
+          "probability": 0.939,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 225.1,
+          "end": 227.06,
+          "word": "форм",
+          "probability": 0.9517,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 227.06,
+          "end": 227.5,
+          "word": "-фактор",
+          "probability": 0.9707,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 227.5,
+          "end": 227.7,
+          "word": "этого",
+          "probability": 0.979,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 227.7,
+          "end": 228.18,
+          "word": "кузова",
+          "probability": 0.9979,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 228.18,
+          "end": 228.42,
+          "word": "это",
+          "probability": 0.8994,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 228.42,
+          "end": 228.74,
+          "word": "лифт",
+          "probability": 0.861,
+          "speaker": "SPEAKER_01"
+        }
+      ],
+      "delivery": {
+        "duration_sec": 4.8,
+        "words_per_sec": 1.25,
+        "syllables_per_sec_est": 2.71,
+        "chars_per_sec": 7.71,
+        "avg_logprob": -0.2579,
+        "compression_ratio": 1.848,
+        "no_speech_prob": 0.1152,
+        "mean_word_probability": 0.9427,
+        "min_word_probability": 0.861,
+        "flags": [],
+        "thresholds_used": {
+          "fast_wps_gte": 3.4,
+          "fast_sps_gte": 6.5,
+          "low_logprob_lt": -0.38,
+          "low_mean_word_prob_lt": 0.42,
+          "high_no_speech_gt": 0.35
+        }
+      },
+      "audio_tone": {
+        "mean_f0_hz": 108.0,
+        "f0_std_hz": 9.4,
+        "rms_energy_mean": 0.03304,
+        "rms_energy_std": 0.01716,
+        "spectral_centroid_mean_hz": 1213.4,
+        "spectral_centroid_std_hz": 269.7,
+        "zero_crossing_rate_mean": 0.0619,
+        "flags": [
+          "monotone_pitch",
+          "warm_dark_timbral"
+        ]
+      },
+      "speaker_role": "EMPLOYEE"
+    },
+    {
+      "start": 228.74,
+      "end": 238.02,
+      "speaker": "SPEAKER_01",
+      "text": "бэк багажнику этого автомобиля огромный то есть удобная удобный угол носа скажем так",
+      "words": [
+        {
+          "start": 228.74,
+          "end": 228.98,
+          "word": "бэк",
+          "probability": 0.5754,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 228.98,
+          "end": 230.8,
+          "word": "багажнику",
+          "probability": 0.894,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 230.8,
+          "end": 231.0,
+          "word": "этого",
+          "probability": 0.8115,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 231.0,
+          "end": 231.64,
+          "word": "автомобиля",
+          "probability": 0.8594,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 231.64,
+          "end": 233.22,
+          "word": "огромный",
+          "probability": 0.4843,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 233.22,
+          "end": 233.44,
+          "word": "то",
+          "probability": 0.9014,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 233.44,
+          "end": 233.64,
+          "word": "есть",
+          "probability": 0.999,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 233.64,
+          "end": 234.6,
+          "word": "удобная",
+          "probability": 0.8176,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 234.6,
+          "end": 235.64,
+          "word": "удобный",
+          "probability": 0.9854,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 235.64,
+          "end": 236.02,
+          "word": "угол",
+          "probability": 0.9263,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 236.02,
+          "end": 237.4,
+          "word": "носа",
+          "probability": 0.9473,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 237.4,
+          "end": 237.78,
+          "word": "скажем",
+          "probability": 0.7927,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 237.78,
+          "end": 238.02,
+          "word": "так",
+          "probability": 0.772,
+          "speaker": "SPEAKER_01"
+        }
+      ],
+      "delivery": {
+        "duration_sec": 9.28,
+        "words_per_sec": 1.4,
+        "syllables_per_sec_est": 3.45,
+        "chars_per_sec": 9.05,
+        "avg_logprob": -0.4753,
+        "compression_ratio": 1.842,
+        "no_speech_prob": 0.0457,
+        "mean_word_probability": 0.8282,
+        "min_word_probability": 0.4843,
+        "flags": [
+          "low_asr_logprob"
+        ],
+        "thresholds_used": {
+          "fast_wps_gte": 3.4,
+          "fast_sps_gte": 6.5,
+          "low_logprob_lt": -0.38,
+          "low_mean_word_prob_lt": 0.42,
+          "high_no_speech_gt": 0.35
+        }
+      },
+      "audio_tone": {
+        "mean_f0_hz": 104.6,
+        "f0_std_hz": 17.9,
+        "rms_energy_mean": 0.0302,
+        "rms_energy_std": 0.01473,
+        "spectral_centroid_mean_hz": 1257.1,
+        "spectral_centroid_std_hz": 328.3,
+        "zero_crossing_rate_mean": 0.0678,
+        "flags": [
+          "monotone_pitch",
+          "warm_dark_timbral"
+        ]
+      },
+      "speaker_role": "EMPLOYEE"
+    },
+    {
+      "start": 238.78,
+      "end": 239.56,
+      "speaker": "SPEAKER_01",
+      "text": "у",
+      "words": [
+        {
+          "start": 238.78,
+          "end": 239.56,
+          "word": "у",
+          "probability": 0.1353,
+          "speaker": "SPEAKER_01"
+        }
+      ],
+      "delivery": {
+        "duration_sec": 0.78,
+        "words_per_sec": 1.28,
+        "syllables_per_sec_est": 1.28,
+        "chars_per_sec": 1.28,
+        "avg_logprob": -0.4753,
+        "compression_ratio": 1.842,
+        "no_speech_prob": 0.0457,
+        "mean_word_probability": 0.1353,
+        "min_word_probability": 0.1353,
+        "flags": [
+          "low_asr_logprob",
+          "low_word_confidence",
+          "some_words_uncertain"
+        ],
+        "thresholds_used": {
+          "fast_wps_gte": 3.4,
+          "fast_sps_gte": 6.5,
+          "low_logprob_lt": -0.38,
+          "low_mean_word_prob_lt": 0.42,
+          "high_no_speech_gt": 0.35
+        }
+      },
+      "audio_tone": {
+        "mean_f0_hz": 115.4,
+        "f0_std_hz": 1.3,
+        "rms_energy_mean": 0.03053,
+        "rms_energy_std": 0.01544,
+        "spectral_centroid_mean_hz": 1141.7,
+        "spectral_centroid_std_hz": 174.2,
+        "zero_crossing_rate_mean": 0.0612,
+        "flags": [
+          "monotone_pitch",
+          "warm_dark_timbral"
+        ]
+      },
+      "speaker_role": "EMPLOYEE"
+    },
+    {
+      "start": 239.56,
+      "end": 240.1,
+      "speaker": "SPEAKER_02",
+      "text": "друга",
+      "words": [
+        {
+          "start": 239.56,
+          "end": 240.1,
+          "word": "друга",
+          "probability": 0.8599,
+          "speaker": "SPEAKER_02"
+        }
+      ],
+      "delivery": {
+        "duration_sec": 0.54,
+        "words_per_sec": 1.85,
+        "syllables_per_sec_est": 3.7,
+        "chars_per_sec": 9.26,
+        "avg_logprob": -0.4753,
+        "compression_ratio": 1.842,
+        "no_speech_prob": 0.0457,
+        "mean_word_probability": 0.8599,
+        "min_word_probability": 0.8599,
+        "flags": [
+          "low_asr_logprob"
+        ],
+        "thresholds_used": {
+          "fast_wps_gte": 3.4,
+          "fast_sps_gte": 6.5,
+          "low_logprob_lt": -0.38,
+          "low_mean_word_prob_lt": 0.42,
+          "high_no_speech_gt": 0.35
+        }
+      },
+      "audio_tone": {
+        "mean_f0_hz": 228.3,
+        "f0_std_hz": 2.5,
+        "rms_energy_mean": 0.04274,
+        "rms_energy_std": 0.02323,
+        "spectral_centroid_mean_hz": 1053.0,
+        "spectral_centroid_std_hz": 118.5,
+        "zero_crossing_rate_mean": 0.0592,
+        "flags": [
+          "warm_dark_timbral"
+        ]
+      },
+      "speaker_role": "CLIENT"
+    },
+    {
+      "start": 240.1,
+      "end": 240.2,
+      "speaker": "SPEAKER_02",
+      "text": "с",
+      "words": [
+        {
+          "start": 240.1,
+          "end": 240.2,
+          "word": "с",
+          "probability": 0.3867,
+          "speaker": "SPEAKER_02"
+        }
+      ],
+      "delivery": {
+        "duration_sec": 0.1,
+        "words_per_sec": 10.0,
+        "syllables_per_sec_est": 0.0,
+        "chars_per_sec": 10.0,
+        "avg_logprob": -0.4753,
+        "compression_ratio": 1.842,
+        "no_speech_prob": 0.0457,
+        "mean_word_probability": 0.3867,
+        "min_word_probability": 0.3867,
+        "flags": [
+          "fast_and_unclear_asr",
+          "fast_pace",
+          "low_asr_logprob",
+          "low_word_confidence"
+        ],
+        "thresholds_used": {
+          "fast_wps_gte": 3.4,
+          "fast_sps_gte": 6.5,
+          "low_logprob_lt": -0.38,
+          "low_mean_word_prob_lt": 0.42,
+          "high_no_speech_gt": 0.35
+        }
+      },
+      "audio_tone": {
+        "skipped": true,
+        "reason": "segment_too_short"
+      },
+      "speaker_role": "CLIENT"
+    },
+    {
+      "start": 240.2,
+      "end": 241.26,
+      "speaker": "SPEAKER_02",
+      "text": "нами было такое",
+      "words": [
+        {
+          "start": 240.2,
+          "end": 240.44,
+          "word": "нами",
+          "probability": 0.917,
+          "speaker": "SPEAKER_02"
+        },
+        {
+          "start": 240.44,
+          "end": 240.7,
+          "word": "было",
+          "probability": 0.6113,
+          "speaker": "SPEAKER_02"
+        },
+        {
+          "start": 240.7,
+          "end": 241.26,
+          "word": "такое",
+          "probability": 0.1133,
+          "speaker": "SPEAKER_02"
+        }
+      ],
+      "delivery": {
+        "duration_sec": 1.06,
+        "words_per_sec": 2.83,
+        "syllables_per_sec_est": 6.6,
+        "chars_per_sec": 14.15,
+        "avg_logprob": -0.4753,
+        "compression_ratio": 1.842,
+        "no_speech_prob": 0.0457,
+        "mean_word_probability": 0.5472,
+        "min_word_probability": 0.1133,
+        "flags": [
+          "fast_and_unclear_asr",
+          "fast_pace",
+          "low_asr_logprob",
+          "some_words_uncertain"
+        ],
+        "thresholds_used": {
+          "fast_wps_gte": 3.4,
+          "fast_sps_gte": 6.5,
+          "low_logprob_lt": -0.38,
+          "low_mean_word_prob_lt": 0.42,
+          "high_no_speech_gt": 0.35
+        }
+      },
+      "audio_tone": {
+        "mean_f0_hz": 154.4,
+        "f0_std_hz": 18.4,
+        "rms_energy_mean": 0.02475,
+        "rms_energy_std": 0.00873,
+        "spectral_centroid_mean_hz": 1229.4,
+        "spectral_centroid_std_hz": 228.0,
+        "zero_crossing_rate_mean": 0.0681,
+        "flags": [
+          "warm_dark_timbral"
+        ]
+      },
+      "speaker_role": "CLIENT"
+    },
+    {
+      "start": 241.26,
+      "end": 243.02,
+      "speaker": "SPEAKER_01",
+      "text": "что багажник большая",
+      "words": [
+        {
+          "start": 241.26,
+          "end": 241.48,
+          "word": "что",
+          "probability": 0.3792,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 241.48,
+          "end": 242.52,
+          "word": "багажник",
+          "probability": 0.8634,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 242.52,
+          "end": 243.02,
+          "word": "большая",
+          "probability": 0.4515,
+          "speaker": "SPEAKER_01"
+        }
+      ],
+      "delivery": {
+        "duration_sec": 1.76,
+        "words_per_sec": 1.7,
+        "syllables_per_sec_est": 3.98,
+        "chars_per_sec": 11.36,
+        "avg_logprob": -0.4753,
+        "compression_ratio": 1.842,
+        "no_speech_prob": 0.0457,
+        "mean_word_probability": 0.5647,
+        "min_word_probability": 0.3792,
+        "flags": [
+          "low_asr_logprob"
+        ],
+        "thresholds_used": {
+          "fast_wps_gte": 3.4,
+          "fast_sps_gte": 6.5,
+          "low_logprob_lt": -0.38,
+          "low_mean_word_prob_lt": 0.42,
+          "high_no_speech_gt": 0.35
+        }
+      },
+      "audio_tone": {
+        "mean_f0_hz": 115.4,
+        "f0_std_hz": 17.7,
+        "rms_energy_mean": 0.02385,
+        "rms_energy_std": 0.00822,
+        "spectral_centroid_mean_hz": 1297.6,
+        "spectral_centroid_std_hz": 348.7,
+        "zero_crossing_rate_mean": 0.0686,
+        "flags": [
+          "monotone_pitch",
+          "warm_dark_timbral"
+        ]
+      },
+      "speaker_role": "EMPLOYEE"
+    },
+    {
+      "start": 245.48,
+      "end": 246.52,
+      "speaker": "SPEAKER_01",
+      "text": "она",
+      "words": [
+        {
+          "start": 245.48,
+          "end": 246.52,
+          "word": "она",
+          "probability": 0.5142,
+          "speaker": "SPEAKER_01"
+        }
+      ],
+      "delivery": {
+        "duration_sec": 1.04,
+        "words_per_sec": 0.96,
+        "syllables_per_sec_est": 1.92,
+        "chars_per_sec": 2.88,
+        "avg_logprob": -0.4753,
+        "compression_ratio": 1.842,
+        "no_speech_prob": 0.0457,
+        "mean_word_probability": 0.5142,
+        "min_word_probability": 0.5142,
+        "flags": [
+          "low_asr_logprob"
+        ],
+        "thresholds_used": {
+          "fast_wps_gte": 3.4,
+          "fast_sps_gte": 6.5,
+          "low_logprob_lt": -0.38,
+          "low_mean_word_prob_lt": 0.42,
+          "high_no_speech_gt": 0.35
+        }
+      },
+      "audio_tone": {
+        "mean_f0_hz": 168.4,
+        "f0_std_hz": 20.5,
+        "rms_energy_mean": 0.02852,
+        "rms_energy_std": 0.00847,
+        "spectral_centroid_mean_hz": 1380.8,
+        "spectral_centroid_std_hz": 255.5,
+        "zero_crossing_rate_mean": 0.0712,
+        "flags": [
+          "warm_dark_timbral"
+        ]
+      },
+      "speaker_role": "EMPLOYEE"
+    },
+    {
+      "start": 246.52,
+      "end": 250.98,
+      "speaker": "SPEAKER_01",
+      "text": "намного длиннее это такой переходной вариант из",
+      "words": [
+        {
+          "start": 246.52,
+          "end": 247.56,
+          "word": "намного",
+          "probability": 0.9749,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 247.56,
+          "end": 247.92,
+          "word": "длиннее",
+          "probability": 0.7418,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 247.92,
+          "end": 248.16,
+          "word": "это",
+          "probability": 0.1622,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 248.16,
+          "end": 249.52,
+          "word": "такой",
+          "probability": 0.9849,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 249.52,
+          "end": 250.1,
+          "word": "переходной",
+          "probability": 0.9746,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 250.1,
+          "end": 250.4,
+          "word": "вариант",
+          "probability": 0.9624,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 250.4,
+          "end": 250.98,
+          "word": "из",
+          "probability": 0.9512,
+          "speaker": "SPEAKER_01"
+        }
+      ],
+      "delivery": {
+        "duration_sec": 4.46,
+        "words_per_sec": 1.57,
+        "syllables_per_sec_est": 4.04,
+        "chars_per_sec": 10.54,
+        "avg_logprob": -0.4753,
+        "compression_ratio": 1.842,
+        "no_speech_prob": 0.0457,
+        "mean_word_probability": 0.8217,
+        "min_word_probability": 0.1622,
+        "flags": [
+          "low_asr_logprob",
+          "some_words_uncertain"
+        ],
+        "thresholds_used": {
+          "fast_wps_gte": 3.4,
+          "fast_sps_gte": 6.5,
+          "low_logprob_lt": -0.38,
+          "low_mean_word_prob_lt": 0.42,
+          "high_no_speech_gt": 0.35
+        }
+      },
+      "audio_tone": {
+        "mean_f0_hz": 107.5,
+        "f0_std_hz": 11.4,
+        "rms_energy_mean": 0.03016,
+        "rms_energy_std": 0.01147,
+        "spectral_centroid_mean_hz": 1222.7,
+        "spectral_centroid_std_hz": 288.7,
+        "zero_crossing_rate_mean": 0.0646,
+        "flags": [
+          "monotone_pitch",
+          "warm_dark_timbral"
+        ]
+      },
+      "speaker_role": "EMPLOYEE"
+    },
+    {
+      "start": 254.85,
+      "end": 261.27,
+      "speaker": "SPEAKER_01",
+      "text": "из c в d-класс то есть она намного лучше чем c-класс но чуть-чуть",
+      "words": [
+        {
+          "start": 254.85,
+          "end": 255.51,
+          "word": "из",
+          "probability": 0.606,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 255.51,
+          "end": 255.77,
+          "word": "c",
+          "probability": 0.3328,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 255.77,
+          "end": 256.07,
+          "word": "в",
+          "probability": 0.7314,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 256.07,
+          "end": 256.27,
+          "word": "d",
+          "probability": 0.9297,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 256.27,
+          "end": 256.63,
+          "word": "-класс",
+          "probability": 0.8103,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 256.63,
+          "end": 256.83,
+          "word": "то",
+          "probability": 0.6045,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 256.83,
+          "end": 257.01,
+          "word": "есть",
+          "probability": 0.9932,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 257.01,
+          "end": 257.55,
+          "word": "она",
+          "probability": 0.8364,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 257.55,
+          "end": 258.81,
+          "word": "намного",
+          "probability": 0.9961,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 258.81,
+          "end": 259.15,
+          "word": "лучше",
+          "probability": 0.9893,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 259.15,
+          "end": 259.85,
+          "word": "чем",
+          "probability": 0.9102,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 259.85,
+          "end": 260.11,
+          "word": "c",
+          "probability": 0.6997,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 260.11,
+          "end": 260.43,
+          "word": "-класс",
+          "probability": 0.925,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 260.43,
+          "end": 260.77,
+          "word": "но",
+          "probability": 0.8447,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 260.77,
+          "end": 261.03,
+          "word": "чуть",
+          "probability": 0.9468,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 261.03,
+          "end": 261.27,
+          "word": "-чуть",
+          "probability": 0.8758,
+          "speaker": "SPEAKER_01"
+        }
+      ],
+      "delivery": {
+        "duration_sec": 6.42,
+        "words_per_sec": 2.02,
+        "syllables_per_sec_est": 2.49,
+        "chars_per_sec": 10.12,
+        "avg_logprob": -0.2484,
+        "compression_ratio": 1.884,
+        "no_speech_prob": 0.0186,
+        "mean_word_probability": 0.8145,
+        "min_word_probability": 0.3328,
+        "flags": [],
+        "thresholds_used": {
+          "fast_wps_gte": 3.4,
+          "fast_sps_gte": 6.5,
+          "low_logprob_lt": -0.38,
+          "low_mean_word_prob_lt": 0.42,
+          "high_no_speech_gt": 0.35
+        }
+      },
+      "audio_tone": {
+        "mean_f0_hz": 110.5,
+        "f0_std_hz": 16.2,
+        "rms_energy_mean": 0.02465,
+        "rms_energy_std": 0.01578,
+        "spectral_centroid_mean_hz": 1601.1,
+        "spectral_centroid_std_hz": 700.4,
+        "zero_crossing_rate_mean": 0.0996,
+        "flags": [
+          "monotone_pitch"
+        ]
+      },
+      "speaker_role": "EMPLOYEE"
+    },
+    {
+      "start": 261.27,
+      "end": 271.73,
+      "speaker": "SPEAKER_01",
+      "text": "у него опять же повторюсь про багажник электроподъем багажник установки из салона",
+      "words": [
+        {
+          "start": 261.27,
+          "end": 261.41,
+          "word": "у",
+          "probability": 0.0847,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 261.41,
+          "end": 265.57,
+          "word": "него",
+          "probability": 0.9258,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 265.57,
+          "end": 265.79,
+          "word": "опять",
+          "probability": 0.8105,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 265.79,
+          "end": 265.97,
+          "word": "же",
+          "probability": 0.9053,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 265.97,
+          "end": 266.45,
+          "word": "повторюсь",
+          "probability": 0.98,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 266.45,
+          "end": 266.97,
+          "word": "про",
+          "probability": 0.1681,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 266.97,
+          "end": 268.05,
+          "word": "багажник",
+          "probability": 0.9683,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 268.05,
+          "end": 270.03,
+          "word": "электроподъем",
+          "probability": 0.9046,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 270.03,
+          "end": 270.81,
+          "word": "багажник",
+          "probability": 0.7871,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 270.81,
+          "end": 271.33,
+          "word": "установки",
+          "probability": 0.7722,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 271.33,
+          "end": 271.41,
+          "word": "из",
+          "probability": 0.5908,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 271.41,
+          "end": 271.73,
+          "word": "салона",
+          "probability": 0.993,
+          "speaker": "SPEAKER_01"
+        }
+      ],
+      "delivery": {
+        "duration_sec": 10.46,
+        "words_per_sec": 1.15,
+        "syllables_per_sec_est": 2.77,
+        "chars_per_sec": 7.74,
+        "avg_logprob": -0.2484,
+        "compression_ratio": 1.884,
+        "no_speech_prob": 0.0186,
+        "mean_word_probability": 0.7409,
+        "min_word_probability": 0.0847,
+        "flags": [
+          "some_words_uncertain"
+        ],
+        "thresholds_used": {
+          "fast_wps_gte": 3.4,
+          "fast_sps_gte": 6.5,
+          "low_logprob_lt": -0.38,
+          "low_mean_word_prob_lt": 0.42,
+          "high_no_speech_gt": 0.35
+        }
+      },
+      "audio_tone": {
+        "mean_f0_hz": 102.9,
+        "f0_std_hz": 12.3,
+        "rms_energy_mean": 0.01888,
+        "rms_energy_std": 0.00675,
+        "spectral_centroid_mean_hz": 1369.2,
+        "spectral_centroid_std_hz": 360.7,
+        "zero_crossing_rate_mean": 0.0727,
+        "flags": [
+          "monotone_pitch",
+          "warm_dark_timbral"
+        ]
+      },
+      "speaker_role": "EMPLOYEE"
+    },
+    {
+      "start": 271.73,
+      "end": 276.95,
+      "speaker": "SPEAKER_01",
+      "text": "он автоматически сам поднимается на кнопку нажимаете он спускается также очень модная",
+      "words": [
+        {
+          "start": 271.73,
+          "end": 271.91,
+          "word": "он",
+          "probability": 0.8809,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 271.91,
+          "end": 272.45,
+          "word": "автоматически",
+          "probability": 0.994,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 272.45,
+          "end": 272.77,
+          "word": "сам",
+          "probability": 0.9634,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 272.77,
+          "end": 273.31,
+          "word": "поднимается",
+          "probability": 0.9666,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 273.31,
+          "end": 273.49,
+          "word": "на",
+          "probability": 0.7607,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 273.49,
+          "end": 273.81,
+          "word": "кнопку",
+          "probability": 0.9766,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 273.81,
+          "end": 274.23,
+          "word": "нажимаете",
+          "probability": 0.8805,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 274.23,
+          "end": 274.41,
+          "word": "он",
+          "probability": 0.6704,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 274.41,
+          "end": 274.89,
+          "word": "спускается",
+          "probability": 0.953,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 274.89,
+          "end": 276.17,
+          "word": "также",
+          "probability": 0.7598,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 276.17,
+          "end": 276.47,
+          "word": "очень",
+          "probability": 0.96,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 276.47,
+          "end": 276.95,
+          "word": "модная",
+          "probability": 0.9685,
+          "speaker": "SPEAKER_01"
+        }
+      ],
+      "delivery": {
+        "duration_sec": 5.22,
+        "words_per_sec": 2.3,
+        "syllables_per_sec_est": 6.32,
+        "chars_per_sec": 16.28,
+        "avg_logprob": -0.2484,
+        "compression_ratio": 1.884,
+        "no_speech_prob": 0.0186,
+        "mean_word_probability": 0.8945,
+        "min_word_probability": 0.6704,
+        "flags": [],
+        "thresholds_used": {
+          "fast_wps_gte": 3.4,
+          "fast_sps_gte": 6.5,
+          "low_logprob_lt": -0.38,
+          "low_mean_word_prob_lt": 0.42,
+          "high_no_speech_gt": 0.35
+        }
+      },
+      "audio_tone": {
+        "mean_f0_hz": 105.2,
+        "f0_std_hz": 11.8,
+        "rms_energy_mean": 0.01988,
+        "rms_energy_std": 0.00764,
+        "spectral_centroid_mean_hz": 1439.8,
+        "spectral_centroid_std_hz": 401.1,
+        "zero_crossing_rate_mean": 0.0808,
+        "flags": [
+          "monotone_pitch",
+          "warm_dark_timbral"
+        ]
+      },
+      "speaker_role": "EMPLOYEE"
+    },
+    {
+      "start": 276.95,
+      "end": 289.66,
+      "speaker": "SPEAKER_01",
+      "text": "современная лед оптика сзади стопы надпись без тюн в их стиле большой свес багажника то есть",
+      "words": [
+        {
+          "start": 276.95,
+          "end": 278.11,
+          "word": "современная",
+          "probability": 0.8835,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 278.11,
+          "end": 279.29,
+          "word": "лед",
+          "probability": 0.3248,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 279.29,
+          "end": 280.11,
+          "word": "оптика",
+          "probability": 0.9141,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 280.11,
+          "end": 280.61,
+          "word": "сзади",
+          "probability": 0.9917,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 280.61,
+          "end": 281.77,
+          "word": "стопы",
+          "probability": 0.7767,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 281.77,
+          "end": 283.51,
+          "word": "надпись",
+          "probability": 0.7875,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 284.88,
+          "end": 285.06,
+          "word": "без",
+          "probability": 0.2489,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 285.06,
+          "end": 285.3,
+          "word": "тюн",
+          "probability": 0.6348,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 285.3,
+          "end": 286.04,
+          "word": "в",
+          "probability": 0.52,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 286.04,
+          "end": 286.54,
+          "word": "их",
+          "probability": 0.4663,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 286.54,
+          "end": 287.38,
+          "word": "стиле",
+          "probability": 0.9954,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 287.38,
+          "end": 288.18,
+          "word": "большой",
+          "probability": 0.9072,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 288.18,
+          "end": 288.66,
+          "word": "свес",
+          "probability": 0.8582,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 288.66,
+          "end": 289.22,
+          "word": "багажника",
+          "probability": 0.9883,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 289.22,
+          "end": 289.52,
+          "word": "то",
+          "probability": 0.9165,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 289.52,
+          "end": 289.66,
+          "word": "есть",
+          "probability": 0.9946,
+          "speaker": "SPEAKER_01"
+        }
+      ],
+      "delivery": {
+        "duration_sec": 12.71,
+        "words_per_sec": 1.26,
+        "syllables_per_sec_est": 2.28,
+        "chars_per_sec": 7.24,
+        "avg_logprob": -0.2739,
+        "compression_ratio": 1.929,
+        "no_speech_prob": 0.0227,
+        "mean_word_probability": 0.763,
+        "min_word_probability": 0.2489,
+        "flags": [
+          "some_words_uncertain"
+        ],
+        "thresholds_used": {
+          "fast_wps_gte": 3.4,
+          "fast_sps_gte": 6.5,
+          "low_logprob_lt": -0.38,
+          "low_mean_word_prob_lt": 0.42,
+          "high_no_speech_gt": 0.35
+        }
+      },
+      "audio_tone": {
+        "mean_f0_hz": 104.2,
+        "f0_std_hz": 15.0,
+        "rms_energy_mean": 0.01821,
+        "rms_energy_std": 0.01034,
+        "spectral_centroid_mean_hz": 1241.2,
+        "spectral_centroid_std_hz": 429.9,
+        "zero_crossing_rate_mean": 0.0688,
+        "flags": [
+          "monotone_pitch",
+          "warm_dark_timbral"
+        ]
+      },
+      "speaker_role": "EMPLOYEE"
+    },
+    {
+      "start": 289.66,
+      "end": 297.18,
+      "speaker": "SPEAKER_01",
+      "text": "флиренс тоже достаточно неплохой можно будет куда нибудь на природу выехать со семьей очень",
+      "words": [
+        {
+          "start": 289.66,
+          "end": 290.16,
+          "word": "флиренс",
+          "probability": 0.7284,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 290.16,
+          "end": 291.04,
+          "word": "тоже",
+          "probability": 0.8599,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 291.04,
+          "end": 291.92,
+          "word": "достаточно",
+          "probability": 0.9736,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 291.92,
+          "end": 292.64,
+          "word": "неплохой",
+          "probability": 0.9756,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 292.64,
+          "end": 292.92,
+          "word": "можно",
+          "probability": 0.8809,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 292.92,
+          "end": 293.2,
+          "word": "будет",
+          "probability": 0.6836,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 293.2,
+          "end": 293.44,
+          "word": "куда",
+          "probability": 0.9253,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 293.44,
+          "end": 293.66,
+          "word": "нибудь",
+          "probability": 0.7681,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 293.66,
+          "end": 293.84,
+          "word": "на",
+          "probability": 0.9561,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 293.84,
+          "end": 294.2,
+          "word": "природу",
+          "probability": 0.9958,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 294.2,
+          "end": 294.62,
+          "word": "выехать",
+          "probability": 0.8916,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 294.62,
+          "end": 294.96,
+          "word": "со",
+          "probability": 0.15,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 294.96,
+          "end": 295.36,
+          "word": "семьей",
+          "probability": 0.5701,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 295.36,
+          "end": 297.18,
+          "word": "очень",
+          "probability": 0.8286,
+          "speaker": "SPEAKER_01"
+        }
+      ],
+      "delivery": {
+        "duration_sec": 7.52,
+        "words_per_sec": 1.86,
+        "syllables_per_sec_est": 4.12,
+        "chars_per_sec": 12.1,
+        "avg_logprob": -0.2739,
+        "compression_ratio": 1.929,
+        "no_speech_prob": 0.0227,
+        "mean_word_probability": 0.7991,
+        "min_word_probability": 0.15,
+        "flags": [
+          "some_words_uncertain"
+        ],
+        "thresholds_used": {
+          "fast_wps_gte": 3.4,
+          "fast_sps_gte": 6.5,
+          "low_logprob_lt": -0.38,
+          "low_mean_word_prob_lt": 0.42,
+          "high_no_speech_gt": 0.35
+        }
+      },
+      "audio_tone": {
+        "mean_f0_hz": 100.4,
+        "f0_std_hz": 8.6,
+        "rms_energy_mean": 0.01789,
+        "rms_energy_std": 0.00756,
+        "spectral_centroid_mean_hz": 1307.9,
+        "spectral_centroid_std_hz": 447.9,
+        "zero_crossing_rate_mean": 0.0749,
+        "flags": [
+          "monotone_pitch",
+          "warm_dark_timbral"
+        ]
+      },
+      "speaker_role": "EMPLOYEE"
+    },
+    {
+      "start": 298.9,
+      "end": 307.36,
+      "speaker": "SPEAKER_01",
+      "text": "полезных функций и очень удобных функций это у нас есть панорама со шторкой и функция откидывания",
+      "words": [
+        {
+          "start": 298.9,
+          "end": 299.8,
+          "word": "полезных",
+          "probability": 0.95,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 299.8,
+          "end": 300.22,
+          "word": "функций",
+          "probability": 0.9175,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 300.22,
+          "end": 300.42,
+          "word": "и",
+          "probability": 0.9307,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 300.42,
+          "end": 301.78,
+          "word": "очень",
+          "probability": 0.9697,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 301.78,
+          "end": 302.34,
+          "word": "удобных",
+          "probability": 0.9963,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 302.34,
+          "end": 302.86,
+          "word": "функций",
+          "probability": 0.9797,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 302.86,
+          "end": 303.22,
+          "word": "это",
+          "probability": 0.6406,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 303.22,
+          "end": 303.42,
+          "word": "у",
+          "probability": 0.9468,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 303.42,
+          "end": 303.72,
+          "word": "нас",
+          "probability": 0.9976,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 303.72,
+          "end": 303.92,
+          "word": "есть",
+          "probability": 0.9902,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 303.92,
+          "end": 304.66,
+          "word": "панорама",
+          "probability": 0.964,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 304.66,
+          "end": 305.22,
+          "word": "со",
+          "probability": 0.9014,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 305.22,
+          "end": 305.9,
+          "word": "шторкой",
+          "probability": 0.9933,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 305.9,
+          "end": 306.18,
+          "word": "и",
+          "probability": 0.9219,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 306.18,
+          "end": 306.86,
+          "word": "функция",
+          "probability": 0.8599,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 306.86,
+          "end": 307.36,
+          "word": "откидывания",
+          "probability": 0.9797,
+          "speaker": "SPEAKER_01"
+        }
+      ],
+      "delivery": {
+        "duration_sec": 8.46,
+        "words_per_sec": 1.89,
+        "syllables_per_sec_est": 4.14,
+        "chars_per_sec": 11.47,
+        "avg_logprob": -0.2739,
+        "compression_ratio": 1.929,
+        "no_speech_prob": 0.0227,
+        "mean_word_probability": 0.9337,
+        "min_word_probability": 0.6406,
+        "flags": [],
+        "thresholds_used": {
+          "fast_wps_gte": 3.4,
+          "fast_sps_gte": 6.5,
+          "low_logprob_lt": -0.38,
+          "low_mean_word_prob_lt": 0.42,
+          "high_no_speech_gt": 0.35
+        }
+      },
+      "audio_tone": {
+        "mean_f0_hz": 105.6,
+        "f0_std_hz": 9.6,
+        "rms_energy_mean": 0.01818,
+        "rms_energy_std": 0.00606,
+        "spectral_centroid_mean_hz": 1457.2,
+        "spectral_centroid_std_hz": 553.1,
+        "zero_crossing_rate_mean": 0.0929,
+        "flags": [
+          "monotone_pitch",
+          "warm_dark_timbral"
+        ]
+      },
+      "speaker_role": "EMPLOYEE"
+    },
+    {
+      "start": 307.36,
+      "end": 314.88,
+      "speaker": "SPEAKER_01",
+      "text": "вообще помимо solaris что-то рассматривали еще мог",
+      "words": [
+        {
+          "start": 307.36,
+          "end": 309.24,
+          "word": "вообще",
+          "probability": 0.4521,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 309.24,
+          "end": 311.4,
+          "word": "помимо",
+          "probability": 0.9568,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 311.4,
+          "end": 312.9,
+          "word": "solaris",
+          "probability": 0.6997,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 312.9,
+          "end": 313.08,
+          "word": "что",
+          "probability": 0.5708,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 313.08,
+          "end": 313.42,
+          "word": "-то",
+          "probability": 0.9023,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 313.42,
+          "end": 313.96,
+          "word": "рассматривали",
+          "probability": 0.9155,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 313.96,
+          "end": 314.24,
+          "word": "еще",
+          "probability": 0.7383,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 314.24,
+          "end": 314.88,
+          "word": "мог",
+          "probability": 0.2188,
+          "speaker": "SPEAKER_01"
+        }
+      ],
+      "delivery": {
+        "duration_sec": 7.52,
+        "words_per_sec": 0.93,
+        "syllables_per_sec_est": 2.13,
+        "chars_per_sec": 6.65,
+        "avg_logprob": -0.4372,
+        "compression_ratio": 1.191,
+        "no_speech_prob": 0.2961,
+        "mean_word_probability": 0.6818,
+        "min_word_probability": 0.2188,
+        "flags": [
+          "low_asr_logprob",
+          "some_words_uncertain"
+        ],
+        "thresholds_used": {
+          "fast_wps_gte": 3.4,
+          "fast_sps_gte": 6.5,
+          "low_logprob_lt": -0.38,
+          "low_mean_word_prob_lt": 0.42,
+          "high_no_speech_gt": 0.35
+        }
+      },
+      "audio_tone": {
+        "mean_f0_hz": 104.5,
+        "f0_std_hz": 17.7,
+        "rms_energy_mean": 0.01661,
+        "rms_energy_std": 0.00668,
+        "spectral_centroid_mean_hz": 1482.8,
+        "spectral_centroid_std_hz": 462.4,
+        "zero_crossing_rate_mean": 0.0878,
+        "flags": [
+          "monotone_pitch",
+          "warm_dark_timbral"
+        ]
+      },
+      "speaker_role": "EMPLOYEE"
+    },
+    {
+      "start": 314.88,
+      "end": 315.34,
+      "speaker": "SPEAKER_02",
+      "text": "я хотел",
+      "words": [
+        {
+          "start": 314.88,
+          "end": 315.1,
+          "word": "я",
+          "probability": 0.9487,
+          "speaker": "SPEAKER_02"
+        },
+        {
+          "start": 315.1,
+          "end": 315.34,
+          "word": "хотел",
+          "probability": 0.8877,
+          "speaker": "SPEAKER_02"
+        }
+      ],
+      "delivery": {
+        "duration_sec": 0.46,
+        "words_per_sec": 4.35,
+        "syllables_per_sec_est": 6.52,
+        "chars_per_sec": 15.22,
+        "avg_logprob": -0.4372,
+        "compression_ratio": 1.191,
+        "no_speech_prob": 0.2961,
+        "mean_word_probability": 0.9182,
+        "min_word_probability": 0.8877,
+        "flags": [
+          "fast_and_unclear_asr",
+          "fast_pace",
+          "low_asr_logprob"
+        ],
+        "thresholds_used": {
+          "fast_wps_gte": 3.4,
+          "fast_sps_gte": 6.5,
+          "low_logprob_lt": -0.38,
+          "low_mean_word_prob_lt": 0.42,
+          "high_no_speech_gt": 0.35
+        }
+      },
+      "audio_tone": {
+        "mean_f0_hz": 202.7,
+        "f0_std_hz": 4.2,
+        "rms_energy_mean": 0.02767,
+        "rms_energy_std": 0.00674,
+        "spectral_centroid_mean_hz": 1338.9,
+        "spectral_centroid_std_hz": 193.7,
+        "zero_crossing_rate_mean": 0.0751,
+        "flags": [
+          "warm_dark_timbral"
+        ]
+      },
+      "speaker_role": "CLIENT"
+    },
+    {
+      "start": 315.34,
+      "end": 330.24,
+      "speaker": "SPEAKER_02",
+      "text": "это чех словакия",
+      "words": [
+        {
+          "start": 315.34,
+          "end": 317.32,
+          "word": "это",
+          "probability": 0.0341,
+          "speaker": "SPEAKER_02"
+        },
+        {
+          "start": 317.32,
+          "end": 329.26,
+          "word": "чех",
+          "probability": 0.7703,
+          "speaker": "SPEAKER_02"
+        },
+        {
+          "start": 329.32,
+          "end": 330.24,
+          "word": "словакия",
+          "probability": 0.4879,
+          "speaker": "SPEAKER_02"
+        }
+      ],
+      "delivery": {
+        "duration_sec": 14.9,
+        "words_per_sec": 0.2,
+        "syllables_per_sec_est": 0.47,
+        "chars_per_sec": 1.07,
+        "avg_logprob": -0.4372,
+        "compression_ratio": 1.191,
+        "no_speech_prob": 0.2961,
+        "mean_word_probability": 0.4307,
+        "min_word_probability": 0.0341,
+        "flags": [
+          "low_asr_logprob",
+          "some_words_uncertain"
+        ],
+        "thresholds_used": {
+          "fast_wps_gte": 3.4,
+          "fast_sps_gte": 6.5,
+          "low_logprob_lt": -0.38,
+          "low_mean_word_prob_lt": 0.42,
+          "high_no_speech_gt": 0.35
+        }
+      },
+      "audio_tone": {
+        "mean_f0_hz": 133.7,
+        "f0_std_hz": 28.8,
+        "rms_energy_mean": 0.01807,
+        "rms_energy_std": 0.00765,
+        "spectral_centroid_mean_hz": 1303.2,
+        "spectral_centroid_std_hz": 350.9,
+        "zero_crossing_rate_mean": 0.0696,
+        "flags": [
+          "warm_dark_timbral"
+        ]
+      },
+      "speaker_role": "CLIENT"
+    },
+    {
+      "start": 332.56,
+      "end": 334.9,
+      "speaker": "SPEAKER_02",
+      "text": "А по поводу гарантии?",
+      "words": [
+        {
+          "start": 332.56,
+          "end": 333.36,
+          "word": "А",
+          "probability": 0.0392,
+          "speaker": "SPEAKER_02"
+        },
+        {
+          "start": 333.36,
+          "end": 333.9,
+          "word": "по",
+          "probability": 0.7739,
+          "speaker": "SPEAKER_02"
+        },
+        {
+          "start": 333.9,
+          "end": 334.3,
+          "word": "поводу",
+          "probability": 0.9893,
+          "speaker": "SPEAKER_02"
+        },
+        {
+          "start": 334.3,
+          "end": 334.9,
+          "word": "гарантии?",
+          "probability": 0.91,
+          "speaker": "SPEAKER_02"
+        }
+      ],
+      "delivery": {
+        "duration_sec": 2.34,
+        "words_per_sec": 1.71,
+        "syllables_per_sec_est": 3.85,
+        "chars_per_sec": 8.97,
+        "avg_logprob": -0.2884,
+        "compression_ratio": 1.719,
+        "no_speech_prob": 0.1243,
+        "mean_word_probability": 0.6781,
+        "min_word_probability": 0.0392,
+        "flags": [
+          "some_words_uncertain"
+        ],
+        "thresholds_used": {
+          "fast_wps_gte": 3.4,
+          "fast_sps_gte": 6.5,
+          "low_logprob_lt": -0.38,
+          "low_mean_word_prob_lt": 0.42,
+          "high_no_speech_gt": 0.35
+        }
+      },
+      "audio_tone": {
+        "mean_f0_hz": 137.7,
+        "f0_std_hz": 14.8,
+        "rms_energy_mean": 0.01755,
+        "rms_energy_std": 0.00687,
+        "spectral_centroid_mean_hz": 1313.7,
+        "spectral_centroid_std_hz": 219.1,
+        "zero_crossing_rate_mean": 0.0668,
+        "flags": [
+          "monotone_pitch",
+          "warm_dark_timbral"
+        ]
+      },
+      "speaker_role": "CLIENT"
+    },
+    {
+      "start": 335.16,
+      "end": 344.0,
+      "speaker": "SPEAKER_01",
+      "text": "У нас есть внутренняя техническая защита, вы можете за отдельную платформу приобрести ее.",
+      "words": [
+        {
+          "start": 335.16,
+          "end": 335.92,
+          "word": "У",
+          "probability": 0.5352,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 335.92,
+          "end": 336.1,
+          "word": "нас",
+          "probability": 0.9878,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 336.1,
+          "end": 337.94,
+          "word": "есть",
+          "probability": 0.9634,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 337.94,
+          "end": 339.6,
+          "word": "внутренняя",
+          "probability": 0.991,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 339.6,
+          "end": 340.82,
+          "word": "техническая",
+          "probability": 0.9915,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 340.82,
+          "end": 341.28,
+          "word": "защита,",
+          "probability": 0.9976,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 341.3,
+          "end": 341.46,
+          "word": "вы",
+          "probability": 0.8188,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 341.46,
+          "end": 341.8,
+          "word": "можете",
+          "probability": 0.9639,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 341.8,
+          "end": 342.28,
+          "word": "за",
+          "probability": 0.4795,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 342.28,
+          "end": 342.72,
+          "word": "отдельную",
+          "probability": 0.7124,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 342.72,
+          "end": 343.2,
+          "word": "платформу",
+          "probability": 0.8364,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 343.2,
+          "end": 343.66,
+          "word": "приобрести",
+          "probability": 0.971,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 343.66,
+          "end": 344.0,
+          "word": "ее.",
+          "probability": 0.2827,
+          "speaker": "SPEAKER_01"
+        }
+      ],
+      "delivery": {
+        "duration_sec": 8.84,
+        "words_per_sec": 1.47,
+        "syllables_per_sec_est": 3.73,
+        "chars_per_sec": 10.07,
+        "avg_logprob": -0.2884,
+        "compression_ratio": 1.719,
+        "no_speech_prob": 0.1243,
+        "mean_word_probability": 0.8101,
+        "min_word_probability": 0.2827,
+        "flags": [
+          "some_words_uncertain"
+        ],
+        "thresholds_used": {
+          "fast_wps_gte": 3.4,
+          "fast_sps_gte": 6.5,
+          "low_logprob_lt": -0.38,
+          "low_mean_word_prob_lt": 0.42,
+          "high_no_speech_gt": 0.35
+        }
+      },
+      "audio_tone": {
+        "mean_f0_hz": 103.5,
+        "f0_std_hz": 15.1,
+        "rms_energy_mean": 0.01604,
+        "rms_energy_std": 0.00629,
+        "spectral_centroid_mean_hz": 1845.2,
+        "spectral_centroid_std_hz": 492.3,
+        "zero_crossing_rate_mean": 0.1097,
+        "flags": [
+          "monotone_pitch"
+        ]
+      },
+      "speaker_role": "EMPLOYEE"
+    },
+    {
+      "start": 346.12,
+      "end": 356.36,
+      "speaker": "SPEAKER_01",
+      "text": "Если вы боитесь надежности этого агрегата, мы можем поднять ее на подъемник и показать вам все это снизу, со стороны.",
+      "words": [
+        {
+          "start": 346.12,
+          "end": 346.92,
+          "word": "Если",
+          "probability": 0.3738,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 346.92,
+          "end": 347.72,
+          "word": "вы",
+          "probability": 0.9834,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 347.72,
+          "end": 348.12,
+          "word": "боитесь",
+          "probability": 0.9978,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 348.12,
+          "end": 350.86,
+          "word": "надежности",
+          "probability": 0.8235,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 350.86,
+          "end": 351.14,
+          "word": "этого",
+          "probability": 0.8955,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 351.14,
+          "end": 351.66,
+          "word": "агрегата,",
+          "probability": 0.9976,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 351.68,
+          "end": 351.8,
+          "word": "мы",
+          "probability": 0.896,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 351.8,
+          "end": 352.04,
+          "word": "можем",
+          "probability": 0.9956,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 352.04,
+          "end": 352.4,
+          "word": "поднять",
+          "probability": 0.9963,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 352.4,
+          "end": 352.56,
+          "word": "ее",
+          "probability": 0.9307,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 352.56,
+          "end": 352.7,
+          "word": "на",
+          "probability": 0.998,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 352.7,
+          "end": 353.2,
+          "word": "подъемник",
+          "probability": 0.9724,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 353.2,
+          "end": 353.2,
+          "word": "и",
+          "probability": 0.2947,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 353.2,
+          "end": 353.8,
+          "word": "показать",
+          "probability": 0.9958,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 353.8,
+          "end": 354.02,
+          "word": "вам",
+          "probability": 0.9551,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 354.02,
+          "end": 355.16,
+          "word": "все",
+          "probability": 0.9424,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 355.16,
+          "end": 355.36,
+          "word": "это",
+          "probability": 0.9805,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 355.36,
+          "end": 355.86,
+          "word": "снизу,",
+          "probability": 0.965,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 355.86,
+          "end": 355.96,
+          "word": "со",
+          "probability": 0.9897,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 355.96,
+          "end": 356.36,
+          "word": "стороны.",
+          "probability": 0.9888,
+          "speaker": "SPEAKER_01"
+        }
+      ],
+      "delivery": {
+        "duration_sec": 10.24,
+        "words_per_sec": 1.95,
+        "syllables_per_sec_est": 4.1,
+        "chars_per_sec": 11.43,
+        "avg_logprob": -0.2884,
+        "compression_ratio": 1.719,
+        "no_speech_prob": 0.1243,
+        "mean_word_probability": 0.8986,
+        "min_word_probability": 0.2947,
+        "flags": [
+          "some_words_uncertain"
+        ],
+        "thresholds_used": {
+          "fast_wps_gte": 3.4,
+          "fast_sps_gte": 6.5,
+          "low_logprob_lt": -0.38,
+          "low_mean_word_prob_lt": 0.42,
+          "high_no_speech_gt": 0.35
+        }
+      },
+      "audio_tone": {
+        "mean_f0_hz": 111.5,
+        "f0_std_hz": 12.8,
+        "rms_energy_mean": 0.01884,
+        "rms_energy_std": 0.0067,
+        "spectral_centroid_mean_hz": 1503.7,
+        "spectral_centroid_std_hz": 395.3,
+        "zero_crossing_rate_mean": 0.0869,
+        "flags": [
+          "monotone_pitch"
+        ]
+      },
+      "speaker_role": "EMPLOYEE"
+    },
+    {
+      "start": 356.36,
+      "end": 361.86,
+      "speaker": "SPEAKER_01",
+      "text": "предоставим вам толщиномер. Все это самостоятельно, все излучительно.",
+      "words": [
+        {
+          "start": 356.36,
+          "end": 357.48,
+          "word": "предоставим",
+          "probability": 0.7834,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 357.48,
+          "end": 357.62,
+          "word": "вам",
+          "probability": 0.811,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 357.62,
+          "end": 358.3,
+          "word": "толщиномер.",
+          "probability": 0.8967,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 358.52,
+          "end": 359.46,
+          "word": "Все",
+          "probability": 0.499,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 359.46,
+          "end": 360.34,
+          "word": "это",
+          "probability": 0.9014,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 360.34,
+          "end": 361.14,
+          "word": "самостоятельно,",
+          "probability": 0.9774,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 361.14,
+          "end": 361.28,
+          "word": "все",
+          "probability": 0.7764,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 361.28,
+          "end": 361.86,
+          "word": "излучительно.",
+          "probability": 0.6575,
+          "speaker": "SPEAKER_01"
+        }
+      ],
+      "delivery": {
+        "duration_sec": 5.5,
+        "words_per_sec": 1.45,
+        "syllables_per_sec_est": 4.36,
+        "chars_per_sec": 12.55,
+        "avg_logprob": -0.2952,
+        "compression_ratio": 1.741,
+        "no_speech_prob": 0.1257,
+        "mean_word_probability": 0.7879,
+        "min_word_probability": 0.499,
+        "flags": [],
+        "thresholds_used": {
+          "fast_wps_gte": 3.4,
+          "fast_sps_gte": 6.5,
+          "low_logprob_lt": -0.38,
+          "low_mean_word_prob_lt": 0.42,
+          "high_no_speech_gt": 0.35
+        }
+      },
+      "audio_tone": {
+        "mean_f0_hz": 109.0,
+        "f0_std_hz": 14.8,
+        "rms_energy_mean": 0.02099,
+        "rms_energy_std": 0.00504,
+        "spectral_centroid_mean_hz": 1578.2,
+        "spectral_centroid_std_hz": 472.5,
+        "zero_crossing_rate_mean": 0.0921,
+        "flags": [
+          "monotone_pitch"
+        ]
+      },
+      "speaker_role": "EMPLOYEE"
+    },
+    {
+      "start": 362.46,
+      "end": 370.6,
+      "speaker": "SPEAKER_01",
+      "text": "Насчет самой надежности жилов я могу гарантировать вам то, что в ближайшие 15 лет вы в них лезть не",
+      "words": [
+        {
+          "start": 362.46,
+          "end": 363.4,
+          "word": "Насчет",
+          "probability": 0.9558,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 363.4,
+          "end": 364.82,
+          "word": "самой",
+          "probability": 0.9829,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 364.82,
+          "end": 365.5,
+          "word": "надежности",
+          "probability": 0.9904,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 365.5,
+          "end": 366.0,
+          "word": "жилов",
+          "probability": 0.7051,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 366.0,
+          "end": 366.64,
+          "word": "я",
+          "probability": 0.5122,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 366.64,
+          "end": 366.88,
+          "word": "могу",
+          "probability": 0.9922,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 366.88,
+          "end": 367.64,
+          "word": "гарантировать",
+          "probability": 0.998,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 367.64,
+          "end": 367.8,
+          "word": "вам",
+          "probability": 0.9399,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 367.8,
+          "end": 368.0,
+          "word": "то,",
+          "probability": 0.5269,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 368.02,
+          "end": 368.16,
+          "word": "что",
+          "probability": 0.9971,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 368.16,
+          "end": 368.26,
+          "word": "в",
+          "probability": 0.4758,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 368.26,
+          "end": 368.76,
+          "word": "ближайшие",
+          "probability": 0.986,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 368.76,
+          "end": 368.96,
+          "word": "15",
+          "probability": 0.9634,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 368.96,
+          "end": 369.4,
+          "word": "лет",
+          "probability": 0.9912,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 369.4,
+          "end": 369.96,
+          "word": "вы",
+          "probability": 0.9087,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 369.96,
+          "end": 370.06,
+          "word": "в",
+          "probability": 0.9858,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 370.06,
+          "end": 370.2,
+          "word": "них",
+          "probability": 0.9937,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 370.2,
+          "end": 370.46,
+          "word": "лезть",
+          "probability": 0.967,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 370.46,
+          "end": 370.6,
+          "word": "не",
+          "probability": 0.9951,
+          "speaker": "SPEAKER_01"
+        }
+      ],
+      "delivery": {
+        "duration_sec": 8.14,
+        "words_per_sec": 2.33,
+        "syllables_per_sec_est": 3.69,
+        "chars_per_sec": 12.16,
+        "avg_logprob": -0.2952,
+        "compression_ratio": 1.741,
+        "no_speech_prob": 0.1257,
+        "mean_word_probability": 0.8877,
+        "min_word_probability": 0.4758,
+        "flags": [],
+        "thresholds_used": {
+          "fast_wps_gte": 3.4,
+          "fast_sps_gte": 6.5,
+          "low_logprob_lt": -0.38,
+          "low_mean_word_prob_lt": 0.42,
+          "high_no_speech_gt": 0.35
+        }
+      },
+      "audio_tone": {
+        "mean_f0_hz": 111.4,
+        "f0_std_hz": 13.7,
+        "rms_energy_mean": 0.02178,
+        "rms_energy_std": 0.00723,
+        "spectral_centroid_mean_hz": 1581.1,
+        "spectral_centroid_std_hz": 550.0,
+        "zero_crossing_rate_mean": 0.0915,
+        "flags": [
+          "monotone_pitch"
+        ]
+      },
+      "speaker_role": "EMPLOYEE"
+    },
+    {
+      "start": 370.6,
+      "end": 379.22,
+      "speaker": "SPEAKER_01",
+      "text": "будете. Это японская коробка, обычный двухлитровый турбованный мотор. Ничего...",
+      "words": [
+        {
+          "start": 370.6,
+          "end": 370.86,
+          "word": "будете.",
+          "probability": 0.9966,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 371.14,
+          "end": 372.08,
+          "word": "Это",
+          "probability": 0.8945,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 372.08,
+          "end": 372.9,
+          "word": "японская",
+          "probability": 0.93,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 372.9,
+          "end": 374.36,
+          "word": "коробка,",
+          "probability": 0.9909,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 374.38,
+          "end": 375.66,
+          "word": "обычный",
+          "probability": 0.9875,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 375.66,
+          "end": 376.38,
+          "word": "двухлитровый",
+          "probability": 0.9493,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 376.38,
+          "end": 377.1,
+          "word": "турбованный",
+          "probability": 0.8984,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 377.1,
+          "end": 377.44,
+          "word": "мотор.",
+          "probability": 0.9978,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 378.28,
+          "end": 379.22,
+          "word": "Ничего...",
+          "probability": 0.6696,
+          "speaker": "SPEAKER_01"
+        }
+      ],
+      "delivery": {
+        "duration_sec": 8.62,
+        "words_per_sec": 1.04,
+        "syllables_per_sec_est": 3.25,
+        "chars_per_sec": 9.16,
+        "avg_logprob": -0.2952,
+        "compression_ratio": 1.741,
+        "no_speech_prob": 0.1257,
+        "mean_word_probability": 0.9239,
+        "min_word_probability": 0.6696,
+        "flags": [],
+        "thresholds_used": {
+          "fast_wps_gte": 3.4,
+          "fast_sps_gte": 6.5,
+          "low_logprob_lt": -0.38,
+          "low_mean_word_prob_lt": 0.42,
+          "high_no_speech_gt": 0.35
+        }
+      },
+      "audio_tone": {
+        "mean_f0_hz": 102.3,
+        "f0_std_hz": 14.4,
+        "rms_energy_mean": 0.02083,
+        "rms_energy_std": 0.00629,
+        "spectral_centroid_mean_hz": 1444.2,
+        "spectral_centroid_std_hz": 384.7,
+        "zero_crossing_rate_mean": 0.0754,
+        "flags": [
+          "monotone_pitch",
+          "warm_dark_timbral"
+        ]
+      },
+      "speaker_role": "EMPLOYEE"
+    },
+    {
+      "start": 384.86,
+      "end": 387.38,
+      "speaker": "SPEAKER_01",
+      "text": "Давайте тогда попробуем тест-драйв провести.",
+      "words": [
+        {
+          "start": 384.86,
+          "end": 385.58,
+          "word": "Давайте",
+          "probability": 0.0679,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 385.58,
+          "end": 385.94,
+          "word": "тогда",
+          "probability": 0.916,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 385.94,
+          "end": 386.46,
+          "word": "попробуем",
+          "probability": 0.9785,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 386.46,
+          "end": 386.76,
+          "word": "тест",
+          "probability": 0.9199,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 386.76,
+          "end": 386.94,
+          "word": "-драйв",
+          "probability": 0.8289,
+          "speaker": "SPEAKER_01"
+        },
+        {
+          "start": 386.94,
+          "end": 387.38,
+          "word": "провести.",
+          "probability": 0.9875,
+          "speaker": "SPEAKER_01"
+        }
+      ],
+      "delivery": {
+        "duration_sec": 2.52,
+        "words_per_sec": 1.98,
+        "syllables_per_sec_est": 5.56,
+        "chars_per_sec": 17.46,
+        "avg_logprob": -0.5063,
+        "compression_ratio": 1.123,
+        "no_speech_prob": 0.4561,
+        "mean_word_probability": 0.7831,
+        "min_word_probability": 0.0679,
+        "flags": [
+          "low_asr_logprob",
+          "possible_non_speech_noise",
+          "some_words_uncertain"
+        ],
+        "thresholds_used": {
+          "fast_wps_gte": 3.4,
+          "fast_sps_gte": 6.5,
+          "low_logprob_lt": -0.38,
+          "low_mean_word_prob_lt": 0.42,
+          "high_no_speech_gt": 0.35
+        }
+      },
+      "audio_tone": {
+        "mean_f0_hz": 108.8,
+        "f0_std_hz": 18.2,
+        "rms_energy_mean": 0.0195,
+        "rms_energy_std": 0.00822,
+        "spectral_centroid_mean_hz": 1605.3,
+        "spectral_centroid_std_hz": 460.0,
+        "zero_crossing_rate_mean": 0.0887,
+        "flags": []
+      },
+      "speaker_role": "EMPLOYEE"
+    }
+  ],
+  "delivery_segments_fast_or_rushed": 7,
+  "delivery_note": "Поля delivery.* — эвристики: быстрый темп (слова/слоги в сек), низкая уверенность Whisper. Подкрутите пороги SPEECH_FAST_WPS, SPEECH_FAST_SPS, SPEECH_LOW_LOGPROB, SPEECH_LOW_WORD_PROB. Точное «бубнеж» без дообучения модели не различить; для лучшего распознавания попробуйте WHISPER_MODEL=large-v3.",
+  "diarization_speaker_alignment": "words",
+  "speech_audio_tone_version": 1,
+  "audio_tone_by_speaker": {
+    "SPEAKER_01": {
+      "mean_f0_hz": 107.8,
+      "f0_std_hz": 13.94,
+      "rms_energy_mean": 0.02,
+      "spectral_centroid_mean_hz": 1486.95,
+      "note": "Средние по сегментам с акустикой; коррелируют с тембром/интонацией, не с «вежливостью» напрямую."
+    },
+    "SPEAKER_02": {
+      "mean_f0_hz": 140.95,
+      "f0_std_hz": 25.28,
+      "rms_energy_mean": 0.02,
+      "spectral_centroid_mean_hz": 1423.14,
+      "note": "Средние по сегментам с акустикой; коррелируют с тембром/интонацией, не с «вежливостью» напрямую."
+    },
+    "SPEAKER_03": {
+      "mean_f0_hz": 85.89,
+      "f0_std_hz": 11.51,
+      "rms_energy_mean": 0.02,
+      "spectral_centroid_mean_hz": 1779.09,
+      "note": "Средние по сегментам с акустикой; коррелируют с тембром/интонацией, не с «вежливостью» напрямую."
+    }
+  },
+  "audio_tone_note": "audio_tone.* — признаки по сырому аудио (F0, громкость, спектральный центроид). Полезно вместе с текстом; не путать с распознаванием эмоций.",
+  "speech_emotion_sidecar": "15969185893096.tone.json",
+  "speaker_roles": {
+    "SPEAKER_01": "EMPLOYEE",
+    "SPEAKER_02": "CLIENT",
+    "SPEAKER_03": "EMPLOYEE"
+  },
+  "speaker_roles_method": "eval_llm",
+  "speaker_roles_confidence": {
+    "SPEAKER_01": 0.95,
+    "SPEAKER_02": 0.98,
+    "SPEAKER_03": 0.85
+  },
+  "speaker_roles_reasoning": "SPEAKER_01 приветствует клиента Михаила, задаёт вопрос о выбранном автомобиле, управляет презентацией и предлагает тест-драйв — это основной менеджер. SPEAKER_02 отвечает на вопросы, описывает свои потребности (семья, дети, багажник) и задаёт вопрос о гарантии — очевидно клиент. SPEAKER_03 говорит «У нас есть», помогает показывать оптику и другие элементы, но его роль вторична — вероятно, коллега-консультант.",
+  "employee_speaker": "SPEAKER_01"
+}

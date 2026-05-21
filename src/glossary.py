@@ -62,22 +62,32 @@ def _unique_terms(parts: list[str]) -> list[str]:
 
 def format_glossary_for_whisper(entries: list[dict[str, Any]] | None = None) -> str:
     rows = entries if entries is not None else load_active_glossary_entries()
+    priority_terms: list[str] = []
     terms: list[str] = []
     for row in rows:
         if not row.get("is_active", True) or not row.get("use_for_whisper", True):
             continue
         hint = str(row.get("whisper_hint") or "").strip()
+        target = priority_terms if str(row.get("category") or "") == "priority_whisper_terms" else terms
         if hint:
-            terms.extend(_split_hint(hint))
+            target.extend(_split_hint(hint))
         else:
-            terms.append(str(row.get("term") or "").strip())
-            terms.extend(str(v).strip() for v in (row.get("variants") or []) if str(v or "").strip())
-    compact = ", ".join(_unique_terms([x for x in terms if x]))
-    if not compact:
+            target.append(str(row.get("term") or "").strip())
+            target.extend(str(v).strip() for v in (row.get("variants") or []) if str(v or "").strip())
+    priority = ", ".join(_unique_terms([x for x in priority_terms if x]))
+    compact = ", ".join(_unique_terms([x for x in terms if x])[:80])
+    if not compact and not priority:
         return ""
+    priority_sentence = (
+        f"Критически важные фирменные термины: {priority}. "
+        if priority
+        else ""
+    )
     return (
         "Это запись разговора в автосалоне Fresh про покупку, продажу, оценку, "
-        "диагностику и обслуживание автомобилей. В речи могут встречаться фирменные "
+        "диагностику и обслуживание автомобилей. "
+        f"{priority_sentence}"
+        "В речи могут встречаться фирменные "
         f"и автомобильные термины. Правильно распознавай и сохраняй написание терминов: {compact}."
     )
 

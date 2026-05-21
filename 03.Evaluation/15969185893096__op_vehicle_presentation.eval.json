@@ -1,0 +1,284 @@
+{
+  "schema_version": 3,
+  "criteria_version": "1",
+  "criteria_file": "op_vehicle_presentation",
+  "evaluated_at": "2026-05-17T07:26:25.939283+00:00",
+  "model": "deepseek-v4-pro",
+  "video_file": "15969185893096.mp4",
+  "speaker_roles": {
+    "SPEAKER_01": "EMPLOYEE",
+    "SPEAKER_02": "CLIENT",
+    "SPEAKER_03": "EMPLOYEE"
+  },
+  "employee_speaker": "SPEAKER_01",
+  "criteria": [
+    {
+      "id": "needs_assessment",
+      "name": "Потребности",
+      "description": "Проводит презентацию основываясь на ключевой потребности клиента",
+      "weight": 1,
+      "passed": true,
+      "comment": "Презентация построена на ключевых потребностях клиента: после слов о семье и багажнике сотрудник ведёт к багажнику и рассказывает о вместительности, удобстве для поездок с семьёй, а также реагирует на вопрос о гарантии.",
+      "evidence_segments": [
+        {
+          "start": 199.58,
+          "end": 204.96
+        },
+        {
+          "start": 209.4,
+          "end": 213.28
+        },
+        {
+          "start": 228.74,
+          "end": 238.02
+        },
+        {
+          "start": 261.27,
+          "end": 271.73
+        },
+        {
+          "start": 289.66,
+          "end": 297.18
+        },
+        {
+          "start": 335.16,
+          "end": 344.0
+        }
+      ],
+      "awarded_weight": 1
+    },
+    {
+      "id": "needs_assessment_2",
+      "name": "Потребности",
+      "description": "Задает уточняющие вопросы по потребностям",
+      "weight": 1,
+      "passed": true,
+      "comment": "Сотрудник задал уточняющий вопрос о размере семьи ('у вас вообще как может семья большая или один-два'), а также начальный вопрос о выбранном автомобиле.",
+      "evidence_segments": [
+        {
+          "start": 4.48,
+          "end": 8.58
+        },
+        {
+          "start": 199.58,
+          "end": 204.96
+        }
+      ],
+      "awarded_weight": 1
+    },
+    {
+      "id": "dialog_control",
+      "name": "Инициатива",
+      "description": "Перехватывает инициативу диалога",
+      "weight": 1,
+      "passed": true,
+      "comment": "Сотрудник уверенно управляет диалогом: направляет внимание на переднюю оптику, предлагает перейти к багажнику, подводит к тест-драйву.",
+      "evidence_segments": [
+        {
+          "start": 112.02,
+          "end": 117.55
+        },
+        {
+          "start": 209.4,
+          "end": 213.28
+        },
+        {
+          "start": 384.86,
+          "end": 387.38
+        }
+      ],
+      "awarded_weight": 1
+    },
+    {
+      "id": "team_invitation",
+      "name": "Приглашение коллег",
+      "description": "Предлагает осмотр подкапотного пространства",
+      "weight": 1,
+      "passed": false,
+      "comment": "Предложение осмотреть подкапотное пространство в транскрипте не зафиксировано. Упоминался осмотр на подъёмнике, но не двигатель под капотом.",
+      "evidence_segments": [],
+      "awarded_weight": 0
+    },
+    {
+      "id": "driver_seat_offer",
+      "name": "Место водителя",
+      "description": "Предлагает присесть на водительское место и садится рядом на место переднего пассажира",
+      "weight": 1,
+      "passed": false,
+      "comment": "Нет речевых маркеров (предложения сесть за руль, фраз типа 'присядьте на водительское место'). Демонстрация салона могла проходить внутри автомобиля, но явного предложения не прозвучало, визуально подтвердить нельзя.",
+      "evidence_segments": [],
+      "awarded_weight": 0
+    },
+    {
+      "id": "name_usage",
+      "name": "Имя клиента",
+      "description": "По ходу презентации обращается к клиенту по имени не менее 3 раз",
+      "weight": 1,
+      "passed": false,
+      "comment": "Имя клиента Михаил прозвучало дважды: при приветствии и при переходе к багажнику. Три раза не достигнуто.",
+      "evidence_segments": [
+        {
+          "start": 4.48,
+          "end": 8.58
+        },
+        {
+          "start": 209.4,
+          "end": 213.28
+        }
+      ],
+      "awarded_weight": 0
+    },
+    {
+      "id": "competitive_advantages",
+      "name": "Преимущества",
+      "description": "Рассказывает о преимуществах перед конкурентами данной модели",
+      "weight": 1,
+      "passed": true,
+      "comment": "Сотрудник сравнил автомобиль с Solaris ('получше чем солярик') и упомянул, что такие же коробки ставятся на Camry и Corolla, подчеркивая качество.",
+      "evidence_segments": [
+        {
+          "start": 32.84,
+          "end": 35.0
+        },
+        {
+          "start": 106.36,
+          "end": 112.02
+        }
+      ],
+      "awarded_weight": 1
+    },
+    {
+      "id": "main_functions_demo",
+      "name": "Основные функции",
+      "description": "Показывает как работают основные функции автомобиля",
+      "weight": 1,
+      "passed": true,
+      "comment": "Показаны приборная панель, управление паркингом, электроручник, автохолд, автосвет, датчик дождя, мультимедиа с руля, старт-стоп, бесключевой доступ, подогревы и регулировки зеркал, руль — сотрудник рассказывает и, судя по словам 'здесь', 'у нас', демонстрирует.",
+      "evidence_segments": [
+        {
+          "start": 159.16,
+          "end": 165.32
+        },
+        {
+          "start": 165.32,
+          "end": 172.92
+        },
+        {
+          "start": 172.92,
+          "end": 184.94
+        },
+        {
+          "start": 185.82,
+          "end": 191.66
+        }
+      ],
+      "awarded_weight": 1
+    },
+    {
+      "id": "extra_options_demo",
+      "name": "Доп. опции",
+      "description": "Показывает как работают дополнительные опции автомобиля",
+      "weight": 1,
+      "passed": true,
+      "comment": "Продемонстрированы дополнительные опции: электроподъём багажника, панорамная крыша со шторкой, функция откидывания.",
+      "evidence_segments": [
+        {
+          "start": 271.73,
+          "end": 276.95
+        },
+        {
+          "start": 298.9,
+          "end": 307.36
+        }
+      ],
+      "awarded_weight": 1
+    },
+    {
+      "id": "test_drive_offer",
+      "name": "Тест-драйв",
+      "description": "Предлагает провести тест-драйв по дорогам общего пользования",
+      "weight": 1,
+      "passed": true,
+      "comment": "Сотрудник прямо предложил провести тест-драйв: 'Давайте тогда попробуем тест-драйв провести'.",
+      "evidence_segments": [
+        {
+          "start": 384.86,
+          "end": 387.38
+        }
+      ],
+      "awarded_weight": 1
+    }
+  ],
+  "criteria_snapshot": [
+    {
+      "id": "needs_assessment",
+      "name": "Потребности",
+      "description": "Проводит презентацию основываясь на ключевой потребности клиента",
+      "weight": 1
+    },
+    {
+      "id": "needs_assessment_2",
+      "name": "Потребности",
+      "description": "Задает уточняющие вопросы по потребностям",
+      "weight": 1
+    },
+    {
+      "id": "dialog_control",
+      "name": "Инициатива",
+      "description": "Перехватывает инициативу диалога",
+      "weight": 1
+    },
+    {
+      "id": "team_invitation",
+      "name": "Приглашение коллег",
+      "description": "Предлагает осмотр подкапотного пространства",
+      "weight": 1
+    },
+    {
+      "id": "driver_seat_offer",
+      "name": "Место водителя",
+      "description": "Предлагает присесть на водительское место и садится рядом на место переднего пассажира",
+      "weight": 1
+    },
+    {
+      "id": "name_usage",
+      "name": "Имя клиента",
+      "description": "По ходу презентации обращается к клиенту по имени не менее 3 раз",
+      "weight": 1
+    },
+    {
+      "id": "competitive_advantages",
+      "name": "Преимущества",
+      "description": "Рассказывает о преимуществах перед конкурентами данной модели",
+      "weight": 1
+    },
+    {
+      "id": "main_functions_demo",
+      "name": "Основные функции",
+      "description": "Показывает как работают основные функции автомобиля",
+      "weight": 1
+    },
+    {
+      "id": "extra_options_demo",
+      "name": "Доп. опции",
+      "description": "Показывает как работают дополнительные опции автомобиля",
+      "weight": 1
+    },
+    {
+      "id": "test_drive_offer",
+      "name": "Тест-драйв",
+      "description": "Предлагает провести тест-драйв по дорогам общего пользования",
+      "weight": 1
+    }
+  ],
+  "earned_score": 7,
+  "max_score": 10,
+  "overall_average": 70.0,
+  "speaker_roles_confidence": {
+    "SPEAKER_01": 0.95,
+    "SPEAKER_02": 0.98,
+    "SPEAKER_03": 0.85
+  },
+  "speaker_roles_reasoning": "SPEAKER_01 приветствует клиента Михаила, задаёт вопрос о выбранном автомобиле, управляет презентацией и предлагает тест-драйв — это основной менеджер. SPEAKER_02 отвечает на вопросы, описывает свои потребности (семья, дети, багажник) и задаёт вопрос о гарантии — очевидно клиент. SPEAKER_03 говорит «У нас есть», помогает показывать оптику и другие элементы, но его роль вторична — вероятно, коллега-консультант.",
+  "reasoning_trace": "We are given a transcript with three speakers: SPEAKER_01, SPEAKER_02, SPEAKER_03. We need to identify which one is the employee (manager/consultant) and which is the client. We need to analyze the conversation to determine roles. The transcript shows various exchanges about a car. Let's analyze the content:\n\n- First segment: [4.48–8.58] SPEAKER_01: Михаил, здравствуйте. Какой автомобиль вы здесь подобрали? (Mikhail, hello. Which car did you pick out here?) This sounds like an employee greeting a client, asking which car they are looking at. But careful: \"вы здесь подобрали\" implies they might have already picked out a car online or are looking at it. This is typical of a consultant. The name \"Михаил\" suggests the client's name. So SPEAKER_01 addresses Mikhail. So Mikhail might be the client. But we have three speakers. Later segments: \n- [8.92–13.56] SPEAKER_02: \"Ну я вообще хотел рассмотреть дилер нового, седана, автомобиль.\" (Well I generally wanted to look at a dealer of a new sedan car.) This sounds like a client answering the question. SPEAKER_02 might be Mikhail. \n- [14.10–20.48] SPEAKER_02: \"Вообще смотрел самарис, георгий, смотрел.\" (Generally looked at Samaris, Georgiy, looked.) This seems like client mentioning they looked at Solaris? Could be \"Солярис\" (Hyundai Solaris) misrecognized as \"самарис, георгий\"? Possibly the client says they looked at Solaris and something else. So SPEAKER_02 is speaking to someone, maybe the employee.\n- [20.58–21.18] SPEAKER_03: \"Я понял.\" (I understood.) Short. \n- [21.54–22.78] SPEAKER_03: \"Что вообще у вас?\" (What do you have at all?) This sounds like a question from an employee or someone? But this could be the employee asking the client what they have in mind? Or maybe SPEAKER_03 is a third person? \n- [23.40–26.90] SPEAKER_03: \"У нас есть бездельный\" (We have a... \"бездельный\" might be misrecognized for \"без пробега?\" Actually \"бездельный\" doesn't make sense. It could be \"бездельный\" or \"без пробега\"? Later we see \"практически 0 человек 40\" which might be misrecognized. Transcript is messy. But \"У нас есть\" suggests the speaker is from the company, offering something. So SPEAKER_03 could be an employee. \n- [26.90–27.48] SPEAKER_01: \"снижение.\" (reduction.) So SPEAKER_01 adds something. Could be two employees working together? Or maybe SPEAKER_01 and SPEAKER_03 are both employees, and SPEAKER_02 is the client. \n- [28.14–28.84] SPEAKER_03: \"Ну\" (Well)\n- [28.84–30.46] SPEAKER_02: \"от китайцев мы как-то не особо.\" (from Chinese we somehow not really.) This is likely the client expressing reluctance about Chinese cars. So SPEAKER_02 is client.\n- [30.46–32.84] SPEAKER_02: \"будет\" (will be)\n- [32.84–35.00] SPEAKER_01: \"получше чем солярик\" (better than Solaris). So SPEAKER_01 comparing, probably employee.\n- [35.00–38.88] SPEAKER_01: \"практически 0 человек 40\" (practically 0 person 40) misrecognized, likely \"практически 0 пробег\" maybe?\n- [38.88–46.20] SPEAKER_01: \"на классическом автомате айсин\" (on a classic automatic Aisin). So SPEAKER_01 is describing car features.\n- Later, [55.12–62.32] SPEAKER_03: \"Техническое обслуживание, архивы безопасности, посмотрим, как оно\" (Technical maintenance, safety archives, let's see how it is) This might be employee talking.\n- [62.32–62.80] SPEAKER_01: \"там вообще.\"\n- [63.24–64.44] SPEAKER_03: \"обращу\" (I'll pay attention)\n- [74.42–82.92] SPEAKER_01: \"внимание пробег 40 километров повторюсь здесь практически нет никакого износа не коррозии\" (attention mileage 40 kilometers I repeat there is practically no wear no corrosion) So SPEAKER_01 is presenting the car with low mileage, likely employee.\n- [82.92–90.94] SPEAKER_01: \"Есть защита на турбине. Будет удобно обслуживать турбину... \" (There is protection on the turbine. It will be convenient to service the turbine...). Employee.\n- [91.18–96.08] SPEAKER_01: \"То есть это будет дешевое обслуживание...\" (That is, it will be cheap maintenance...). Employee.\n- [97.72–106.24] SPEAKER_01: \"Также хотел бы рассказать, что эта коробка передач i-SIM это японское производство...\" (Also I would like to tell that this gearbox i-SIM is Japanese production...). Employee.\n- [106.36–112.02] SPEAKER_01: \"Такие стоят в Camry, в Corolla...\" (These are in Camry, Corolla...). Employee.\n- [112.02–117.55] SPEAKER_01: \"Давайте пока обратим внимание на переднюю\" (Let's now pay attention to the front). Employee.\n- [117.99–125.71] SPEAKER_03: \"оптику. Сдвоенная LED оптика с подсветкой\" (optics. Dual LED optics with lighting) – this sounds like employee or maybe another person? Could be a second employee? Or maybe SPEAKER_03 is the employee picking up where SPEAKER_01 left off? But note that [117.99–125.71] is SPEAKER_03 saying about optics. Then [128.29–132.95] SPEAKER_01: \"значка. Красивые хромированные элементы. Губа\" (badge. Beautiful chrome elements. Lip). So they seem to be alternating. Possibly two consultants showing the car together? That's plausible. But then [132.95–134.07] SPEAKER_02: \"тоже выполнена в\" (also made in) then [134.07–136.39] SPEAKER_01: \"качестве хрома.\" (quality of chrome). So client chimes in? That segment seems like client might be asking or remarking. Actually SPEAKER_02 is present and commenting.\n- Later, [204.96–207.92] SPEAKER_02: \"семья двое детей багажник я\" (family two children trunk I) – client sharing needs.\n- [207.92–209.40] SPEAKER_01: \"понял\" (understood)\n- [209.40–213.28] SPEAKER_01: \"михаил вас смотрите так как пройдемся к багажнику\" (Mikhail you look so let's go to the trunk) So SPEAKER_01 addresses the client as Mikhail, so SPEAKER_02 is Mikhail? But SPEAKER_01 says \"Михаил, вас смотрите так как пройдемся к багажнику\". That confirms that SPEAKER_01 is the employee addressing Mikhail (the client), so Mikhail must be SPEAKER_02 (since that's who was talking about family). So SPEAKER_02 = Client Mikhail.\n- Then SPEAKER_01 is clearly the main presenter, using \"Михаил\" and detailing features. So SPEAKER_01 is Employee 1. \n- What about SPEAKER_03? They also speak with \"У нас есть\", \"оптику\", \"сдвоенная LED оптика\". So this might be a second employee, maybe a colleague also presenting the car? Or could it be the same as SPEAKER_01 and the segmentation mixed up? But they have different speaker IDs. In the acoustic summary, SPEAKER_03 has a lower pitch (85.89 Hz) and some segments marked as \"прочее\". Could be another consultant. In such car presentations, it's common for a manager and a salesperson to both talk. But the criteria are about the employee. We need to decide which one to evaluate? The criteria state \"сотрудник (менеджер, консультант)\" and we need to evaluate the employee's performance. If there are two employees, perhaps they both are evaluated as a team? But the instruction: \"Все критерии относятся только к сотруднику (менеджеру, консультанту), не к клиенту.\" We need to pick one or consider them as one? But we need to assign an employee_speaker id. Since SPEAKER_01 seems to be the primary consultant who greets and leads, we'll consider SPEAKER_01 as the main employee. SPEAKER_03 might be an assistant, but many of the criteria (like \"предлагает осмотр подкапотного пространства\", \"предлагает присесть на водительское место\") could be performed by either. However, from the transcript, the offer to show the car, ask about test drive, etc., likely comes from SPEAKER_01. We'll need to see each criterion.\n\nLet's identify roles:\n- SPEAKER_01: employee (primary), as they greet Mikhail, ask about car choice, present features, suggest going to trunk, propose test drive (at end: \"Давайте тогда попробуем тест-драйв провести.\").\n- SPEAKER_02: client Mikhail, expressed needs, asked about warranty.\n- SPEAKER_03: possibly another employee? The segments where SPEAKER_03 speaks: \"Я понял.\", \"Что вообще у вас?\", \"У нас есть бездельный\", \"Ну\", \"Техническое обслуживание, архивы безопасности, посмотрим, как оно\", \"обращу\", \"основные\", \"оптику. Сдвоенная LED оптика с подсветкой\", etc. Some of these could be employee speech: \"У нас есть\" (we have), \"оптику\" (optics), \"основные\" (main). But note [117.99–125.71] SPEAKER_03: \"оптику. Сдвоенная LED оптика с подсветкой\". That might be the employee pointing out features. So SPEAKER_03 could be another consultant, maybe showing the front optics while SPEAKER_01 momentarily steps aside? But the main flow is SPEAKER_01 leading. Also, the transcript has segments like [26.90–27.48] SPEAKER_01: \"снижение.\" after SPEAKER_03 said \"У нас есть бездельный\". Could be a team effort. For the purpose of evaluating the employee, we can consider both SPEAKER_01 and SPEAKER_03 as part of the staff, but the criteria items like \"Предлагает присесть на водительское место\" might be done by either. However, we need to assign an employee_speaker. Since SPEAKER_01 is the one who addresses Mikhail directly, maintains control, and proposes test drive, we'll designate SPEAKER_01 as the employee. We'll note that SPEAKER_03 might be another employee, but we'll evaluate based on SPEAKER_01's actions and also note if SPEAKER_03's actions contribute to the criteria. But the instruction: \"Перед оценкой явно определи: какой говорящий — сотрудник ... и какой — клиент ... Не приписывай репликам клиента оценку по критериям сотрудника\". So we need to pick one employee speaker. Since SPEAKER_01 is clearly the main, we'll go with that. We'll mention any doubt in speaker_roles_reasoning. The confidence might be high for SPEAKER_02 as client, high for SPEAKER_01 as employee, and maybe lower for SPEAKER_03 as employee (we can label SPEAKER_03 as \"EMPLOYEE\" with lower confidence, but we only need to output one employee_speaker id. The schema has \"employee_speaker\": string, so we need to pick one. I'll output \"employee_speaker\": \"SPEAKER_01\". And in speaker_roles, assign SPEAKER_01: EMPLOYEE, SPEAKER_02: CLIENT, SPEAKER_03: EMPLOYEE? But the instruction didn't forbid multiple employees, but they asked to define which speaker is the employee. I'll label SPEAKER_03 as EMPLOYEE as well, with confidence, but the employee_speaker will be SPEAKER_01. I'll include all three in speaker_roles: SPEAKER_01: EMPLOYEE, SPEAKER_02: CLIENT, SPEAKER_03: EMPLOYEE. That's fine.\n\nNow, for the criteria, we evaluate based on the employee (primarily SPEAKER_01, but also if SPEAKER_03 performs an action that fulfills a criterion, it's still an employee action. However, the instruction says \"evidence_segments: только отрезки с речью сотрудника, если критерий про его действия\". So we can include segments from either employee. I'll treat the whole staff as one entity, but since the criteria require evidence, I'll use segments from both SPEAKER_01 and SPEAKER_03 where applicable. But careful: if the criterion is like \"Предлагает осмотр подкапотного пространства\", we need to see if any employee offers that. That might be SPEAKER_01 or SPEAKER_03. I'll examine.\n\nNow evaluate each criterion:\n\n1. needs_assessment: Проводит презентацию основываясь на ключевой потребности клиента. Did the employee tailor the presentation to the client's key need? The client expressed: [8.92–13.56] wanted a new sedan, looked at Solaris, [28.84–30.46] not keen on Chinese, [204.96–207.92] family with two kids, trunk important, [332.56–334.90] asked about warranty. The employee (SPEAKER_01) later talks about trunk space, family use, and low wear, etc. Specifically, after the client mentions family and trunk, employee leads to trunk: [209.40–213.28] \"михаил вас смотрите так как пройдемся к багажнику\" and then emphasizes trunk size: [228.74–238.02] \"багажнику этого автомобиля огромный\", [261.27–271.73] \"про багажник электроподъем ...\", [289.66–297.18] \"флиренс тоже достаточно неплохой можно будет куда нибудь на природу выехать со семьей\". So the presentation was adapted to the family/trunk need. Also, warranty concern addressed later. So passed: true.\n\n2. needs_assessment_2: Задает уточняющие вопросы по потребностям. Does the employee ask clarifying questions? At the start, SPEAKER_01 asks: \"Какой автомобиль вы здесь подобрали?\" That's a question to understand initial interest. Later, [199.58–204.96] SPEAKER_01 asks: \"у вас вообще как может семья большая или один-два\" (how big is your family, one or two?) That's a clarifying question about needs. So yes, there is at least one clarifying question. Passed.\n\n3. dialog_control: Перехватывает инициативу диалога. The employee should take control of the conversation. After the initial greeting and client's answers, SPEAKER_01 takes control, leading the presentation: \"Давайте пока обратим внимание на переднюю\" [112.02–117.55], \"михаил вас смотрите так как пройдемся к багажнику\" [209.40–213.28], \"Давайте тогда попробуем тест-драйв провести.\" [384.86–387.38]. So clearly controls the flow. Passed.\n\n4. team_invitation: Предлагает осмотр подкапотного пространства. Did any employee offer to inspect the engine bay? In the transcript, we see mention of \"защита на турбине\", \"коробка передач\", but no explicit invitation to open the hood and look at the engine compartment. The segment [346.12–356.36] SPEAKER_01 says: \"Если вы боитесь надежности этого агрегата, мы можем поднять ее на подъемник и показать вам все это снизу, со стороны.\" (If you are afraid of the reliability of this unit, we can lift it and show you everything from below, from the side.) That's about a lift, not engine bay. There's no mention of opening the hood or showing the engine. So probably false. But check if any other employee offered? Not in the provided segments. So passed: false.\n\n5. driver_seat_offer: Предлагает присесть на водительское место и садится рядом на место переднего пассажира. Did the employee offer to sit in the driver's seat? We don't have any explicit mention like \"садитесь за руль\" or similar. There is talk about interior features: [159.16–172.92] about \"планшет... спидометр одометр... селектор... электроручник, автохолл\", etc. That could be while sitting in the car, but not necessarily. There's no explicit offer to sit in the driver's seat. The phrase \"Давайте пока обратим внимание на переднюю\" might be external. We need to see if they are already inside? Possibly the demonstration of the interior implies they are inside the car, but did the employee specifically say \"присядьте на водительское\"? Not clear. Without concrete evidence, we have to mark false, as we can't confirm. However, the instruction says for visual elements: \"сначала попробуй восстановить её по речевым маркерам в разговоре: словам сотрудника и клиента, явным упоминаниям показа, осмотра, демонстрации, реакции собеседника\". Is there any mention of testing or sitting? No. So we cannot confirm. Passed: false.\n\n6. name_usage: По ходу презентации обращается к клиенту по имени не менее 3 раз. Client name is Mikhail. Count how many times the employee uses the name: [4.48–8.58] SPEAKER_01 says \"Михаил, здравствуйте.\" That's 1. [209.40–213.28] SPEAKER_01: \"михаил вас смотрите так как пройдемся к багажнику\" – that's 2. Does he say it again? We don't see another mention in the transcript. Are there any other instances? [332.56–334.90] client asks about warranty, employee responds but doesn't use name. Later segments: [384.86–387.38] \"Давайте тогда попробуем тест-драйв провести.\" No name. So only two occurrences found. So false, as not at least 3 times.\n\n7. competitive_advantages: Рассказывает о преимуществах перед конкурентами данной модели. Employee mentions comparisons: [32.84–35.00] \"получше чем солярик\" (better than Solaris), [106.36–112.02] \"Такие стоят в Camry, в Corolla, во всяких таких автомобилях\" – compares gearbox to those found in Toyota models, implying quality. Also [38.88–46.20] \"на классическом автомате айсин\" (on a classic Aisin automatic) – Aisin is known for reliability. Possibly also against Chinese cars: earlier client said \"от китайцев мы как-то не особо,\" and employee didn't directly counter but later emphasized Japanese gearbox, etc. The comparison \"получше чем солярик\" is explicit. So there is at least one advantage over a competitor (Solaris). So passed: true.\n\n8. main_functions_demo: Показывает как работают основные функции автомобиля. From the transcript, employee demonstrates functions: [159.16–165.32] \"планшет так называемый здесь управление функциями здесь соответственно спидометр\", [165.32–172.92] \"одометр и так далее включение паркинга с кнопки селектор который у нас выполнен\", [172.92–184.94] \"в стиле Octavia V8, есть электроручник, автохолл, система автоматического, автосвет, датчик дождя, датчик света\", [185.82–191.66] \"мультирует шикарно, управление мультимедией с руля тоже, старт-стоп, бесключевой доступ, подогревы боковых зеркал, электрорегулировки зеркал, руль тоже у нас регулируется в двух\". These are verbal demonstrations of functions. The criterion is \"показывает как работают\". If it's a physical show, they might be demonstrating in person. The employee likely points and explains. The words \"здесь\", \"у нас\", \"включение паркинга с кнопки\" indicate demonstration. So passed: true.\n\n9. extra_options_demo: Показывает как работают дополнительные опции автомобиля. What are extra options? The employee mentions: [298.90–307.36] \"панорама со шторкой и функция откидывания\" (panorama with curtain and folding function?) – that's an extra feature. Also earlier, [271.73–276.95] \"электроподъем багажник ... автоматически сам поднимается\" – power liftgate is an extra option? It could be standard but likely shown. [185.82–191.66] \"мультимедий с руля, старт-стоп, бесключевой доступ\" – those might be extra or top trim. So there is demonstration of extra features. Passed: true.\n\n10. test_drive_offer: Предлагает провести тест-драйв по дорогам общего пользования. The last segment [384.86–387.38] SPEAKER_01: \"Давайте тогда попробуем тест-драйв провести.\" That explicitly offers a test drive. Passed: true.\n\nNow we need to gather evidence_segments for each criterion. For each, we provide intervals where the employee (SPEAKER_01 or SPEAKER_03) of relevant evidence appears. We'll only use the employee's segments. For needs_assessment: evidence could be the part where employee asks about family and then adapts: [199.58–204.96] (employee asks about family), [209.40–213.28] (suggests going to trunk). So I'll include those intervals. For needs_assessment_2: the clarifying question about family [199.58–204.96]. Also maybe the initial question? That's also a question. So [4.48–8.58] and [199.58–204.96]. I'll include both. For dialog_control: many instances: [112.02–117.55] \"Давайте пока обратим внимание на переднюю\", [209.40–213.28] \"михаил вас смотрите так как пройдемся к багажнику\", [384.86–387.38] \"Давайте тогда попробуем тест-драйв провести.\" So include those. For team_invitation: no evidence, so empty. For driver_seat_offer: empty. For name_usage: the two mentions: [4.48–8.58] and [209.40–213.28]. For competitive_advantages: [32.84–35.00] (получше чем солярик) and [106.36–112.02] (comparison with Camry, Corolla). For main_functions_demo: several segments: [159.16–165.32], [165.32–172.92], [172.92–184.94], [185.82–191.66] – I'll pick the main blocs. Actually need to include the intervals where functions are listed. I'll include the range where they talk about dashboard, parking, etc. For extra_options_demo: [271.73–276.95] (электроподъем багажник), [298.90–307.36] (панорама). Also maybe [185.82–191.66] mentions some extras like keyless entry, but that may overlap with main functions. I'll include specific extra options. For test_drive_offer: [384.86–387.38].\n\nWe need to be careful with time intervals: only the exact start and end from the transcript. So I'll copy the timestamps exactly as given. For example, [199.58–204.96] is the segment from the transcript. So that's fine.\n\nNow fill out JSON.\n\nConfidence in roles: I'll set SPEAKER_01 employee confidence 0.95, SPEAKER_02 client confidence 0.98, SPEAKER_03 employee confidence 0.85 (since less clear but still likely). reasoning: SPEAKER_01 greets by name, presents car, offers test drive; SPEAKER_02 expresses needs, asks questions from buyer perspective; SPEAKER_03 uses \"У нас есть\", helps with presentation, likely a co-worker.\n\nNow produce the final JSON."
+}

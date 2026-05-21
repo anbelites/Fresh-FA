@@ -1,0 +1,341 @@
+{
+  "schema_version": 3,
+  "criteria_version": "1",
+  "criteria_file": "oo_incoming_call",
+  "evaluated_at": "2026-05-20T09:39:32.967045+00:00",
+  "model": "deepseek-v4-pro",
+  "video_file": "VID_20260520_123343.mp4",
+  "speaker_roles": {
+    "SPEAKER_01": "EMPLOYEE",
+    "SPEAKER_02": "CLIENT"
+  },
+  "employee_speaker": "SPEAKER_01",
+  "criteria": [
+    {
+      "id": "self_intro",
+      "name": "Представление",
+      "description": "Начинает общение с представления и слов приветствия",
+      "weight": 1,
+      "passed": false,
+      "comment": "Сотрудник начал разговор с 'Начинаем', без приветствия и представления (не назвал ни компанию, ни своё имя). Возможно, начало диалога обрезано, но в предоставленном фрагменте самопрезентация отсутствует.",
+      "evidence_segments": [
+        {
+          "start": 26.56,
+          "end": 27.96
+        }
+      ],
+      "awarded_weight": 0
+    },
+    {
+      "id": "name_usage",
+      "name": "Имя клиента",
+      "description": "Уточняет имя клиента, обращается на «Вы» и по имени",
+      "weight": 1,
+      "passed": false,
+      "comment": "Сотрудник обращается на «Вы» и использует имя клиента ('Сильвия', 'Ильвер'), однако нигде не уточнил и не запросил имя клиента в данном разговоре. Имя могло быть известно из системы, но шаг 'уточняет имя' не выполнен.",
+      "evidence_segments": [
+        {
+          "start": 83.2,
+          "end": 84.42
+        },
+        {
+          "start": 115.46,
+          "end": 119.02
+        }
+      ],
+      "awarded_weight": 0
+    },
+    {
+      "id": "speech_quality",
+      "name": "Речь",
+      "description": "При разговоре не использует \"не знаю\", сленг, жаргон, уменьшительно-ласкательные слова",
+      "weight": 1,
+      "passed": true,
+      "comment": "В речи сотрудника отсутствуют слова-паразиты 'не знаю', сленг, жаргон и уменьшительно-ласкательные формы. Речь формальная и профессиональная.",
+      "evidence_segments": [
+        {
+          "start": 30.0,
+          "end": 35.36
+        },
+        {
+          "start": 39.84,
+          "end": 46.12
+        },
+        {
+          "start": 61.1,
+          "end": 62.94
+        }
+      ],
+      "awarded_weight": 1
+    },
+    {
+      "id": "car_info",
+      "name": "Данные авто",
+      "description": "Уточняет информацию об автомобиле",
+      "weight": 1,
+      "passed": true,
+      "comment": "Сотрудник уточнил марку/модель ('какой автомобиль?'), историю обслуживания ('всё проходили у дилера?'), состояние кузова ('по кузову как?') и пробег, собрав ключевую информацию об автомобиле.",
+      "evidence_segments": [
+        {
+          "start": 83.2,
+          "end": 84.42
+        },
+        {
+          "start": 115.46,
+          "end": 119.04
+        },
+        {
+          "start": 139.5,
+          "end": 142.14
+        }
+      ],
+      "awarded_weight": 1
+    },
+    {
+      "id": "sale_reason",
+      "name": "Причина продажи",
+      "description": "Выясняет ответы на вопросы «Почему, когда?»",
+      "weight": 1,
+      "passed": false,
+      "comment": "В репликах сотрудника (SPEAKER_01) нет явного вопроса о причине продажи. Ответ клиента ('хочу свою быстренько продать, купить там Камри') мог быть вызван предыдущим, но по разметке этот фрагмент отнесён к SPEAKER_02, и надёжно подтвердить, что сотрудник целенаправленно выяснял причину и сроки, не удаётся.",
+      "evidence_segments": [],
+      "awarded_weight": 0
+    },
+    {
+      "id": "prezentuet_uslugu_i",
+      "name": "Презентует услугу и",
+      "description": "Презентует услугу и компанию",
+      "weight": 1,
+      "passed": true,
+      "comment": "Сотрудник подробно презентует услуги компании: комиссионную продажу, прямой выкуп, трейд-ин, а также бесплатную диагностику, размещение в рекламе и профессиональную подготовку.",
+      "evidence_segments": [
+        {
+          "start": 30.0,
+          "end": 35.36
+        },
+        {
+          "start": 36.26,
+          "end": 39.48
+        },
+        {
+          "start": 39.84,
+          "end": 46.12
+        },
+        {
+          "start": 52.08,
+          "end": 58.46
+        },
+        {
+          "start": 61.1,
+          "end": 62.94
+        },
+        {
+          "start": 70.38,
+          "end": 72.02
+        }
+      ],
+      "awarded_weight": 1
+    },
+    {
+      "id": "alternative_service",
+      "name": "Альтернатива",
+      "description": "Презентует альтернативные варианты услуг",
+      "weight": 1,
+      "passed": true,
+      "comment": "Предложил альтернативные варианты услуг: комиссионная продажа, прямой выкуп и трейд-ин (обмен). Клиент может выбрать подходящее решение.",
+      "evidence_segments": [
+        {
+          "start": 36.26,
+          "end": 39.48
+        },
+        {
+          "start": 61.1,
+          "end": 62.94
+        },
+        {
+          "start": 70.38,
+          "end": 72.02
+        }
+      ],
+      "awarded_weight": 1
+    },
+    {
+      "id": "objection_handling",
+      "name": "Возражения",
+      "description": "Работает с возражениями",
+      "weight": 1,
+      "passed": true,
+      "comment": "Клиент выразил сомнение в корректности оценки ('занижаете не занижаете') – сотрудник спокойно объяснил рыночный подход и межрегиональную разницу. Ранее упоминание клиентом подозрительно дешёвого предложения сотрудник парировал доводом 'машину не видели, по телефону могут назвать любую сумму'.",
+      "evidence_segments": [
+        {
+          "start": 224.08,
+          "end": 231.02
+        },
+        {
+          "start": 263.52,
+          "end": 270.86
+        }
+      ],
+      "awarded_weight": 1
+    },
+    {
+      "id": "motiviruet_na_vizit",
+      "name": "Мотивирует на визит",
+      "description": "Мотивирует на визит в салон",
+      "weight": 1,
+      "passed": true,
+      "comment": "Сотрудник несколько раз приглашает клиента приехать посмотреть варианты, провести осмотр и оценить автомобиль, тем самым мотивируя на визит в салон.",
+      "evidence_segments": [
+        {
+          "start": 183.62,
+          "end": 188.74
+        },
+        {
+          "start": 288.4,
+          "end": 293.16
+        },
+        {
+          "start": 343.86,
+          "end": 346.2
+        }
+      ],
+      "awarded_weight": 1
+    },
+    {
+      "id": "no_exact_price",
+      "name": "Без точной цены",
+      "description": "Не называет точную цену",
+      "weight": 1,
+      "passed": true,
+      "comment": "Сотрудник ни разу не назвал точную цену автомобиля, ссылался на рыночную стоимость, межрегиональную разницу и необходимость очного осмотра.",
+      "evidence_segments": [
+        {
+          "start": 224.08,
+          "end": 231.02
+        },
+        {
+          "start": 263.52,
+          "end": 270.86
+        },
+        {
+          "start": 275.88,
+          "end": 280.08
+        }
+      ],
+      "awarded_weight": 1
+    },
+    {
+      "id": "phone_number",
+      "name": "Телефон",
+      "description": "Уточняет номер телефона",
+      "weight": 1,
+      "passed": false,
+      "comment": "Сотрудник упомянул 'номер 3460' и отправил свою смс-визитку, но не запросил и не подтвердил номер телефона клиента. Шаг 'уточняет номер телефона' не выполнен.",
+      "evidence_segments": [
+        {
+          "start": 357.86,
+          "end": 373.62
+        }
+      ],
+      "awarded_weight": 0
+    },
+    {
+      "id": "summary_and_goodbye",
+      "name": "Резюме",
+      "description": "Резюмирует договоренности и прощается по стандарту",
+      "weight": 1,
+      "passed": true,
+      "comment": "В конце разговора сотрудник чётко резюмировал: подытожил ('подытожим'), назвал дату и время встречи, упомянул отправку контактов и завершил вежливым 'Всего доброго'.",
+      "evidence_segments": [
+        {
+          "start": 357.86,
+          "end": 373.62
+        }
+      ],
+      "awarded_weight": 1
+    }
+  ],
+  "criteria_snapshot": [
+    {
+      "id": "self_intro",
+      "name": "Представление",
+      "description": "Начинает общение с представления и слов приветствия",
+      "weight": 1
+    },
+    {
+      "id": "name_usage",
+      "name": "Имя клиента",
+      "description": "Уточняет имя клиента, обращается на «Вы» и по имени",
+      "weight": 1
+    },
+    {
+      "id": "speech_quality",
+      "name": "Речь",
+      "description": "При разговоре не использует \"не знаю\", сленг, жаргон, уменьшительно-ласкательные слова",
+      "weight": 1
+    },
+    {
+      "id": "car_info",
+      "name": "Данные авто",
+      "description": "Уточняет информацию об автомобиле",
+      "weight": 1
+    },
+    {
+      "id": "sale_reason",
+      "name": "Причина продажи",
+      "description": "Выясняет ответы на вопросы «Почему, когда?»",
+      "weight": 1
+    },
+    {
+      "id": "prezentuet_uslugu_i",
+      "name": "Презентует услугу и",
+      "description": "Презентует услугу и компанию",
+      "weight": 1
+    },
+    {
+      "id": "alternative_service",
+      "name": "Альтернатива",
+      "description": "Презентует альтернативные варианты услуг",
+      "weight": 1
+    },
+    {
+      "id": "objection_handling",
+      "name": "Возражения",
+      "description": "Работает с возражениями",
+      "weight": 1
+    },
+    {
+      "id": "motiviruet_na_vizit",
+      "name": "Мотивирует на визит",
+      "description": "Мотивирует на визит в салон",
+      "weight": 1
+    },
+    {
+      "id": "no_exact_price",
+      "name": "Без точной цены",
+      "description": "Не называет точную цену",
+      "weight": 1
+    },
+    {
+      "id": "phone_number",
+      "name": "Телефон",
+      "description": "Уточняет номер телефона",
+      "weight": 1
+    },
+    {
+      "id": "summary_and_goodbye",
+      "name": "Резюме",
+      "description": "Резюмирует договоренности и прощается по стандарту",
+      "weight": 1
+    }
+  ],
+  "earned_score": 8,
+  "max_score": 12,
+  "overall_average": 66.7,
+  "speaker_roles_confidence": {
+    "SPEAKER_01": 0.92,
+    "SPEAKER_02": 0.91
+  },
+  "speaker_roles_reasoning": "SPEAKER_01 приветствует, презентует услуги, задаёт уточняющие вопросы о машине, обращается к клиенту по имени ('Ильвер', 'Сильвия') и назначает встречу. SPEAKER_02 отвечает о машине, пробеге, обслуживании и причине продажи.",
+  "reasoning_trace": "We need to evaluate the employee's speech based on the provided transcript and criteria. First, determine speaker roles: SPEAKER_01 appears to be the employee (manager, consultant) because they present the services, ask questions about the car, schedule an appointment, etc. SPEAKER_02 appears to be the client (answers questions about the car, asks about price, etc.). Let's verify:\n\nSPEAKER_01 starts with \"Начинаем.\" then \"Также мы можем продать ваш автомобиль несколькими путями, я вам сейчас более подробно расскажу.\" – that's clearly employee. Later: \"Ильвер, подскажите...\" (using the client's name, so SPEAKER_01 addresses SPEAKER_02 as Ilver). At [84.86–86.24], SPEAKER_01 says \"У меня Тойота\" – that seems odd because employee wouldn't say \"у меня\" about client's car? Wait, transcription: [84.86–86.24] SPEAKER_01: У меня Тойота | ... SER: нейтральный/умеренно. That might be a misassignment? Look at the labels: The previous segment [83.20–84.42] SPEAKER_01: \"вас, Сильвия, какой автомобиль вообще?\" So employee asks \"what car do you have?\" Then [84.86–86.24] SPEAKER_01: \"У меня Тойота\". That is likely a continuation of the client's answer, but the label still says SPEAKER_01. Could be an ASR error where the speaker tag didn't switch. Then [87.22–88.10] SPEAKER_02: \"2008 года.\" So client says \"У меня Тойота 2008 года.\" The \"У меня Тойота\" part might have been incorrectly attributed to SPEAKER_01. That makes sense: employee asks, client answers \"У меня Тойота 2008 года.\" but the first bit of the answer got labeled SPEAKER_01. So employee is actually SPEAKER_01 except for a few mislabeled bits. Let's check the flow: [83.20–84.42] SPEAKER_01: \"вас, Сильвия, какой автомобиль вообще?\" (employee addresses client by name \"Сильвия\" or maybe \"Ильвер\"? The client's name is \"Ильвер\" at [115.46] SPEAKER_01 says \"Ильвер, подскажите...\", so client's name is Ильвер. \"Сильвия\" might be misheard. So employee asks. Then [84.86–86.24] SPEAKER_01: \"У меня Тойота\" – probably client saying \"У меня Тойота\". So that's mislabeled. Then [87.22–88.10] SPEAKER_02: \"2008 года.\" – client continues. So overall, SPEAKER_01 is the employee, and SPEAKER_02 is the client. The mislabeling is a small portion, we'll treat accordingly. We'll set SPEAKER_01 = EMPLOYEE, SPEAKER_02 = CLIENT. The employee uses \"Ильвер\" and \"вас\" etc. Good.\n\nNow evaluate criteria. All criteria refer to the employee, so we'll evaluate SPEAKER_01.\n\nCriterion descriptions:\n- **self_intro** (Представление, вес 1): Начинает общение с представления и слов приветствия. Check if the employee introduces themselves and says greeting at the start of the conversation. The transcript starts at [26.56] with SPEAKER_01 saying \"Начинаем.\" and then \"Также мы можем продать ваш автомобиль несколькими путями, я вам сейчас более подробно расскажу.\" There is no \"Здравствуйте\" or \"Меня зовут ...\". The first segment might be cut off; the beginning may have been missed. But based on what we have, no explicit greeting or self-introduction. So passed = false. Comment: Employee started with \"Начинаем\" without greeting or introduction. Evidence: segments [26.56–27.96] etc. But note, the beginning might be cut; but we can only judge what's provided. So false.\n\n- **name_usage** (Имя клиента, вес 1): Уточняет имя клиента, обращается на «Вы» и по имени. Does employee ask for the client's name and address them by \"Вы\" and name? Employee asks \"вас, Сильвия, какой автомобиль вообще?\" at [83.20–84.42] which includes name (Сильвия, but later says Ильвер). Later at [115.46] \"Ильвер, подскажите,\" and uses \"вы\" consistently. The name was used, but did they ask the client's name? Not explicitly; they might have known from context or call. Still, they address by name and \"Вы\". Passed: true? But careful: The criterion says \"Уточняет имя клиента, обращается на «Вы» и по имени\". Employee might not have asked for name in the transcript, but uses it. Maybe they had it from prior. We'll check if there's any segment where they ask \"Как вас зовут?\" No. So they didn't clarify the name; they used a name that they presumably already had. The criterion might be interpreted as using the client's name appropriately. Would that be passed? The wording \"Уточняет имя клиента\" suggests they ask or confirm the name. I see at [83.20] they said \"вас, Сильвия,\" maybe that's a mishearing of \"Ильвер\". But they didn't ask. I'll consider it as they might have gotten the name from the system, but they did use the name, so partially okay. But it says \"Уточняет имя клиента\" which is a proactive step. Since they didn't, maybe false? But they address by name and on \"Вы\". I'll note that they didn't explicitly ask for name, but they used it. So I'll mark passed as false because the requirement is \"Уточняет имя клиента\", which they didn't. They just used a name they might already know, which is okay but not proactive. I'll say false: Employee did not clarify client's name in the conversation, only used it (which may have been known beforehand). Still, they used \"Вы\" and name, but missing clarification. So I'll set false.\n\n- **speech_quality** (Речь, вес 1): При разговоре не использует \"не знаю\", сленг, жаргон, уменьшительно-ласкательные слова. Check employee's speech for any \"не знаю\", slang, jargon, diminutives. There is no \"не знаю\" used. There is no obvious slang. However, employee uses \"камри 70\" (Camry 70) which is model jargon but acceptable. No diminutives like \"машинка\" etc. So passed = true.\n\n- **car_info** (Данные авто, вес 1): Уточняет информацию об автомобиле. Employee asks about the car: \"какой автомобиль вообще?\" at [83.20], then later \"сколько пробега?\" (though that might be mislabeled? At [88.86–93.84] SPEAKER_02 says \"сколько пробега? ...\" but that's SPEAKER_02, so client asking? Wait: [88.86–93.84] SPEAKER_02: \"сколько пробега? На ней уже, ну, слушайте, 350 тысяч пробега. Я понял. А давно\" That's weird: the client asks about пробег and then answers? Actually, it seems the employee asked about пробег and the client answered, but the label is SPEAKER_02. There is a mislabel. The employee likely asked \"сколько пробега?\" but it's under SPEAKER_02. Let's check: earlier [84.86–86.24] SPEAKER_01 said \"У меня Тойота\" (client mislabeled). Then [87.22–88.10] SPEAKER_02 says \"2008 года.\" Then [88.42–88.86] SPEAKER_01: \"А\" (maybe employee starting to ask). Then [88.86–93.84] SPEAKER_02: \"сколько пробега? На ней уже, ну, слушайте, 350 тысяч пробега. Я понял. А давно\" That is likely the employee asking \"сколько пробега?\" and the client answering \"350 тысяч пробега\", and the \"Я понял\" is employee acknowledging, then asking \"А давно сами владеете?\" So the label on [88.86–93.84] is likely a mix of employee and client. But as per labeling, it's attributed to SPEAKER_02, but we can still infer that the employee clarified car info. The employee also asks about обслуживание: \"все то проходили в первое время у дилера?\" [115.46–121.18]. So passed = true. They gathered car details.\n\n- **sale_reason** (Причина продажи, вес 1): Выясняет ответы на вопросы «Почему, когда?». Employee asks about reason: at [160.28–171.46] SPEAKER_02 says \"я нашел машину вот в уфе там камри 70 ... хочу как бы свое тут быстренько продать ее там купить\". That's client. Employee didn't explicitly ask \"почему продаете?\" but earlier the employee asks \"по какой причине продают?\" at [154.02–160.28] SPEAKER_02: \"единственно там на бампере сколы есть потому что бампер я не обтягивал а по какой причине продают\" – that's client, but the question is about why selling? Actually, [154.02–160.28] is SPEAKER_02, but they say \"а по какой причине продают\" which is likely client asking himself? No, it might be employee asking \"по какой причине продаете?\" but it's under SPEAKER_02. Let's read: \"единственно там на бампере сколы есть потому что бампер я не обтягивал а по какой причине продают\" – this looks like the employee asking about body condition and then asking \"а по какой причине продают?\" But label is SPEAKER_02. MISLABEL. The employee did ask the reason. Also later employee says \"Ну хорошо, вы правильно сказали, машину не видели...\" but that's about price. So likely employee inquired about reason. So I'll consider that employee did ask about selling reason. And client responded about wanting to buy another car. So passed = true.\n\n- **prezentuet_uslugu_i** (Презентует услугу и, вес 1): Презентует услугу и компанию. Employee presents multiple services: комиссионная продажа, прямой выкуп, трейд-ин (услуга трейдерная). They also mention \"бесплатная диагностика, размещение в рекламе и профессиональная подготовка\". This is clearly presentation of services. So passed = true. Evidence: segments from [30.00–35.36] onward.\n\n- **alternative_service** (Альтернатива, вес 1): Презентует альтернативные варианты услуг. Employee mentions three options: комиссионная продажа, выкуп, трейд-ин (услуга трейдерная). So alternatives are presented. Passed = true.\n\n- **objection_handling** (Возражения, вес 1): Работает с возражениями. Check for any objections from client and how employee handles. Client raises concerns about price: at [258.88–263.52] client asks \"ну там по цене скажите пожалуйста занижаете не занижаете\". Employee responds: \"оцениваем мы рыночную стоимость за счет того что у нас есть межрегиональная разница...\" and explains. Also earlier client mentioned a low price offer elsewhere and employee addressed that: [224.08–231.02] \"Вы правильно сказали, машину не видели... По телефону вам любую сумму могут назвать...\" So worked with objections. Passed = true.\n\n- **motiviruet_na_vizit** (Мотивирует на визит, вес 1): Мотивирует на визит в салон. Employee invites: \"вы приедете мы по факту сами определимся\" [288.40–293.16], \"можете приехать нам посмотреть\" [183.62–188.74], and schedules appointment at the end. So they motivate to visit. Passed = true.\n\n- **no_exact_price** (Без точной цены, вес 1): Не называет точную цену. Employee does not give an exact price for the client's car. They say \"оцениваем рыночную стоимость\" and explain factors. So passed = true.\n\n- **phone_number** (Телефон, вес 1): Уточняет номер телефона. Employee says \"вот номер 3460, это ваш личный\" and sends SMS-visitka. They mention phone number, but did they ask the client's phone number? At [357.86–373.62] employee says \"вот номер 3460, это ваш личный.\" That might be their own phone number? Or the client's record number? Unclear. Employee doesn't explicitly ask for client's phone number; they might have it already. The criterion says \"Уточняет номер телефона\" – that implies they ask the client to confirm or provide phone number. I don't see that. They say \"Я вам сейчас туда отправляю свою смс-визитку, там будет мой личный номер телефона, наш адрес\", but no confirmation of client's number. So no explicit phone number clarification. Thus passed = false.\n\n- **summary_and_goodbye** (Резюме, вес 1): Резюмирует договоренности и прощается по стандарту. Employee says \"Все, Вер, тогда подытожим. Завтра в 12 часов я вас жду, вот номер 3460, это ваш личный. ... Все, хорошо, договорились. Всего доброго. Всего доброго.\" That's a summary and goodbye. Passed = true.\n\nNow evidence segments: use actual time ranges where employee speaks. For each criterion, pick relevant segments. Since many segments are mislabeled, we'll stick to where SPEAKER_01 is speaking about the topic, and treat mislabeled patient replies as client. For car_info, the asking might be in SPEAKER_02 mislabeled, but we can extract the nearest SPEAKER_01 segments that indicate the question. We'll use segments with SPEAKER_01 that clearly discuss the car: [83.20–84.42] asking about car, [115.46–119.04] asking about maintenance, [139.50–142.14] asking about кузов, etc. For sale_reason, the employee's \"а по какой причине продают\" is under SPEAKER_02, but I can't assign evidence if it's not SPEAKER_01. Better to use context: the employee's question about reason might be inferred from the response, but no direct employee segment. However, later employee says \"Ну хорошо, вы правильно сказали...\", but that's addressing price not reason. So to be safe, passed could be false if no direct employee statement. But I can interpret that the employee did ask based on the flow, but evidence must be from employee's segments. I'll look for any SPEAKER_01 that asks about reason. At [160.28–171.46] is SPEAKER_02. No explicit employee question. So I might have to set sale_reason as false because we cannot point to a specific employee segment where they ask \"почему продаете?\" The employee does say \"вы правильно сказали\" but that's not asking. I'll re-evaluate: The employee may have asked during the mislabeled part. But the rule: only use actual labeled employee segments. If there's no such segment, then passed false. However, maybe the question is in [154.02–160.28] where SPEAKER_02 says \"а по какой причине продают\" – but that's SPEAKER_02. It could be employee asking but labeled wrong. I'll treat it as unreliable. So for evidence, I'll maybe mark passed = false due to insufficient clear evidence in employee's own segments. But I could argue that the employee's response indicates they asked: \"Ну хорошо, вы правильно сказали, машину не видели.\" That addresses the client's earlier comment about price, not reason. Reason was given by client spontaneously: at [160.28–171.46] SPEAKER_02 says they want to sell to buy another car. That might be a response to an unheard employee question. But to be safe, I'll set passed = false and comment that no explicit segment where employee asks selling reason is found, though client provided reason. Maybe the employee assumed from context. So I'll set false.\n\nFor phone_number, no segment where employee asks for phone number, only gives their own. So false.\n\nFor name_usage, employee used name but didn't ask for it; I'll set false.\n\nAlright. Now construct JSON with evidence segments for each criterion. I'll list the actual time spans for employee's speeches.\n\nEvidence for self_intro: none, because no greeting; I can list the first segments where they start talking, but that's not representation; so evidence_segments empty.\n\nname_usage: the segment where they use the name: [83.20–84.42] \"вас, Сильвия, какой автомобиль вообще?\" (using name); [115.46–119.02] \"Ильвер, подскажите,\"; but not asking for name. So I can still have evidence of usage, but the criterion is about clarifying name. So comment false, evidence segments could include those if needed but I'll put the use-of-name segments as evidence for usage. I'll include [83.20–84.42] and [115.46–119.02].\n\nspeech_quality: I need to show no slang, etc. I can cite the whole employee speech, but better to pick a few representative segments where they speak formally: [30.00–35.36], [36.26–39.48], etc. So evidence_segments: [30.00–35.36] etc.\n\ncar_info: segments asking about car: [83.20–84.42] asking car type, [115.46–119.04] asking about обслуживание, [139.50–142.14] asking about кузов. So these.\n\nsale_reason: I'll mark false, but maybe I'll find a segment where employee says something like \"а по какой причине продают?\" Actually, at [154.02–160.28] SPEAKER_02 says \"а по какой причине продают\", but that's client. If I consider that as likely employee, I could use it, but labeling says SPEAKER_02, so I won't. So passed false.\n\nprezentuet_uslugu_i: many segments presenting services: [30.00–35.36] \"Также мы можем продать ваш автомобиль несколькими путями, я вам сейчас более подробно расскажу.\" [36.26–39.48] \"Есть вариант, это комиссионная продажа. Что это такое?\" [39.84–46.12] explanation, etc. Use a range of those.\n\nalternative_service: similar multiple options mentioned: [36.26–39.48] комиссионная, [61.10–62.94] \"Далее есть услуга прямого выкупа\", [70.38–72.02] \"Есть услуга трейдерная\". So evidence.\n\nobjection_handling: client asks about занижается цена at [258.88–263.52] and employee responds at [263.52–266.18] \"оцениваем мы рыночную стоимость...\". Also earlier [224.08–231.02] addressing low price offers. So segments [263.52–266.18] etc.\n\nmotiviruet_na_vizit: [183.62–188.74] \"можете приехать нам посмотреть\", [288.40–293.16] \"но вы приедете мы по факту сами определимся\", and later scheduling. Use those.\n\nno_exact_price: segments where price discussed but no exact: [263.52–266.18] \"оцениваем мы рыночную стоимость\", etc. Also [224.08–231.02] \"По телефону вам любую сумму могут назвать\". These.\n\nphone_number: no evidence of asking for client's phone, so empty.\n\nsummary_and_goodbye: the final part [357.86–373.62] where they summarize and say до свидания.\n\nNow final JSON. Include speaker_roles with confidence high.\n\nLet's write it."
+}

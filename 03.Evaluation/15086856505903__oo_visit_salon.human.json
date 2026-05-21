@@ -1,0 +1,416 @@
+{
+  "schema_version": 3,
+  "source": "human",
+  "criteria_file": "oo_visit_salon",
+  "criteria_version": "1",
+  "criteria_snapshot": [
+    {
+      "id": "greeting",
+      "name": "Приветствие",
+      "description": "Поприветствовал клиента, Представился (имя, должность, отдел)",
+      "weight": 1
+    },
+    {
+      "id": "name_usage",
+      "name": "Имя клиента",
+      "description": "Уточнил имя клиента, обращается по имени не менее 3х раз",
+      "weight": 1
+    },
+    {
+      "id": "small_talk",
+      "name": "Small talk",
+      "description": "Проводит Smal - talk",
+      "weight": 1
+    },
+    {
+      "id": "company_experience",
+      "name": "Опыт клиента",
+      "description": "Уточняет опыт взаимодействия с нашей компанией (впервые в салоне/ знакомы с компанией)",
+      "weight": 1
+    },
+    {
+      "id": "v_prezentatsii_ispolzuet",
+      "name": "В презентации использует",
+      "description": "В презентации использует следующие факты:",
+      "weight": 1
+    },
+    {
+      "id": "company_scale",
+      "name": "Масштаб",
+      "description": "Масштаб (20 лет на автомобильном рынке, продаем по 6000 авто в мес",
+      "weight": 1
+    },
+    {
+      "id": "services_list",
+      "name": "Виды услуг",
+      "description": "Перечислил основные виды услуг компании: выкуп, комиссия, трейд-ин, интерактивные продажи, КСО",
+      "weight": 1
+    },
+    {
+      "id": "help_with_sale",
+      "name": "Помощь с продажей",
+      "description": "Мы в любом случае поможем с продажей авто",
+      "weight": 1
+    },
+    {
+      "id": "logic_sequence",
+      "name": "Логика презентации",
+      "description": "При презентации компании соблюдается логическая последовательность:",
+      "weight": 1
+    },
+    {
+      "id": "services_list_2",
+      "name": "Виды услуг",
+      "description": "давно работаем, много продаем -> все виды услуг -> все услуги интересные, в любом случае можем помочь",
+      "weight": 1
+    },
+    {
+      "id": "sale_reason",
+      "name": "Причина продажи",
+      "description": "Необходимо выявить причину продажи (ПОЧЕМУ)",
+      "weight": 1
+    },
+    {
+      "id": "sale_timing",
+      "name": "Срок продажи",
+      "description": "Узнать у клиента время, которым располагает клиент на продажу авто (КОГДА?)",
+      "weight": 1
+    },
+    {
+      "id": "price_expectation",
+      "name": "Ожидания по цене",
+      "description": "Узнать ценовые оживания клиента (СКОЛЬКО?)",
+      "weight": 1
+    },
+    {
+      "id": "inspection_flow",
+      "name": "Порядок осмотра",
+      "description": "ЭО озвучивает последовательность действий по осмотру автомобиля",
+      "weight": 1
+    },
+    {
+      "id": "open_questions",
+      "name": "Открытые вопросы",
+      "description": "Задает открытые вопросы по техничскому состоянию автомтобиля",
+      "weight": 1
+    },
+    {
+      "id": "best_fit_service",
+      "name": "Подходящая услуга",
+      "description": "ЭО подбробно рассказывает про услугу компании, которая максимально подходит клиенту",
+      "weight": 1
+    },
+    {
+      "id": "alternative_service",
+      "name": "Альтернатива",
+      "description": "Подробно презентует альтернативный вариант услуг компании",
+      "weight": 1
+    },
+    {
+      "id": "price_argumentation",
+      "name": "Аргументация цены",
+      "description": "Аргументированно озвучивает стоимость (внешнее состояние, дефекты, состояние, ликвидность, эксклюзивность)",
+      "weight": 1
+    },
+    {
+      "id": "no_excuses",
+      "name": "Без оправданий",
+      "description": "ЭО не оправдывается, не перекладывает ответственность",
+      "weight": 1
+    },
+    {
+      "id": "objection_handling",
+      "name": "Возражения",
+      "description": "Отрабатывает возражение клиента по технике работы с возражениями",
+      "weight": 1
+    },
+    {
+      "id": "clear_argument",
+      "name": "Аргументация",
+      "description": "Дает четкий аргументированный ответ",
+      "weight": 1
+    },
+    {
+      "id": "deal_close",
+      "name": "Закрытие на сделку",
+      "description": "ЭО предлагает клиенту оформить сделку",
+      "weight": 1
+    },
+    {
+      "id": "body_language",
+      "name": "Контакт",
+      "description": "Соблюдает комфортную социальную дистанцию, поддерживает контакт глаз,",
+      "weight": 1
+    },
+    {
+      "id": "positive_attitude",
+      "name": "Позитив",
+      "description": "Улыбка, доброжелательность, позитивный настрой",
+      "weight": 1
+    },
+    {
+      "id": "speech_quality",
+      "name": "Речь",
+      "description": "Речь грамотная, не использует сленг и жаргон",
+      "weight": 1
+    }
+  ],
+  "evaluated_at": "2026-05-19T10:49:53.424336+00:00",
+  "criteria": [
+    {
+      "id": "greeting",
+      "name": "Приветствие",
+      "description": "Поприветствовал клиента, Представился (имя, должность, отдел)",
+      "weight": 1,
+      "passed": true,
+      "comment": "",
+      "evidence_segments": [],
+      "awarded_weight": 1
+    },
+    {
+      "id": "name_usage",
+      "name": "Имя клиента",
+      "description": "Уточнил имя клиента, обращается по имени не менее 3х раз",
+      "weight": 1,
+      "passed": true,
+      "comment": "",
+      "evidence_segments": [],
+      "awarded_weight": 1
+    },
+    {
+      "id": "small_talk",
+      "name": "Small talk",
+      "description": "Проводит Smal - talk",
+      "weight": 1,
+      "passed": false,
+      "comment": "",
+      "evidence_segments": [],
+      "awarded_weight": 0
+    },
+    {
+      "id": "company_experience",
+      "name": "Опыт клиента",
+      "description": "Уточняет опыт взаимодействия с нашей компанией (впервые в салоне/ знакомы с компанией)",
+      "weight": 1,
+      "passed": true,
+      "comment": "",
+      "evidence_segments": [],
+      "awarded_weight": 1
+    },
+    {
+      "id": "v_prezentatsii_ispolzuet",
+      "name": "В презентации использует",
+      "description": "В презентации использует следующие факты:",
+      "weight": 1,
+      "passed": true,
+      "comment": "",
+      "evidence_segments": [],
+      "awarded_weight": 1
+    },
+    {
+      "id": "company_scale",
+      "name": "Масштаб",
+      "description": "Масштаб (20 лет на автомобильном рынке, продаем по 6000 авто в мес",
+      "weight": 1,
+      "passed": false,
+      "comment": "",
+      "evidence_segments": [],
+      "awarded_weight": 0
+    },
+    {
+      "id": "services_list",
+      "name": "Виды услуг",
+      "description": "Перечислил основные виды услуг компании: выкуп, комиссия, трейд-ин, интерактивные продажи, КСО",
+      "weight": 1,
+      "passed": true,
+      "comment": "",
+      "evidence_segments": [],
+      "awarded_weight": 1
+    },
+    {
+      "id": "help_with_sale",
+      "name": "Помощь с продажей",
+      "description": "Мы в любом случае поможем с продажей авто",
+      "weight": 1,
+      "passed": true,
+      "comment": "",
+      "evidence_segments": [],
+      "awarded_weight": 1
+    },
+    {
+      "id": "logic_sequence",
+      "name": "Логика презентации",
+      "description": "При презентации компании соблюдается логическая последовательность:",
+      "weight": 1,
+      "passed": true,
+      "comment": "",
+      "evidence_segments": [],
+      "awarded_weight": 1
+    },
+    {
+      "id": "services_list_2",
+      "name": "Виды услуг",
+      "description": "давно работаем, много продаем -> все виды услуг -> все услуги интересные, в любом случае можем помочь",
+      "weight": 1,
+      "passed": true,
+      "comment": "",
+      "evidence_segments": [],
+      "awarded_weight": 1
+    },
+    {
+      "id": "sale_reason",
+      "name": "Причина продажи",
+      "description": "Необходимо выявить причину продажи (ПОЧЕМУ)",
+      "weight": 1,
+      "passed": false,
+      "comment": "",
+      "evidence_segments": [],
+      "awarded_weight": 0
+    },
+    {
+      "id": "sale_timing",
+      "name": "Срок продажи",
+      "description": "Узнать у клиента время, которым располагает клиент на продажу авто (КОГДА?)",
+      "weight": 1,
+      "passed": true,
+      "comment": "",
+      "evidence_segments": [],
+      "awarded_weight": 1
+    },
+    {
+      "id": "price_expectation",
+      "name": "Ожидания по цене",
+      "description": "Узнать ценовые оживания клиента (СКОЛЬКО?)",
+      "weight": 1,
+      "passed": true,
+      "comment": "",
+      "evidence_segments": [],
+      "awarded_weight": 1
+    },
+    {
+      "id": "inspection_flow",
+      "name": "Порядок осмотра",
+      "description": "ЭО озвучивает последовательность действий по осмотру автомобиля",
+      "weight": 1,
+      "passed": true,
+      "comment": "",
+      "evidence_segments": [],
+      "awarded_weight": 1
+    },
+    {
+      "id": "open_questions",
+      "name": "Открытые вопросы",
+      "description": "Задает открытые вопросы по техничскому состоянию автомтобиля",
+      "weight": 1,
+      "passed": true,
+      "comment": "",
+      "evidence_segments": [],
+      "awarded_weight": 1
+    },
+    {
+      "id": "best_fit_service",
+      "name": "Подходящая услуга",
+      "description": "ЭО подбробно рассказывает про услугу компании, которая максимально подходит клиенту",
+      "weight": 1,
+      "passed": true,
+      "comment": "",
+      "evidence_segments": [],
+      "awarded_weight": 1
+    },
+    {
+      "id": "alternative_service",
+      "name": "Альтернатива",
+      "description": "Подробно презентует альтернативный вариант услуг компании",
+      "weight": 1,
+      "passed": true,
+      "comment": "",
+      "evidence_segments": [],
+      "awarded_weight": 1
+    },
+    {
+      "id": "price_argumentation",
+      "name": "Аргументация цены",
+      "description": "Аргументированно озвучивает стоимость (внешнее состояние, дефекты, состояние, ликвидность, эксклюзивность)",
+      "weight": 1,
+      "passed": true,
+      "comment": "",
+      "evidence_segments": [],
+      "awarded_weight": 1
+    },
+    {
+      "id": "no_excuses",
+      "name": "Без оправданий",
+      "description": "ЭО не оправдывается, не перекладывает ответственность",
+      "weight": 1,
+      "passed": true,
+      "comment": "",
+      "evidence_segments": [],
+      "awarded_weight": 1
+    },
+    {
+      "id": "objection_handling",
+      "name": "Возражения",
+      "description": "Отрабатывает возражение клиента по технике работы с возражениями",
+      "weight": 1,
+      "passed": true,
+      "comment": "",
+      "evidence_segments": [],
+      "awarded_weight": 1
+    },
+    {
+      "id": "clear_argument",
+      "name": "Аргументация",
+      "description": "Дает четкий аргументированный ответ",
+      "weight": 1,
+      "passed": true,
+      "comment": "",
+      "evidence_segments": [],
+      "awarded_weight": 1
+    },
+    {
+      "id": "deal_close",
+      "name": "Закрытие на сделку",
+      "description": "ЭО предлагает клиенту оформить сделку",
+      "weight": 1,
+      "passed": true,
+      "comment": "",
+      "evidence_segments": [],
+      "awarded_weight": 1
+    },
+    {
+      "id": "body_language",
+      "name": "Контакт",
+      "description": "Соблюдает комфортную социальную дистанцию, поддерживает контакт глаз,",
+      "weight": 1,
+      "passed": true,
+      "comment": "",
+      "evidence_segments": [],
+      "awarded_weight": 1
+    },
+    {
+      "id": "positive_attitude",
+      "name": "Позитив",
+      "description": "Улыбка, доброжелательность, позитивный настрой",
+      "weight": 1,
+      "passed": true,
+      "comment": "",
+      "evidence_segments": [],
+      "awarded_weight": 1
+    },
+    {
+      "id": "speech_quality",
+      "name": "Речь",
+      "description": "Речь грамотная, не использует сленг и жаргон",
+      "weight": 1,
+      "passed": true,
+      "comment": "",
+      "evidence_segments": [],
+      "awarded_weight": 1
+    }
+  ],
+  "earned_score": 22,
+  "max_score": 25,
+  "overall_average": 88.0,
+  "published_at": "2026-05-19T10:49:53.471523+00:00",
+  "published_by": "m.hamin"
+}

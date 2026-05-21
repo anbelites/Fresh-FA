@@ -78,6 +78,57 @@ def _duration_from_segments(segments: list[dict[str, Any]]) -> float:
     return max((_as_float(seg.get("end")) for seg in segments), default=0.0)
 
 
+def _windowed_primary_summary(segments: list[dict[str, Any]], gaps: list[dict[str, Any]]) -> dict[str, Any]:
+    windowed_segments = [
+        seg for seg in segments if str(seg.get("asr_source") or "") == "windowed"
+    ]
+    rescue_segments = [
+        seg for seg in segments if str(seg.get("asr_source") or "") == "rescue"
+    ]
+    windows: dict[str, dict[str, Any]] = {}
+    for seg in windowed_segments:
+        raw_id = seg.get("asr_window_id")
+        window_id = str(raw_id) if raw_id is not None else "unknown"
+        bucket = windows.setdefault(
+            window_id,
+            {
+                "window_id": raw_id,
+                "segments_count": 0,
+                "word_probs": [],
+            },
+        )
+        bucket["segments_count"] += 1
+        words = seg.get("words") or []
+        if isinstance(words, list):
+            for word in words:
+                if isinstance(word, dict) and "probability" in word:
+                    bucket["word_probs"].append(_as_float(word.get("probability")))
+
+    window_rows: list[dict[str, Any]] = []
+    all_probs: list[float] = []
+    for bucket in windows.values():
+        vals = bucket.pop("word_probs", [])
+        all_probs.extend(vals)
+        if vals:
+            bucket["mean_word_probability"] = round(sum(vals) / len(vals), 4)
+            bucket["words_count"] = len(vals)
+        else:
+            bucket["mean_word_probability"] = None
+            bucket["words_count"] = 0
+        window_rows.append(bucket)
+
+    return {
+        "enabled": bool(windowed_segments),
+        "segments_count": len(windowed_segments),
+        "rescue_segments_count": len(rescue_segments),
+        "remaining_gaps_count": len(gaps),
+        "remaining_max_gap_sec": round(max((gap["duration_sec"] for gap in gaps), default=0.0), 3),
+        "mean_word_probability": round(sum(all_probs) / len(all_probs), 4) if all_probs else None,
+        "windows_count": len(window_rows),
+        "windows": sorted(window_rows, key=lambda row: str(row.get("window_id")))[:60],
+    }
+
+
 def transcript_quality_report(
     transcript: dict[str, Any],
     *,
@@ -289,6 +340,7 @@ def transcript_quality_report(
         "duplicate_segments": duplicate_segments,
         "repeated_ngrams": repeated_ngrams,
         "tiny_segments": tiny_segments[:25],
+        "windowed_primary": _windowed_primary_summary(segments, gaps),
     }
 
 

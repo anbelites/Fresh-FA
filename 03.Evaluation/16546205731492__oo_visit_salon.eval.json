@@ -1,0 +1,549 @@
+{
+  "schema_version": 3,
+  "criteria_version": "1",
+  "criteria_file": "oo_visit_salon",
+  "evaluated_at": "2026-05-13T17:09:44.990970+00:00",
+  "model": "deepseek-v4-pro",
+  "video_file": "16546205731492.mp4",
+  "speaker_roles": {
+    "SPEAKER_01": "EMPLOYEE",
+    "SPEAKER_02": "CLIENT"
+  },
+  "employee_speaker": "SPEAKER_01",
+  "criteria": [
+    {
+      "id": "greeting",
+      "name": "Приветствие",
+      "description": "Поприветствовал клиента, Представился (имя, должность, отдел)",
+      "weight": 1,
+      "passed": true,
+      "comment": "Сотрудник поприветствовал клиента («Здравствуйте») и представился по имени и должности («зовут Елисей, я эксперт-оценщик»).",
+      "evidence_segments": [
+        {
+          "start": 3.25,
+          "end": 20.68
+        },
+        {
+          "start": 22.24,
+          "end": 25.94
+        }
+      ],
+      "awarded_weight": 1
+    },
+    {
+      "id": "name_usage",
+      "name": "Имя клиента",
+      "description": "Уточнил имя клиента, обращается по имени не менее 3х раз",
+      "weight": 1,
+      "passed": true,
+      "comment": "Уточнил имя клиента и использовал его по ходу диалога не менее трёх раз (например, «Иван, очень приятно», «Иван, как к нам добрались?», «скажите Иван сами пробовали продавать автомобиль»).",
+      "evidence_segments": [
+        {
+          "start": 27.48,
+          "end": 28.76
+        },
+        {
+          "start": 29.44,
+          "end": 30.92
+        },
+        {
+          "start": 304.7,
+          "end": 310.42
+        }
+      ],
+      "awarded_weight": 1
+    },
+    {
+      "id": "small_talk",
+      "name": "Small talk",
+      "description": "Проводит Smal - talk",
+      "weight": 1,
+      "passed": true,
+      "comment": "Провёл лёгкую вступительную беседу: спросил о дороге («Иван, как к нам добрались?») и сделал комплимент автомобилю клиента («машина хорошего вас до сразу отметил…»).",
+      "evidence_segments": [
+        {
+          "start": 29.44,
+          "end": 30.92
+        },
+        {
+          "start": 41.26,
+          "end": 46.96
+        }
+      ],
+      "awarded_weight": 1
+    },
+    {
+      "id": "company_experience",
+      "name": "Опыт клиента",
+      "description": "Уточняет опыт взаимодействия с нашей компанией (впервые в салоне/ знакомы с компанией)",
+      "weight": 1,
+      "passed": true,
+      "comment": "Уточнил, знаком ли клиент с компанией («с нашей компании знакомы»).",
+      "evidence_segments": [
+        {
+          "start": 97.8,
+          "end": 102.02
+        }
+      ],
+      "awarded_weight": 1
+    },
+    {
+      "id": "v_prezentatsii_ispolzuet",
+      "name": "В презентации использует",
+      "description": "В презентации использует следующие факты:",
+      "weight": 1,
+      "passed": true,
+      "comment": "В презентации использовал факты о масштабе компании и филиалах, подтверждая знакомство с организацией.",
+      "evidence_segments": [
+        {
+          "start": 129.92,
+          "end": 137.08
+        },
+        {
+          "start": 137.08,
+          "end": 141.64
+        }
+      ],
+      "awarded_weight": 1
+    },
+    {
+      "id": "company_scale",
+      "name": "Масштаб",
+      "description": "Масштаб (20 лет на автомобильном рынке, продаем по 6000 авто в мес",
+      "weight": 1,
+      "passed": false,
+      "comment": "Упомянул лидирующие позиции и 50 филиалов, но не назвал ключевые цифры из чеклиста: 20 лет на рынке и продажи по 6000 авто в месяц.",
+      "evidence_segments": [
+        {
+          "start": 129.92,
+          "end": 137.08
+        },
+        {
+          "start": 137.08,
+          "end": 141.64
+        }
+      ],
+      "awarded_weight": 0
+    },
+    {
+      "id": "services_list",
+      "name": "Виды услуг",
+      "description": "Перечислил основные виды услуг компании: выкуп, комиссия, трейд-ин, интерактивные продажи, КСО",
+      "weight": 1,
+      "passed": false,
+      "comment": "Говорил только о трейд-ин, не перечислил полный перечень услуг (выкуп, комиссия, трейд-ин, интерактивные продажи, КСО).",
+      "evidence_segments": [
+        {
+          "start": 461.02,
+          "end": 471.94
+        }
+      ],
+      "awarded_weight": 0
+    },
+    {
+      "id": "help_with_sale",
+      "name": "Помощь с продажей",
+      "description": "Мы в любом случае поможем с продажей авто",
+      "weight": 1,
+      "passed": false,
+      "comment": "Прямого заявления «мы в любом случае поможем с продажей авто» от сотрудника не прозвучало. Упомянутое «мы обязательно постараемся сделать всё возможное» лишь косвенно отражает эту мысль.",
+      "evidence_segments": [],
+      "awarded_weight": 0
+    },
+    {
+      "id": "logic_sequence",
+      "name": "Логика презентации",
+      "description": "При презентации компании соблюдается логическая последовательность:",
+      "weight": 1,
+      "passed": true,
+      "comment": "Диалог выстроен логично: приветствие, small talk, выявление потребности, презентация компании, осмотр и тест-драйв, оценка и обсуждение цены.",
+      "evidence_segments": [
+        {
+          "start": 3.25,
+          "end": 20.68
+        },
+        {
+          "start": 257.22,
+          "end": 262.94
+        }
+      ],
+      "awarded_weight": 1
+    },
+    {
+      "id": "services_list_2",
+      "name": "Виды услуг",
+      "description": "давно работаем, много продаем -> все виды услуг -> все услуги интересные, в любом случае можем помочь",
+      "weight": 1,
+      "passed": false,
+      "comment": "Не воспроизвёл последовательность «давно работаем, много продаём – все виды услуг – все услуги интересные, в любом случае можем помочь».",
+      "evidence_segments": [],
+      "awarded_weight": 0
+    },
+    {
+      "id": "sale_reason",
+      "name": "Причина продажи",
+      "description": "Необходимо выявить причину продажи (ПОЧЕМУ)",
+      "weight": 1,
+      "passed": false,
+      "comment": "Прямого вопроса о причине продажи не задавал; клиент сам озвучил семейные обстоятельства, а сотрудник не уточнял.",
+      "evidence_segments": [],
+      "awarded_weight": 0
+    },
+    {
+      "id": "sale_timing",
+      "name": "Срок продажи",
+      "description": "Узнать у клиента время, которым располагает клиент на продажу авто (КОГДА?)",
+      "weight": 1,
+      "passed": false,
+      "comment": "Вопрос о сроках продажи (когда планирует продать) нигде не задан.",
+      "evidence_segments": [],
+      "awarded_weight": 0
+    },
+    {
+      "id": "price_expectation",
+      "name": "Ожидания по цене",
+      "description": "Узнать ценовые оживания клиента (СКОЛЬКО?)",
+      "weight": 1,
+      "passed": true,
+      "comment": "Через вопрос о самостоятельной продаже («сами пробовали продавать автомобиль») побудил клиента озвучить желаемую цену (около 3,1 млн руб.), тем самым выяснил ценовые ожидания.",
+      "evidence_segments": [
+        {
+          "start": 304.7,
+          "end": 310.42
+        }
+      ],
+      "awarded_weight": 1
+    },
+    {
+      "id": "inspection_flow",
+      "name": "Порядок осмотра",
+      "description": "ЭО озвучивает последовательность действий по осмотру автомобиля",
+      "weight": 1,
+      "passed": true,
+      "comment": "Озвучил порядок действий: сначала осмотр автомобиля, затем тест-драйв, а позже и полную диагностику.",
+      "evidence_segments": [
+        {
+          "start": 257.22,
+          "end": 262.94
+        },
+        {
+          "start": 264.76,
+          "end": 269.22
+        }
+      ],
+      "awarded_weight": 1
+    },
+    {
+      "id": "open_questions",
+      "name": "Открытые вопросы",
+      "description": "Задает открытые вопросы по техничскому состоянию автомтобиля",
+      "weight": 1,
+      "passed": true,
+      "comment": "Задал открытый вопрос о техническом состоянии: «Как вам в целом автомобиль? Понравился за время эксплуатации?».",
+      "evidence_segments": [
+        {
+          "start": 193.26,
+          "end": 196.5
+        }
+      ],
+      "awarded_weight": 1
+    },
+    {
+      "id": "best_fit_service",
+      "name": "Подходящая услуга",
+      "description": "ЭО подбробно рассказывает про услугу компании, которая максимально подходит клиенту",
+      "weight": 1,
+      "passed": false,
+      "comment": "Упомянул трейд-ин, но не рассказал об услуге подробно (условия, выгоды, процесс).",
+      "evidence_segments": [],
+      "awarded_weight": 0
+    },
+    {
+      "id": "alternative_service",
+      "name": "Альтернатива",
+      "description": "Подробно презентует альтернативный вариант услуг компании",
+      "weight": 1,
+      "passed": false,
+      "comment": "Альтернативные варианты (выкуп, комиссия и т.д.) не презентовал.",
+      "evidence_segments": [],
+      "awarded_weight": 0
+    },
+    {
+      "id": "price_argumentation",
+      "name": "Аргументация цены",
+      "description": "Аргументированно озвучивает стоимость (внешнее состояние, дефекты, состояние, ликвидность, эксклюзивность)",
+      "weight": 1,
+      "passed": true,
+      "comment": "Аргументировал цену, сославшись на хорошее состояние кузова, заводской окрас, минимальные сколы и маленький пробег, назвав оценку «очень хорошей».",
+      "evidence_segments": [
+        {
+          "start": 290.14,
+          "end": 296.62
+        },
+        {
+          "start": 461.02,
+          "end": 471.94
+        }
+      ],
+      "awarded_weight": 1
+    },
+    {
+      "id": "no_excuses",
+      "name": "Без оправданий",
+      "description": "ЭО не оправдывается, не перекладывает ответственность",
+      "weight": 1,
+      "passed": true,
+      "comment": "Не оправдывался, не перекладывал ответственность; при возражении предложил дополнительную диагностику.",
+      "evidence_segments": [],
+      "awarded_weight": 1
+    },
+    {
+      "id": "objection_handling",
+      "name": "Возражения",
+      "description": "Отрабатывает возражение клиента по технике работы с возражениями",
+      "weight": 1,
+      "passed": true,
+      "comment": "На возражение о цене ответил пониманием и предложил провести полную диагностику (258 пунктов) как условие для возможного пересмотра оценки – отработка по технике работы с возражениями.",
+      "evidence_segments": [
+        {
+          "start": 509.8,
+          "end": 514.66
+        },
+        {
+          "start": 514.66,
+          "end": 520.32
+        }
+      ],
+      "awarded_weight": 1
+    },
+    {
+      "id": "clear_argument",
+      "name": "Аргументация",
+      "description": "Дает четкий аргументированный ответ",
+      "weight": 1,
+      "passed": true,
+      "comment": "Дал чёткий ответ: для обсуждения торга нужна полная диагностика, объяснил, что при пробеге 10000 критических замечаний не ожидается.",
+      "evidence_segments": [
+        {
+          "start": 509.8,
+          "end": 514.66
+        },
+        {
+          "start": 525.96,
+          "end": 532.34
+        }
+      ],
+      "awarded_weight": 1
+    },
+    {
+      "id": "deal_close",
+      "name": "Закрытие на сделку",
+      "description": "ЭО предлагает клиенту оформить сделку",
+      "weight": 1,
+      "passed": false,
+      "comment": "Прямого предложения оформить сделку (подписать документы, завершить trade-in) не прозвучало.",
+      "evidence_segments": [],
+      "awarded_weight": 0
+    },
+    {
+      "id": "body_language",
+      "name": "Контакт",
+      "description": "Соблюдает комфортную социальную дистанцию, поддерживает контакт глаз,",
+      "weight": 1,
+      "passed": false,
+      "comment": "Визуальные аспекты (дистанция, контакт глаз) невозможно подтвердить по аудиозаписи; в разговоре нет упоминаний жестов или поз.",
+      "evidence_segments": [],
+      "awarded_weight": 0
+    },
+    {
+      "id": "positive_attitude",
+      "name": "Позитив",
+      "description": "Улыбка, доброжелательность, позитивный настрой",
+      "weight": 1,
+      "passed": true,
+      "comment": "Тон речи в целом доброжелательный; сотрудник делал комплименты, интересовался дорогой и поддерживал вежливую беседу. Акустически заметны живые интонации (high F0 sigma в некоторых сегментах) и тёплый тембр, SER-метки смешанные, но негативная окраска не доминировала в ключевых репликах.",
+      "evidence_segments": [
+        {
+          "start": 29.44,
+          "end": 30.92
+        },
+        {
+          "start": 41.26,
+          "end": 46.96
+        }
+      ],
+      "awarded_weight": 1
+    },
+    {
+      "id": "speech_quality",
+      "name": "Речь",
+      "description": "Речь грамотная, не использует сленг и жаргон",
+      "weight": 1,
+      "passed": true,
+      "comment": "Речь грамотная, без сленга и жаргона, использована профессиональная лексика.",
+      "evidence_segments": [],
+      "awarded_weight": 1
+    }
+  ],
+  "criteria_snapshot": [
+    {
+      "id": "greeting",
+      "name": "Приветствие",
+      "description": "Поприветствовал клиента, Представился (имя, должность, отдел)",
+      "weight": 1
+    },
+    {
+      "id": "name_usage",
+      "name": "Имя клиента",
+      "description": "Уточнил имя клиента, обращается по имени не менее 3х раз",
+      "weight": 1
+    },
+    {
+      "id": "small_talk",
+      "name": "Small talk",
+      "description": "Проводит Smal - talk",
+      "weight": 1
+    },
+    {
+      "id": "company_experience",
+      "name": "Опыт клиента",
+      "description": "Уточняет опыт взаимодействия с нашей компанией (впервые в салоне/ знакомы с компанией)",
+      "weight": 1
+    },
+    {
+      "id": "v_prezentatsii_ispolzuet",
+      "name": "В презентации использует",
+      "description": "В презентации использует следующие факты:",
+      "weight": 1
+    },
+    {
+      "id": "company_scale",
+      "name": "Масштаб",
+      "description": "Масштаб (20 лет на автомобильном рынке, продаем по 6000 авто в мес",
+      "weight": 1
+    },
+    {
+      "id": "services_list",
+      "name": "Виды услуг",
+      "description": "Перечислил основные виды услуг компании: выкуп, комиссия, трейд-ин, интерактивные продажи, КСО",
+      "weight": 1
+    },
+    {
+      "id": "help_with_sale",
+      "name": "Помощь с продажей",
+      "description": "Мы в любом случае поможем с продажей авто",
+      "weight": 1
+    },
+    {
+      "id": "logic_sequence",
+      "name": "Логика презентации",
+      "description": "При презентации компании соблюдается логическая последовательность:",
+      "weight": 1
+    },
+    {
+      "id": "services_list_2",
+      "name": "Виды услуг",
+      "description": "давно работаем, много продаем -> все виды услуг -> все услуги интересные, в любом случае можем помочь",
+      "weight": 1
+    },
+    {
+      "id": "sale_reason",
+      "name": "Причина продажи",
+      "description": "Необходимо выявить причину продажи (ПОЧЕМУ)",
+      "weight": 1
+    },
+    {
+      "id": "sale_timing",
+      "name": "Срок продажи",
+      "description": "Узнать у клиента время, которым располагает клиент на продажу авто (КОГДА?)",
+      "weight": 1
+    },
+    {
+      "id": "price_expectation",
+      "name": "Ожидания по цене",
+      "description": "Узнать ценовые оживания клиента (СКОЛЬКО?)",
+      "weight": 1
+    },
+    {
+      "id": "inspection_flow",
+      "name": "Порядок осмотра",
+      "description": "ЭО озвучивает последовательность действий по осмотру автомобиля",
+      "weight": 1
+    },
+    {
+      "id": "open_questions",
+      "name": "Открытые вопросы",
+      "description": "Задает открытые вопросы по техничскому состоянию автомтобиля",
+      "weight": 1
+    },
+    {
+      "id": "best_fit_service",
+      "name": "Подходящая услуга",
+      "description": "ЭО подбробно рассказывает про услугу компании, которая максимально подходит клиенту",
+      "weight": 1
+    },
+    {
+      "id": "alternative_service",
+      "name": "Альтернатива",
+      "description": "Подробно презентует альтернативный вариант услуг компании",
+      "weight": 1
+    },
+    {
+      "id": "price_argumentation",
+      "name": "Аргументация цены",
+      "description": "Аргументированно озвучивает стоимость (внешнее состояние, дефекты, состояние, ликвидность, эксклюзивность)",
+      "weight": 1
+    },
+    {
+      "id": "no_excuses",
+      "name": "Без оправданий",
+      "description": "ЭО не оправдывается, не перекладывает ответственность",
+      "weight": 1
+    },
+    {
+      "id": "objection_handling",
+      "name": "Возражения",
+      "description": "Отрабатывает возражение клиента по технике работы с возражениями",
+      "weight": 1
+    },
+    {
+      "id": "clear_argument",
+      "name": "Аргументация",
+      "description": "Дает четкий аргументированный ответ",
+      "weight": 1
+    },
+    {
+      "id": "deal_close",
+      "name": "Закрытие на сделку",
+      "description": "ЭО предлагает клиенту оформить сделку",
+      "weight": 1
+    },
+    {
+      "id": "body_language",
+      "name": "Контакт",
+      "description": "Соблюдает комфортную социальную дистанцию, поддерживает контакт глаз,",
+      "weight": 1
+    },
+    {
+      "id": "positive_attitude",
+      "name": "Позитив",
+      "description": "Улыбка, доброжелательность, позитивный настрой",
+      "weight": 1
+    },
+    {
+      "id": "speech_quality",
+      "name": "Речь",
+      "description": "Речь грамотная, не использует сленг и жаргон",
+      "weight": 1
+    }
+  ],
+  "earned_score": 15,
+  "max_score": 25,
+  "overall_average": 60.0,
+  "speaker_roles_confidence": {
+    "SPEAKER_01": 0.99,
+    "SPEAKER_02": 0.99
+  },
+  "speaker_roles_reasoning": "SPEAKER_01 в роли эксперта-оценщика («Сонаров Елисей») приветствует от лица компании, представляется, задаёт вопросы по сделке, осматривает автомобиль и озвучивает оценку. SPEAKER_02 отвечает как клиент («Черезов Иван»).",
+  "reasoning_trace": "We need to evaluate the transcript, identify who is the employee (SPEAKER_01 vs SPEAKER_02) based on the dialogue content. The transcript starts with \"Коллеги, добрый день. Сегодня снимаем ежедневную тренировку отдела оценки «Визит» в роли эксперта-оценщика Сонаров Елисей, в роли клиента Черезов Иван. Приступим. Здравствуйте.\" That's clearly a meta-commentary, announcing the roleplay. Then SPEAKER_01 says: \"Коллеги, добрый день. Сегодня снимаем ежедневную тренировку отдела оценки «Визит» в роли эксперта-оценщика Сонаров Елисей, в роли клиента Черезов Иван. Приступим. Здравствуйте.\" So SPEAKER_01 is the one who says that, and then immediately SPEAKER_02 says \"Здравствуйте.\" The first real line of the scene seems to be: after \"Приступим. Здравствуйте.\" by SPEAKER_01, then SPEAKER_02 says \"Здравствуйте.\" So in the enacted scene, SPEAKER_01 is playing the expert (expert-appraiser) – they introduced themselves as the one in role of expert. However, the line after that: SPEAKER_01 continues with \"зовут Елисей, я эксперт-оценщик.\" So definitely SPEAKER_01 is the employee (expert-appraiser). SPEAKER_02 is the client (Ivan). So roles: SPEAKER_01 is employee, SPEAKER_02 is client. The employee_speaker is \"SPEAKER_01\". Confidence: high, consistent throughout. Now we need to evaluate all criteria only for SPEAKER_01. The criteria list is extensive. Let's go through each based on the transcript. We'll collect evidence segments with SPEAKER_01's speech for each criterion. The evidence segments must be actual intervals from transcript where SPEAKER_01 is speaking and relevant to the criterion.\n\nFirst, confirm roles: SPEAKER_01 is employee, SPEAKER_02 is client. I'll output that.\n\nNow criteria:\n\n1. **greeting** (Приветствие, вес 1): Поприветствовал клиента, Представился (имя, должность, отдел)\n   - Did SPEAKER_01 greet? Yes: \"Здравствуйте.\" (segment 3.25-20.68, but note that segment includes the meta commentary and greeting, but the actual greeting is within that segment). The segment 3.25-20.68: \"Коллеги, добрый день. Сегодня снимаем ежедневную тренировку отдела оценки «Визит» в роли эксперта-оценщика Сонаров Елисей, в роли клиента Черезов Иван. Приступим. Здравствуйте.\" So that's a meta announcement and then greeting to the client. That's greeting. Then SPEAKER_02 replies \"Здравствуйте.\" Then SPEAKER_01 later says: \"зовут Елисей, я эксперт-оценщик. Скажите, как вас зовут?\" (segment 22.24–25.94). That's introduction: name and role. So yes, greeted and introduced. So passed true. Evidence: segment 3.25-20.68 (contains greeting and introduction announcement, but the actual name introduction is in 22.24-25.94). Better to include both: the greeting part from 3.25-20.68 (since it includes \"Здравствуйте\"), and the full introduction segment 22.24-25.94. However, note that the first segment mixes meta talk, but the greeting \"Здравствуйте\" is in there. We'll include it. Comment: Сотрудник поприветствовал, представился по имени и должности.\n\n2. **name_usage** (Имя клиента, вес 1): Уточнил имя клиента, обращается по имени не менее 3х раз\n   - He asks: \"Скажите, как вас зовут?\" (22.24-25.94). Client says \"зовут Ваня Иван.\" Then SPEAKER_01 says: \"Иван, очень приятно.\" (27.48-28.76). Then later: \"Иван, как к нам добрались?\" (29.44-30.92). Then later: \"Иван, очень приятно.\" again? No, once. Then: \"Иван, еще она будет провести с вами тест-драйв...\" (349.74-354.44) says \"Иван\". Also \"Скажите, Иван, сами пробовали продавать автомобиль?\" (304.70-310.42) says \"скажите иван сами пробовали продавать автомобиль\". So he uses \"Иван\" multiple times. Need at least 3 times. Let's count in employee's speech: 1) \"Иван, очень приятно.\" (27.48-28.76); 2) \"Иван, как к нам добрались?\" (29.44-30.92); 3) \"скажите иван сами пробовали продавать автомобиль\" (304.70-310.42); 4) \"Иван еще она будет провести...\" (349.74-354.44). So more than 3. So passed true. Evidence segments: 27.48-28.76, 29.44-30.92, 304.70-310.42, etc. But to show at least three usage, we can pick three. I'll include them.\n\n3. **small_talk** (Small talk, вес 1): Проводит Smal - talk\n   - He asks: \"Иван, как к нам добрались?\" (29.44-30.92). That's small talk. And complements the car: \"машина хорошего вас до сразу отметил когда только заезжали к нам уже увидел что за белый\" (41.26-46.96) – compliment on car. And later: \"хендай в офис да да что-то новое машина хорошая соглашусь с вами\" (48.74-57.16). So small talk is present. Passed true. Evidence: segment 29.44-30.92 (small talk about travel), 41.26-46.96 (compliment on car). The small talk definition in glossary: лёгкая вступительная беседа (дорога, погода, первый визит, автомобиль, комплимент). So yes.\n\n4. **company_experience** (Опыт клиента, вес 1): Уточняет опыт взаимодействия с нашей компанией (впервые в салоне/ знакомы с компанией)\n   - He asks: \"с нашей компании знакомы\" (97.80-102.02). Segment: \"продаж они вас проконсультируют покажут наш выбор вообще с нашей компании знакомы\". So he inquires about experience with the company. Client says he was there four years ago for service. So passed true. Evidence: 97.80-102.02.\n\n5. **v_prezentatsii_ispolzuet** (В презентации использует, вес 1): В презентации использует следующие факты:\n   This seems to be an overarching criterion that might be split into sub-items? The instruction says: \"v_prezentatsii_ispolzuet (В презентации использует, вес 1): В презентации использует следующие факты:\" but then the next criteria are listed like company_scale, services_list, help_with_sale, logic_sequence, services_list_2? Actually the check list includes multiple criteria: \"v_prezentatsii_ispolzuet\" then later \"company_scale\", \"services_list\", \"help_with_sale\", \"logic_sequence\", \"services_list_2\". But the criteria list given after that is:\n- v_prezentatsii_ispolzuet (В презентации использует, вес 1): В презентации использует следующие факты:\n- company_scale (Масштаб, вес 1): Масштаб (20 лет на автомобильном рынке, продаем по 6000 авто в мес\n- services_list (Виды услуг, вес 1): Перечислил основные виды услуг компании: выкуп, комиссия, трейд-ин, интерактивные продажи, КСО\n- help_with_sale (Помощь с продажей, вес 1): Мы в любом случае поможем с продажей авто\n- logic_sequence (Логика презентации, вес 1): При презентации компании соблюдается логическая последовательность:\n- services_list_2 (Виды услуг, вес 1): давно работаем, много продаем -> все виды услуг -> все услуги интересные, в любом случае можем помочь\n\nSo separate criteria. I'll evaluate each. \"v_prezentatsii_ispolzuet\" might be about using facts in general? Possibly it expects to check if the presentation includes these facts, but the next criteria specifically check each fact. So maybe this is redundant or meant to evaluate overall presentation use? It's ambiguous. I'll treat it as: Did the employee use facts in the presentation? But we need to check if they used any of the following facts? The description says: \"В презентации использует следующие факты:\" and then nothing? Possibly the list is the points below. I'll interpret that \"v_prezentatsii_ispolzuet\" is an umbrella criterion that should be passed true if at least some of the sub-facts (company_scale, services_list, help_with_sale) are used. But the check might be independent. I'll evaluate as: Did the employee present any facts about the company? Yes, he mentioned scale: \"Мы сейчас одна из лидирующих компаний по России, которая специализируется по продаже автомобилей. вот у нас порядка 50 филиалов по всей россии\" (129.92-141.64). So he used facts. Passed true. But I'll comment that presentation included company facts. Evidence: segments about company scale, etc. I'll use 129.92-137.08 and 137.08-141.64.\n\n6. **company_scale** (Масштаб, вес 1): Масштаб (20 лет на автомобильном рынке, продаем по 6000 авто в мес\n   He says: \"Мы сейчас одна из лидирующих компаний по России, которая специализируется по продаже автомобилей. вот у нас порядка 50 филиалов по всей россии\" (129.92-141.64). But does he mention 20 years and 6000 per month? Not exactly. He says \"одна из лидирующих\", \"порядка 50 филиалов\". The criterion specifies 20 years, 6000 per month. He didn't mention years or sales volume. Maybe he said \"компания сейчас растет\" (126.36-129.60) but no 20 years. I don't see a reference to 20 years or 6000 per month. So maybe not fully met. So passed false? However, he did mention scale (50 филиалов) which is a part of scale. The criterion seems to expect to mention specific numbers: 20 years, 6000 per month. He didn't. So passed false. Comment: Сотрудник говорит о лидирующих позициях и 50 филиалах, но не упоминает 20 лет работы и 6000 авто в месяц. Evidence segments: 129.92-141.64 for scale mention, but not meeting full requirement.\n\n7. **services_list** (Виды услуг, вес 1): Перечислил основные виды услуг компании: выкуп, комиссия, трейд-ин, интерактивные продажи, КСО\n   - Does he list these? He mentions trade-in: client mentions trade-in, employee later talks about trade-in evaluation and services. He lists types: He says: \"я эксперт-оценщик\" initially, but does he list services? At the beginning, he asks about trade-in? Client says \"хотелось бы трейд-ин\". Employee says: \"с вашего позволения задам пару вопросов по поводу эксплуатации\" and later \"оценка рассчитывалось именно по трейдингу\". He might have said something like: \"у нас разные услуги\". Let's search dialogue. In the beginning, after client mentions trade-in, employee says: \"я благодарен что обратились именно к нам мы обязательно постараемся сделать все возможное чтобы остались довольны\" (151.02-158.34). That's generic. Later when he presents the price, he says: \"мы готовы предложить 2 миллиона 650 тысяч рублей... оценка рассчитывалось именно по трейдингу\" (461.02-474.68). So he mentions trade-in repeatedly. But does he list all services? I don't see mention of выкуп, комиссия, интерактивные продажи, КСО. He may have mentioned consignment? Not. He talks about trade-in as the service. So services list is incomplete. The criterion: \"Перечислил основные виды услуг компании: выкуп, комиссия, трейд-ин, интерактивные продажи, КСО\". He only mentioned trade-in. So passed false. Evidence: he does mention trade-in; for the list, we could point to the lack. Evidence segments for mentioning trade-in: 461.02-474.68, 471.94-474.68 \"оценка рассчитывалось именно по трейдингу\". But not a comprehensive list. So comment: Упомянул только трейд-ин, не перечислил выкуп, комиссию, интерактивные продажи, КСО. So passed false.\n\n8. **help_with_sale** (Помощь с продажей, вес 1): Мы в любом случае поможем с продажей авто\n   - He says: \"мы обязательно постараемся сделать все возможное чтобы остались довольны\" (155.74-164.06). Also later: \"мы в любом случае поможем продать данный автомобиль\" (179.90-184.80) - wait, that segment [179.90-184.80] is actually SPEAKER_02? Let's check: segment 179.90-184.80: \"гейеров все нормально отлично отлично мы вам поможем продать данный автомобиль\". Who said that? The transcript labels: [175.00-179.90] SPEAKER_02: \"параллельный импорт был ну обслуживалась расскажу то что обслуживалась но только у официальных\"; then [179.90-184.80] SPEAKER_02: \"гейеров все нормально отлично отлично мы вам поможем продать данный автомобиль\". That's SPEAKER_02 speaking. So not employee. The employee does not say that, it's the client who says that. But earlier employee says: \"мы обязательно постараемся сделать все возможное чтобы остались довольны\" (155.74-164.06). That could be interpreted as general help. Also later when discussing offer: \"я вас понял хорошо ...\" No explicit \"поможем с продажей\". So maybe not fully. The phrase \"мы в любом случае поможем с продажей авто\" is not said by employee. The closest is that he'll assist with trade-in. I'll check if any segment from SPEAKER_01 says something like \"поможем продать\". In segment 179.90-184.80, it's client's line. I see an earlier segment: 91.84-97.80: SPEAKER_01: \"хороший выбор без проблем наши ребята с отдела продаж они вас проконсультируют покажут наш выбор вообще с нашей компании знакомы\" - that's about consulting, not sale help. So not directly. But he says \"постараемся сделать все возможное чтобы остались довольны\" which might imply help. But the specific statement \"мы в любом случае поможем с продажей авто\" is missing. So passed false. I'll set false. Comment: Сотрудник не произносил фразу «в любом случае поможем с продажей», хотя выражал намерение помочь.\n\n9. **logic_sequence** (Логика презентации, вес 1): При презентации компании соблюдается логическая последовательность:\n   Then next criterion services_list_2 (Виды услуг, вес 1): давно работаем, много продаем -> все виды услуг -> все услуги интересные, в любом случае можем помочь.\n   The logic_sequence presumably is separate from services_list_2. The check list includes both logic_sequence and services_list_2. The description of services_list_2 is: \"давно работаем, много продаем -> все виды услуг -> все услуги интересные, в любом случае можем помочь\". That seems like a specific sequence of presentation. \"logic_sequence\" might be a separate evaluation: did the presentation follow a logical order overall? We'll need to assess based on dialogue. The talk starts with small talk, then client's need, then employee introduces company scale, then asks about client experience? The flow: greeting, small talk, needs analysis, then presentation of company, then inspection, then price, etc. That seems logical. But I'm not sure if the criterion expects a specific order. I'll evaluate logic_sequence: The presentation seems coherent; he starts with needs (trade-in), then offers to help, then does inspection, then price. Not sure if he explicitly follows the pattern of \"давно работаем, много продаем -> все виды услуг -> все услуги интересные, в любом случае можем помочь\". He mentions scale (50 филиалов, leading company) but not all services or the exact statement. I'll check if there's a part where he logically sequences services. Probably not. So I'll set logic_sequence as false or null? I'd need to see if there was an attempt at logical sequence. The dialogue does have a progression from greeting to small talk to need identification, then presentation of company, then inspection, then offer. That's a logical sales process, so passed maybe true. But I'll examine: He greets, asks name, small talk, asks about experience, then client mentions trade-in, employee says they'll help, then after some back-and-forth, he says he'll inspect and then test drive, then presents price. So it's logical. I'll pass true with comment that the dialogue follows a logical structure of service presentation. Evidence: random segments showing flow.\n\n10. **services_list_2** (Виды услуг, вес 1): давно работаем, много продаем -> все виды услуг -> все услуги интересные, в любом случае можем помочь\n   Did he explicitly say: \"давно работаем, много продаем\"? He says \"У нас компания сейчас растет, вот так вкратце вам расскажу. Мы сейчас одна из лидирующих компаний по России, которая специализируется по продаже автомобилей. вот у нас порядка 50 филиалов по всей россии\" (126.36-141.64). That implies \"давно работаем\" implicitly, but not explicitly. He doesn't say \"много продаем\" (6000) as per scale. Then \"все виды услуг\" – he didn't list. \"Все услуги интересные\" – not. \"В любом случае можем помочь\" – not phrased that way. So services_list_2 is false. Comment: Сотрудник не воспроизвёл последовательность «давно работаем, много продаем -> все виды услуг -> все услуги интересные, в любом случае можем помочь».\n\nNow criteria: sale_reason, sale_timing, price_expectation, inspection_flow, open_questions, best_fit_service, alternative_service, price_argumentation, no_excuses, objection_handling, clear_argument, deal_close, body_language, positive_attitude, speech_quality.\n\n11. **sale_reason** (Причина продажи, вес 1): Необходимо выявить причину продажи (ПОЧЕМУ)\n   - Did he ask why selling? He asks about car usage: \"Как вам в целом автомобиль? Понравился за время эксплуатации?\" (193.26-196.50). That's about satisfaction, not directly reason. He asks \"сами пробовали продавать автомобиль?\" (304.70-310.42). But doesn't ask \"почему хотите продать?\" The client volunteers: \"хотелось бы трейд-ин у меня беременная жена\" (61.10-64.54). So the reason is given by client, and employee acknowledges: \"я вас понял\" later (345.14-347.00). But did he explicitly ask? I don't see a direct question. He might have indirectly got the reason from client's statement, but the criterion is \"выявить причину продажи\". He didn't ask \"почему вы решили продать?\" So maybe not. However, the client says \"хотелось бы трейд-ин у меня беременная жена ... хотелось бы пересесть на что-то более с высоким клиренсом ... семейная машина\" and employee picks up later: \"я вас понял за оба божий ски как бы такие вопросы\" (249.86-256.78) but that's client speaking? Actually segment 249.86-256.78: SPEAKER_02: \"побольше квартира побольше я вас понял за оба божий ски как бы такие вопросы да да\" – that's still client? Wait, it says SPEAKER_02, but the last line: \"я вас понял за оба божий ски как бы такие вопросы да да\" - that could be employee? The transcript is messy. Let's check: [249.86-256.78] SPEAKER_02: \"побольше квартира побольше я вас понял за оба божий ски как бы такие вопросы да да\" – this is labelled SPEAKER_02. But \"я вас понял\" seems like employee, but the speaker label is SPEAKER_02, which we've determined is client. So maybe it's mislabeled, but we have to go by labels. The employee later says \"я вас понял хорошо\" at 345.14-347.00. So that's when he acknowledges reasoning. But he didn't probe. So I'd say he didn't specifically ask \"почему\". So pass false. Comment: Сотрудник не задал вопрос о причине продажи; клиент сам озвучил, но сотрудник не уточнял. (Could argue he acknowledges it, but the criterion is to \"выявить\", meaning actively ask. So false.)\n\n12. **sale_timing** (Срок продажи, вес 1): Узнать у клиента время, которым располагает клиент на продажу авто (КОГДА?)\n   - He doesn't ask about timing at all. He asks about selling experience but not \"когда планируете продать?\" The dialogue moves from inspection to offer, not about timing. So false.\n\n13. **price_expectation** (Ожидания по цене, вес 1): Узнать ценовые ожидания клиента (СКОЛЬКО?)\n   - He asks: \"сами пробовали продавать автомобиль\" (304.70-310.42) then client says he didn't, but looked online, saw prices 3.5, bought for 3.349, and hopes for 3. then says \"я хотел бы ну три сто ну вот это в идеале а так я понимаю конечно есть жизненные моменты там это еще может где-то камушки по дну бились... три я был бы доволен\" (325.94-341.34, 341.34-345.14). So the employee did ask about selling attempt which led to price expectation. He didn't directly ask \"сколько хотите?\", but the question about selling attempt naturally elicited price expectation. The client volunteered his price. So arguably he did gather price expectation. The criterion is \"Узнать ценовые ожидания клиента (СКОЛЬКО?)\" - did he actively learn that? The answer came out. So it's effectively met. I'd say passed true. Evidence: employee asks about selling attempt at 304.70-310.42, which leads to client's price revelation in 325.94-345.14 and employee acknowledges. So I'll mark true. But careful: the employee's segment 304.70-310.42 is: \"автомобиль хороший согласен скажите иван сами пробовали продавать автомобиль\". That's not directly asking \"сколько вы хотите получить?\" but it's a standard way to uncover price expectation. So passed.\n\n14. **inspection_flow** (Порядок осмотра, вес 1): ЭО озвучивает последовательность действий по осмотру автомобиля\n   - He says: \"с вашего позволения произведу осмотр автомобиля\" (257.22-262.94). Then says \"красочное покрытие посмотрю салон красочные покрытия посмотрел в целом кузов прям я бы сказал бы очень хороший\" (282.92-290.14). He also mentions \"мы наверное проведем с вами тест драйв\" (264.76-269.22). So he outlines: осмотр, потом тест-драйв. He doesn't spell out a detailed sequence like \"сначала осмотр внешний, потом тест-драйв, потом диагностика\". He mentions diagnostic later. But he does verbalize that he will inspect the car and then test-drive. So there's a sequence. However, the criterion might expect him to outline the full flow of inspection (e.g., visual inspection, test drive, diagnostics). He later says: \"я вам будет тогда полную сделать диагностику ... мы проводим диагностику по 258 пункт\" (509.80-514.66, 514.66-520.32). But that is after an objection. He didn't lay out order upfront. In the beginning after agreeing to help, he says \"с вашего позволения произведу осмотр автомобиля\" (257.22-262.94). Then \"в дальнейшем мы наверное проведем с вами тест драйв\" (264.76-269.22). So he does sequence: осмотр, тест-драйв. That's a form of order. So I'd pass true. Evidence segments: 257.22-262.94, 264.76-269.22.\n\n15. **open_questions** (Открытые вопросы, вес 1): Задает открытые вопросы по техническому состоянию автомобиля\n   - He asks: \"Как вам в целом автомобиль? Понравился за время эксплуатации?\" (193.26-196.50). That's an open question about satisfaction/condition. Later he asks about пробег: \"пробег 10000 всего\" (296.62-300.48) but that's statement. So he got пробег. But does he ask about scratches/defects? He says \"есть пару мелких сколов но они незначительные\" (294.04-296.62). That's comment during inspection. He doesn't ask open questions like \"какие проблемы были с машиной?\" etc. But the \"Как вам автомобиль?\" is open. So I'd say passed true. Evidence: 193.26-196.50.\n\n16. **best_fit_service** (Подходящая услуга, вес 1): ЭО подробно рассказывает про услугу компании, которая максимально подходит клиенту\n   - The client wants trade-in. The employee discusses trade-in: he conducts inspection, then later states the offer: \"оценка рассчитывалось именно по трейдингу\" (471.94-474.68). He also earlier says: \"мы вам поможем продать данный автомобиль\" was client's line, not employee. But employee says \"мы вам поможем\" in the context of trade-in? He says \"я благодарен что обратились именно к нам мы обязательно постараемся сделать все возможное\" (151.02-158.34). After inspection, he says \"посчитали ваш автомобиль ... оценка очень хорошая этот оценка рассчитывалось именно по трейдингу\" (461.02-471.94). He doesn't elaborate on the trade-in process in detail, just says he'll take car for diagnostic and then present price after diagnostic. So he offers the service but not a detailed description. I'd say false. Comment: Сотрудник упоминает трейд-ин, но не рассказывает подробно об услуге (условия, выгоды и т.п.).\n\n17. **alternative_service** (Альтернатива, вес 1): Подробно презентует альтернативный вариант услуг компании\n   - He doesn't mention any alternative like выкуп or комиссия. So false.\n\n18. **price_argumentation** (Аргументация цены, вес 1): Аргументированно озвучивает стоимость (внешнее состояние, дефекты, состояние, ликвидность, эксклюзивность)\n   - When he gives the offer, he says: \"смотрите за ваш автомобиль на данный момент мы готовы предложить 2 миллиона 650 тысяч рублей вот оценка очень хорошая этот оценка рассчитывалось именно по трейдингу\" (461.02-471.94). He earlier commented on the car's condition: \"кузов прям я бы сказал бы очень хороший да весь заводском окрасе есть пару мелких сколов но они незначительные как бы пробег 10000 всего\" (290.14-296.62, 294.04-296.62, 296.62-300.48). So he does mention condition (good, factory paint, minor chips). He then says the price is good and based on trade-in evaluation. But does he explicitly link the price to the condition, etc.? He says \"оценка очень хорошая\", implying the condition leads to high offer. That's argumentation. So passed true. Evidence: 290.14-296.62 (condition comments), 461.02-471.94 (price and mention of evaluation).\n\n19. **no_excuses** (Без оправданий, вес 1): ЭО не оправдывается, не перекладывает ответственность\n   - Does he make excuses? When client objects to price (wanted 3.1), employee says \"для того чтобы нам сейчас разговаривать о торге не надо будет тогда полную сделать диагностику на ваш автомобиль\" (509.80-514.66). That's not an excuse, it's a condition. He doesn't blame anyone. So passed true. Evidence: throughout, no excuses found.\n\n20. **objection_handling** (Возражения, вес 1): Отрабатывает возражение клиента по технике работы с возражениями\n   - Client objects to price: \"ну как бы как сказать устраивать на 400000 почти меньше чем я хотел\" (481.96-486.74). Employee responds: \"я понимаю вас смотрите для того чтобы нам сейчас разговаривать о торге не надо будет тогда полную сделать диагностику на ваш автомобиль мы проводим диагностику по 258 пункт и осматриваем уже более детально двигатель коробку я уверен что на данном автомобиле с пробегом 10000 никаких критических замечаний не будет но в любом случае мне для того чтобы у ...\" (509.80-525.96, 525.96-532.34). He acknowledges, doesn't argue, offers a path (comprehensive diagnostic) to potentially justify a better price. That is handling the objection by proposing a next step. So passed true. Evidence: 509.80-514.66, 514.66-520.32 (offer diagnostic), 525.96-532.34 (explanation).\n\n21. **clear_argument** (Аргументация, вес 1): Дает четкий аргументированный ответ\n   - After client's mention of wife and distance, employee says: \"я вас понимаю для того чтобы в любом случае как бы мне оценку\" (540.00-544.64). That might be truncated. The transcription is messy. But his response to objection is clear: need complete diagnostic to talk about price negotiation. So clear argument. I'll pass true.\n\n22. **deal_close** (Закрытие на сделку, вес 1): ЭО предлагает клиенту оформить сделку\n   - Does he explicitly close? After presenting the price, there is no clear \"давайте оформим сделку\". He suggests: \"если все устраивает загоняем с вами автомобиль диагностику\" (475.90-481.38). That's conditional. But he doesn't directly ask to proceed with the trade-in. The dialogue then goes to client objection. So no deal close. Passed false. Comment: Сотрудник не предложил клиенту завершить сделку (подписать документы, оформить).\n\n23. **body_language** (Контакт, вес 1): Соблюдает комфортную социальную дистанцию, поддерживает контакт глаз,\n   - This is visual, not verifiable from audio transcript alone. No mention of eye contact, distance. So passed false with comment that visual component cannot be confirmed from dialogue. So false.\n\n24. **positive_attitude** (Позитив, вес 1): Улыбка, доброжелательность, позитивный настрой\n   - From audio and ser: Speaker_01 has some positive segments but also anger-flagged many times. His tone is warm_dark_timbral often, and there are expressive variations. But the acoustic profile indicates \"раздражение\" prominently (angry 0.39, neutral 0.38). However, we consider SER as auxiliary, and rely on text and acoustic features. His speech has some positive statements (compliments), but also some segments flagged as negative. However, the criterion \"улыбка, доброжелательность\" is visual. From dialogue alone, we can infer friendly tone through word choice: compliments car, asks small talk, polite. So I'd lean passed true, but visual not confirmed. The comment could mention that audio suggests some negative emotion flags, but words are polite, so overall attitude appears positive. I'll note that SER shows some irritation, but the dialogue is polite. I'll pass true with caution. But we might set null if unsure. However, we can note that audio offers some evidence: the acoustic features include bright timbral and expressive pitch (for some segments). I'd pass true based on text and mild positive tones.\n\n25. **speech_quality** (Речь, вес 1): Речь грамотная, не использует сленг и жаргон\n   - His speech is mostly grammatically correct. Some filler: \"вот\", \"как бы\", but no slang. He uses proper language. So passed true.\n\nNow compile evidence segments for each. I need to ensure evidence_segments are arrays of objects with start/end numbers from transcript. Use decimal seconds as given (e.g., 3.25). I'll pull those.\n\nLet's list out all criteria with decisions, comments, and evidence.\n\nspeaker_roles: SPEAKER_01 Employee (expert), SPEAKER_02 Client.\nemployee_speaker: SPEAKER_01.\nConfidence: high.\n\nNow produce JSON."
+}
